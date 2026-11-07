@@ -1,0 +1,519 @@
+{
+  "input": {
+    "clicks": [
+      8,
+      16,
+      27,
+      43,
+      54,
+      64,
+      73,
+      82,
+      92,
+      102
+    ],
+    "accepted": 5,
+    "slowClicks": [
+      138,
+      161,
+      184,
+      215,
+      238
+    ],
+    "slowAccepted": 5,
+    "animation": [
+      {
+        "t": 1,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 2,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 2,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 3,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 4,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 5,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 5,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 7,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 9,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 10,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 11,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 11,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 12,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 13,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 13,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 14,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 15,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 15,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 16,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 17,
+        "body": 0,
+        "rotation": 0
+      },
+      {
+        "t": 18,
+        "body": 0,
+        "rotation": 0
+      }
+    ]
+  },
+  "direct": {
+    "atPress": {
+      "p": {
+        "x": 760.5,
+        "y": 207.25,
+        "hp": 3,
+        "mode": "fall"
+      },
+      "e": {
+        "x": 756.5,
+        "hp": 3,
+        "state": "windup"
+      },
+      "gap": -2
+    },
+    "events": [
+      {
+        "type": "jump",
+        "t": 341,
+        "player": {
+          "x": 709.75,
+          "y": 271.0902777777779,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 761.75,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "chase",
+          "stateTicks": 0,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true
+        }
+      },
+      {
+        "type": "enemy:windup",
+        "t": 349,
+        "player": {
+          "x": 723.75,
+          "y": 238.31249999999994,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "enemy:attack",
+        "t": 379,
+        "player": {
+          "x": 760.5,
+          "y": 249.31250000000045,
+          "hp": 2,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "attack",
+          "stateTicks": 8,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "hurt",
+        "t": 379,
+        "player": {
+          "x": 760.5,
+          "y": 249.31250000000045,
+          "hp": 2,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "attack",
+          "stateTicks": 8,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "source": "contact"
+      },
+      {
+        "type": "hurt",
+        "t": 425,
+        "player": {
+          "x": 760.5,
+          "y": 276,
+          "hp": 1,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "recovery",
+          "stateTicks": 2,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "source": "contact"
+      },
+      {
+        "type": "enemy:windup",
+        "t": 428,
+        "player": {
+          "x": 760.5,
+          "y": 276,
+          "hp": 1,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": 1,
+          "lockedFacing": 1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 768.5,
+            "y": 290
+          }
+        },
+        "id": "soldier-1"
+      }
+    ],
+    "player": {
+      "x": 760.5,
+      "y": 276,
+      "hp": 1,
+      "mode": "hurt"
+    },
+    "enemy": {
+      "hp": 3,
+      "state": "windup"
+    }
+  },
+  "adjacent": {
+    "atPress": {
+      "p": {
+        "x": 743,
+        "y": 219.11111111111111,
+        "hp": 3,
+        "mode": "jump"
+      },
+      "e": {
+        "x": 756.5,
+        "hp": 3,
+        "state": "windup"
+      },
+      "gap": 15.5
+    },
+    "events": [
+      {
+        "type": "jump",
+        "t": 345,
+        "player": {
+          "x": 716.75,
+          "y": 271.0902777777779,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 758.75,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "chase",
+          "stateTicks": 0,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true
+        }
+      },
+      {
+        "type": "enemy:windup",
+        "t": 349,
+        "player": {
+          "x": 723.75,
+          "y": 253.25694444444446,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 267.25694444444446
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "hurt",
+        "t": 366,
+        "player": {
+          "x": 744.75,
+          "y": 250.42361111111148,
+          "hp": 2,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 13,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 267.25694444444446
+          }
+        },
+        "source": "contact"
+      },
+      {
+        "type": "enemy:attack",
+        "t": 379,
+        "player": {
+          "x": 744.75,
+          "y": 276,
+          "hp": 2,
+          "mode": "idle"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "attack",
+          "stateTicks": 8,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 267.25694444444446
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "hurt",
+        "t": 412,
+        "player": {
+          "x": 744.75,
+          "y": 276,
+          "hp": 1,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "recovery",
+          "stateTicks": 15,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 267.25694444444446
+          }
+        },
+        "source": "contact"
+      }
+    ],
+    "player": {
+      "x": 744.75,
+      "y": 276,
+      "hp": 1,
+      "mode": "hurt"
+    },
+    "enemy": {
+      "hp": 3,
+      "state": "recovery"
+    }
+  }
+}

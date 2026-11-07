@@ -20,15 +20,34 @@ test('arena locks on entry, death unlocks, and restore resets boss',()=>{
  let r=createStageRun(stage);r.player.x=stage.arena.left+16;r=tick(r).run;assert.equal(r.arenaLocked,true);assert.equal(r.boss.state,'intro');
  r.player.y=344;r.boss.state='recovery';r.boss.stateTicks=10;let result=tick(r);r=result.run;assert.equal(r.arenaLocked,false);r=tick(r,60).run;assert.equal(r.boss.state,'dormant');assert.equal(r.boss.hp,18);
 });
+test('the player can move and jump while the boss enters',()=>{
+ let r=createStageRun(stage);r.player.x=stage.arena.left+16;
+ r=stepStage(r,{...input,move:1},stage).run;assert.equal(r.boss.state,'intro');const startX=r.player.x,startY=r.player.y;
+ for(let i=0;i<20;i++)r=stepStage(r,{...input,move:1,jumpPressed:i===0,jumpHeld:true},stage).run;
+ assert.equal(r.boss.state,'intro');assert.ok(r.player.x>startX+20);assert.ok(r.player.y<startY-10);assert.equal(r.outcome,null);
+});
+test('dive landing damages only enemies overlapping the impact area',()=>{
+ let r=createStageRun(stage);Object.assign(r.player,{x:200,y:275,mode:'dive',diveUsed:true,grounded:false});
+ const near=r.enemies.find(e=>e.id==='soldier-1'),far=r.enemies.find(e=>e.id==='soldier-2');
+ Object.assign(near,{x:238,y:276,state:'hurt',stateTicks:10});Object.assign(far,{x:239,y:276,state:'hurt',stateTicks:10});r.enemies=[near,far];
+ const result=tick(r),impact=result.events.find(e=>e.type==='dive-impact');assert.equal(impact.canDamage,true);
+ assert.equal(result.run.enemies[0].hp,near.hp-1);assert.equal(result.run.enemies[1].hp,far.hp);
+});
+test('dive landing during boss intro does not apply damage',()=>{
+ let r=createStageRun(stage);Object.assign(r.player,{x:200,y:275,mode:'dive',diveUsed:true,grounded:false});
+ const near=r.enemies.find(e=>e.id==='soldier-1');Object.assign(near,{x:227,y:276,state:'hurt',stateTicks:10});r.enemies=[near];
+ Object.assign(r.boss,{state:'intro',stateTicks:20});const result=tick(r),impact=result.events.find(e=>e.type==='dive-impact');
+ assert.equal(impact.canDamage,false);assert.equal(result.run.enemies[0].hp,near.hp);
+});
 test('simultaneous lethal collision wins over the player swing',()=>{
- let r=createStageRun(stage);r.player.x=11010;r.player.hp=1;r.player.mode='attack';r.player.attackTick=4;r.player.lockedAim={x:1,y:0};
+ let r=createStageRun(stage);r.player.x=11010;r.player.hp=1;r.player.mode='attack';r.player.attackTick=4;r.player.aim={x:1,y:0};
  Object.assign(r.boss,{hp:1,state:'attack',stateTicks:5,phase:2,transitioned:true,hitboxes:[{x:11000,y:260,w:40,h:44,ticks:5}]});r.arenaLocked=true;
  const result=tick(r);assert.equal(result.run.player.mode,'dead');assert.equal(result.run.boss.hp,1);assert.equal(result.run.outcome,null);assert.equal(result.events.filter(e=>e.type==='stage:clear').length,0);
 });
 test('boss death unlocks arena and emits clear once after victory',()=>{
- let r=createStageRun(stage);r.player.x=11010;r.player.mode='attack';r.player.attackTick=4;r.player.lockedAim={x:1,y:0};
+ let r=createStageRun(stage);r.player.x=11010;r.player.mode='attack';r.player.attackTick=4;r.player.aim={x:1,y:0};
  Object.assign(r.boss,{hp:1,state:'recovery',stateTicks:40,phase:2,transitioned:true});r.arenaLocked=true;
- let result=tick(r);r=result.run;assert.equal(r.boss.state,'dying');assert.equal(r.arenaLocked,false);assert.equal(r.player.mode,'idle');assert.equal(r.player.combo,0);
+ let result=tick(r);r=result.run;assert.equal(r.boss.state,'dying');assert.equal(r.arenaLocked,false);assert.equal(r.player.mode,'idle');assert.equal(r.player.attackTick,0);
  result=tick(r,90);r=result.run;assert.equal(r.outcome,'clear');assert.equal(result.events.filter(e=>e.type==='stage:clear').length,1);assert.equal(tick(r).events.length,0);
 });
 

@@ -3,18 +3,16 @@ import { moveAxis, normalizeAim } from './geometry.js';
 import { applyPlayerDamage, angleToFacing8 } from './combat.js';
 export function createPlayer(x = 120, y = 276) {
   return { x, y, vx: 0, vy: 0, w: 16, h: 28, grounded: false, hp: 3, mode: 'idle', facing: 0,
-    horizontalFacing: 1, aim: { x: 1, y: 0 }, lockedAim: { x: 1, y: 0 }, invulnerableTicks: 0,
+    horizontalFacing: 1, aim: { x: 1, y: 0 }, invulnerableTicks: 0,
     rollCooldown: 0, rollTicks: 0, rollDirection: 1, rollInvulnerable: false, damageInvulnerable: false, jumpCut: false, diveCooldown: 0, diveUsed: false,
-    combo: 0, attackTick: 0, attackBuffered: false, hitIds: new Set(), hurtTicks: 0 };
+    attackTick: 0, hitIds: new Set(), hurtTicks: 0 };
 }
-function startAttack(p, events, combo) {
-  p.mode = 'attack'; p.combo = combo; p.attackTick = 0; p.attackBuffered = false; p.hitIds.clear();
-  if (combo === 1) p.lockedAim = { ...p.aim };
-  p.facing = angleToFacing8(p.lockedAim);
-  events.push({ type: 'swing', combo, aim: { ...p.lockedAim } });
+function startAttack(p, events) {
+  p.mode = 'attack'; p.attackTick = 0; p.hitIds.clear();
+  events.push({ type: 'swing', aim: { ...p.aim } });
 }
 export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
-  let p = { ...state, hitIds: new Set(state.hitIds), aim: { ...state.aim }, lockedAim: { ...state.lockedAim } };
+  let p = { ...state, hitIds: new Set(state.hitIds), aim: { ...state.aim } };
   const events = [];
   if (p.mode === 'dead') return { player: p, events };
   if (p.y >= pitDeathY) return applyPlayerDamage(p, 'pit');
@@ -26,18 +24,18 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   if (p.rollCooldown > 0) p.rollCooldown--;
   if (p.diveCooldown > 0) p.diveCooldown--;
   p.aim = normalizeAim(p.x + p.w/2, p.y + p.h/2, input.aimX, input.aimY, p.aim);
-  if (p.mode !== 'attack') p.facing = angleToFacing8(p.aim);
+  p.facing = angleToFacing8(p.aim);
   if (input.move) p.horizontalFacing = input.move;
   if (p.mode === 'hurt') { if (--p.hurtTicks <= 0) p.mode = p.grounded ? 'idle' : 'fall'; }
   if (p.mode !== 'hurt' && p.mode !== 'roll' && p.mode !== 'dive') {
     if (input.rollPressed && canRoll) {
       p.mode = 'roll'; p.rollTicks = C.ROLL_TICKS; p.rollDirection = input.move || p.horizontalFacing;
-      p.combo = 0; p.attackTick = 0; p.attackBuffered = false; p.hitIds.clear(); events.push({ type: 'roll' });
+      p.attackTick = 0; p.hitIds.clear(); events.push({ type: 'roll' });
     } else if (input.divePressed && !p.grounded && !p.diveUsed && canDive) {
-      p.mode = 'dive'; p.diveUsed = true; p.combo = 0; p.attackTick = 0; p.attackBuffered = false; p.hitIds.clear();
+      p.mode = 'dive'; p.diveUsed = true; p.attackTick = 0; p.hitIds.clear();
     } else {
       if (input.jumpPressed && p.grounded) { p.vy = C.JUMP_SPEED; p.grounded = false; p.jumpCut = false; events.push({ type: 'jump' }); }
-      if (input.attackPressed) { if (p.mode === 'attack') p.attackBuffered = true; else startAttack(p, events, 1); }
+      if (input.attackPressed && p.mode !== 'attack') startAttack(p, events);
     }
   }
   if (p.mode === 'roll') { p.vx = p.rollDirection * C.ROLL_SPEED; p.rollInvulnerable = true; }
@@ -66,8 +64,7 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   else if (p.mode === 'attack') {
     p.attackTick++;
     if (p.attackTick >= C.ATTACK_TICKS) {
-      if (p.attackBuffered && p.combo < 3) startAttack(p, events, p.combo + 1);
-      else { p.combo = 0; p.attackTick = 0; p.attackBuffered = false; p.hitIds.clear(); p.mode = p.grounded ? 'idle' : 'fall'; }
+      p.attackTick = 0; p.hitIds.clear(); p.mode = p.grounded ? 'idle' : 'fall';
     }
   }
   if (['idle', 'run', 'jump', 'fall'].includes(p.mode)) p.mode = !p.grounded ? (p.vy < 0 ? 'jump' : 'fall') : (p.vx ? 'run' : 'idle');

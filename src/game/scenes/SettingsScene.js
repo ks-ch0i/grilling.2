@@ -1,15 +1,17 @@
 import Phaser from 'phaser';
 import {getAppStore} from '../storage/appStore.js';
 import {mountMenu} from '../ui/menu.js';
+import {getAudioManager} from '../audio/AudioManager.js';
 export class SettingsScene extends Phaser.Scene {
   constructor(){super('settings');}
   create(data){
     this.store=getAppStore();this.onClose=data.onClose;this.menu=mountMenu('설정');const settings=this.store.getSave().settings;
-    const change=patch=>{const save=this.store.getSave();this.store.setSave({...save,settings:{...save.settings,...patch}});this.store.persist();};
+    const change=patch=>{const save=this.store.getSave();this.store.setSave({...save,settings:{...save.settings,...patch}});this.store.persist();getAudioManager().setVolumes(this.store.getSave().settings);if(patch.screenShake===false&&this.scene.isActive('stage'))this.scene.get('stage').cameras.main.resetFX();};
     this.menu.range('음악 음량',settings.musicVolume,v=>change({musicVolume:v}));
     this.menu.range('효과음 음량',settings.sfxVolume,v=>change({sfxVolume:v}));
     this.menu.checkbox('화면 흔들림',settings.screenShake,v=>change({screenShake:v}));
     this.menu.text('조작: A/D 이동 · Space 점프 · 마우스 왼쪽 공격 · Shift 구르기 · E 내려베기 · Esc 일시정지');
+    this.menu.text('배경음: Magic Forest — Kevin MacLeod (incompetech.com), CC BY 4.0');
     this.fullscreenButton=this.menu.button('',()=>this.toggleFullscreen());this.fullscreenError=this.menu.text('');this.fullscreenError.setAttribute('role','status');
     this.menu.button('뒤로',()=>this.close());this.fullscreenChanged=()=>{this.fullscreenButton.textContent=document.fullscreenElement?'전체화면 종료':'전체화면';if(document.fullscreenElement)this.fullscreenError.textContent='';};
     this.onKey=e=>{if(e.code==='Escape'&&!e.repeat){e.preventDefault();this.close();}};

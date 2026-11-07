@@ -1,0 +1,118 @@
+{
+  "date": "2026-11-07",
+  "scope": "키보드·마우스 자동 입력으로 실제 Chrome 게임 실행. 게임 상태는 관찰만 하고 좌표·체력·판정은 변경하지 않음. 테스트용 브라우저에서만 game 참조 노출.",
+  "fullplay": {
+    "seconds": 127.8,
+    "deaths": 0,
+    "allEnemiesDefeated": true,
+    "bossPhase2": true,
+    "pageErrors": 0
+  },
+  "limits": [
+    "자동 입력 완주 시간은 사람의 난이도 평가를 대체하지 않음",
+    "음원 재생 상태는 확인했으나 실제 청취 품질은 평가하지 않음",
+    "개선안은 미확정이며 게임 코드를 수정하지 않음"
+  ],
+  "findings": [
+    {
+      "id": "R01",
+      "priority": "P1",
+      "title": "적 위로 내려찍으면 공격이 취소됨",
+      "evidence": "정면 하강 중 dive 상태가 contact 피해로 hurt로 바뀜. 플레이어 HP 3→2, 적 HP 3 유지, dive-impact 없음. 적 옆으로 착지하면 플레이어 HP 3 유지, 적 HP 3→2.",
+      "proposal": "하강 중 적과 접촉할 때 공격 판정을 먼저 처리하거나 하강 공격 전용 접촉 규칙을 설계한다.",
+      "sources": [
+        "src/game/sim/stage.js:73",
+        "src/game/sim/player.js:58"
+      ],
+      "artifacts": [
+        "dive-trace.json",
+        "dive-direct-trace.png",
+        "dive-offset-trace.png"
+      ]
+    },
+    {
+      "id": "R02",
+      "priority": "P1",
+      "title": "등장 연출이 끝나면 보스가 다시 화면 밖으로 나감",
+      "evidence": "플레이어를 움직이지 않은 상태에서 보스 화면 중심 x가 581→811로 이동. 게임 화면 가로는 640.",
+      "proposal": "보스 구역에서는 보스와 플레이어를 함께 담는 카메라를 유지하고 일반 추적 전환을 재설계한다.",
+      "sources": [
+        "src/game/scenes/StageScene.js:95"
+      ],
+      "artifacts": [
+        "fullplay.json",
+        "intro.png",
+        "after-intro.png"
+      ]
+    },
+    {
+      "id": "R03",
+      "priority": "P1",
+      "title": "빠른 클릭의 절반이 반응 없이 버려짐",
+      "evidence": "빠른 클릭 10회에서 swing 5회, 느린 클릭 5회에서는 swing 5회. 공격 중 입력은 폐기되지만 재공격 가능 상태를 알리는 표시가 없음.",
+      "proposal": "콤보 없이 종료 직전의 단발 클릭 하나만 짧게 예약하거나 재공격 가능 신호를 제공한다.",
+      "sources": [
+        "src/game/sim/player.js:38"
+      ],
+      "artifacts": [
+        "probes.json"
+      ]
+    },
+    {
+      "id": "R04",
+      "priority": "P2",
+      "title": "칼날바람에 비해 몸과 검의 실제 휘두름이 부족함",
+      "evidence": "한 공격의 tick 1~18 동안 body frame 0과 검 회전 0이 유지됨. 칼날바람은 움직이지만 몸·검은 같은 공격 자세.",
+      "proposal": "한 번의 공격 안에서 준비→휘두름→복귀 자세를 만들고 검의 궤적을 동기화한다. 연속 타격 콤보와는 별개.",
+      "sources": [
+        "src/game/assets/manifest.js:13",
+        "src/game/render/PlayerView.js:25"
+      ],
+      "artifacts": [
+        "probes.json"
+      ]
+    },
+    {
+      "id": "R05",
+      "priority": "P2",
+      "title": "피격 뒤 적과 겹쳐 남아 반복 피해를 받음",
+      "evidence": "접촉 피격 시 x좌표가 그대로 유지되고, 약 0.77초 뒤 같은 위치에서 HP 2→1의 추가 접촉 피해 발생.",
+      "proposal": "짧은 밀려남·분리와 피격 방향 표시를 검토한다.",
+      "sources": [
+        "src/game/sim/combat.js:80"
+      ],
+      "artifacts": [
+        "dive-trace.json",
+        "dive-direct-trace.png"
+      ]
+    },
+    {
+      "id": "R06",
+      "priority": "P2",
+      "title": "구르기·내려찍기 재사용 가능 여부를 알기 어려움",
+      "evidence": "HUD는 하트·보스 HP 중심이고 재사용 표시가 없음. 구르기 종료 후 0.4초, 내려찍기 착지 후 0.6초의 재사용 대기시간이 존재.",
+      "proposal": "작은 아이콘이나 게이지로 사용 가능 여부를 표시한다.",
+      "sources": [
+        "src/game/sim/constants.js:10",
+        "src/game/scenes/StageScene.js:102"
+      ],
+      "artifacts": [
+        "forest.png"
+      ]
+    },
+    {
+      "id": "R07",
+      "priority": "P3",
+      "title": "긴 이동 구간과 짧은 일반 적 전투가 반복됨",
+      "evidence": "여러 일반 적이 첫 명중 후 약 0.65~0.75초 만에 처치됨. 일반 적 타격 구간 사이에는 약 13~17초 간격이 반복됨.",
+      "proposal": "적 간격과 피격 경직부터 조정해 패턴을 보면서 싸우는 시간을 늘린다. 새 콘텐츠 추가 전 배치 조정을 우선 검토한다.",
+      "sources": [
+        "src/game/content/forestStage.js",
+        "src/game/sim/enemies.js:29"
+      ],
+      "artifacts": [
+        "fullplay.json"
+      ]
+    }
+  ]
+}

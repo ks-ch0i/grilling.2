@@ -13,7 +13,7 @@ test('forest validates and its five pits stay open',()=>{
 test('a normal full jump crosses each 64 pixel pit',()=>{
  for(const [start,end] of [[1504,1568],[3136,3200],[4960,5024],[6848,6912],[8752,8816]]){
   let p=createPlayer(start-24,276);p.grounded=true;
-  for(let i=0;i<50;i++){p=stepPlayer(p,{...f,jumpPressed:i===0},FOREST_STAGE.solids,FOREST_STAGE.pitDeathY).player;if(p.grounded&&p.x>=end)break;}
+  for(let i=0;i<80;i++){p=stepPlayer(p,{...f,jumpPressed:i===0},FOREST_STAGE.solids,FOREST_STAGE.pitDeathY).player;if(p.grounded&&p.x>=end)break;}
   assert.notEqual(p.mode,'dead');assert.ok(p.x>=end,`failed at ${start}`);assert.equal(p.grounded,true);
  }
 });

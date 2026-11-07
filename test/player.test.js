@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPlayer, stepPlayer, isAttackActive } from '../src/game/sim/player.js';
-import { applyPlayerDamage } from '../src/game/sim/combat.js';
+import { applyPlayerDamage, attackIntersects } from '../src/game/sim/combat.js';
 import * as C from '../src/game/sim/constants.js';
 const floor = [{x:-1000,y:304,w:2000,h:56}];
 const frame = overrides => ({move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:500,aimY:290,...overrides});
@@ -36,17 +36,26 @@ test('dive requires air, falls vertically and starts cooldown at landing', () =>
   let impacts=0; for(let i=0;i<20;i++){const r=stepPlayer(p,frame(),floor);p=r.player;impacts+=r.events.filter(e=>e.type==='dive-impact').length;} assert.equal(impacts,1); assert.ok(p.diveCooldown>0);
   p=tick(p,{jumpPressed:true,jumpHeld:true}); p=tick(p,{divePressed:true}); assert.notEqual(p.mode,'dive');
 });
-test('three buffered attacks lock aim and reset hit ids per swing', () => {
-  let p=grounded(); p=tick(p,{attackPressed:true,aimX:200,aimY:290}); const locked={...p.lockedAim}; let attacks=[p.combo], active=0;
-  p.hitIds.add('target'); for(let i=1;i<3*C.ATTACK_TICKS;i++) { const r=stepPlayer(p,frame({attackPressed:i===2||i===C.ATTACK_TICKS+2,aimX:0,aimY:0}),floor); p=r.player;
-    if (isAttackActive(p)) active++; if(r.events.some(e=>e.type==='swing')) {attacks.push(p.combo); assert.equal(p.hitIds.size,0);} if(p.mode==='attack') assert.deepEqual(p.lockedAim,locked);
-  }
-  assert.deepEqual(attacks,[1,2,3]); assert.equal(active,15); assert.equal(p.combo,0);
+test('attacks track current aim without queuing another swing', () => {
+  let p=grounded(); let result=stepPlayer(p,frame({attackPressed:true,aimX:500,aimY:290}),floor);p=result.player;
+  assert.equal(result.events.filter(e=>e.type==='swing').length,1);p.hitIds.add('target');
+  result=stepPlayer(p,frame({attackPressed:true,aimX:0,aimY:290}),floor);p=result.player;
+  assert.equal(p.facing,4);assert.ok(p.aim.x<0);assert.equal(result.events.some(e=>e.type==='swing'),false);
+  for(let i=2;i<C.ATTACK_TICKS;i++){result=stepPlayer(p,frame({aimX:0,aimY:290}),floor);p=result.player;assert.equal(result.events.some(e=>e.type==='swing'),false);}
+  assert.notEqual(p.mode,'attack');assert.equal(p.hitIds.size,0);
+  result=stepPlayer(p,frame({attackPressed:true,aimX:0,aimY:290}),floor);assert.equal(result.player.mode,'attack');assert.equal(result.events.filter(e=>e.type==='swing').length,1);assert.ok(result.events[0].aim.x<0);
 });
 
 test('attack has four startup, five active and ten recovery ticks',()=>{
  let p=grounded(); const phases=[]; for(let i=0;i<19;i++){p=tick(p,{attackPressed:i===0});phases.push(isAttackActive(p));}
  assert.deepEqual(phases, [...Array(4).fill(false),...Array(5).fill(true),...Array(10).fill(false)]);
+});
+
+test('turning during an active swing moves the hit area with the aim',()=>{
+ let p=grounded();for(let i=0;i<5;i++)p=tick(p,{attackPressed:i===0,aimX:500,aimY:290});
+ const right={x:p.x+30,y:p.y+10,w:8,h:8},left={x:p.x-22,y:p.y+10,w:8,h:8};
+ assert.equal(isAttackActive(p),true);assert.equal(attackIntersects(p,right),true);assert.equal(attackIntersects(p,left),false);
+ p=tick(p,{aimX:0,aimY:290});assert.equal(isAttackActive(p),true);assert.equal(attackIntersects(p,right),false);assert.equal(attackIntersects(p,left),true);
 });
 
 test('a dive interrupted by damage cannot be reused until landing and cooldown',()=>{

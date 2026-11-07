@@ -1,12 +1,12 @@
 import { validateStage } from '../content/forestStage.js';
 import { createPlayer, stepPlayer, isAttackActive } from './player.js';
 import { intersects } from './geometry.js';
-import { applyPlayerDamage, registerAttackHit } from './combat.js';
+import { applyPlayerDamage, registerAttackHit, diveImpactRect } from './combat.js';
 import { createEnemy, damageEnemy, enemyAttackRect, stepEnemy, stepProjectile } from './enemies.js';
 import { createBoss, damageBoss, stepBoss } from './boss.js';
 const DEATH_TICKS=60;
 function freshPlayer(point) { const p=createPlayer(point.x,point.y);p.grounded=true;return p; }
-function boundaries(stage,locked) {
+export function stageTerrain(stage,locked) {
   const {width,height}=stage.world;
   const walls=[{x:-16,y:0,w:16,h:height},{x:width,y:0,w:16,h:height},{x:0,y:-16,w:width,h:16}];
   if (locked) walls.push({x:stage.arena.left,y:stage.arena.top,w:16,h:stage.arena.bottom-stage.arena.top},{x:stage.arena.right,y:stage.arena.top,w:16,h:stage.arena.bottom-stage.arena.top});
@@ -41,7 +41,7 @@ function damageTargets(run,rect,terrain,events) {
   const b=run.boss;
   if (!['dormant','intro','transition','dying','dead'].includes(b.state)) {
     const hit=diving?intersects(rect,b):registerAttackHit(run.player,b,terrain);
-    if (hit) {const result=damageBoss(b);run.boss=result.boss;events.push(...result.events);if(result.boss.state==='dying'){run.arenaLocked=false;run.player.mode='idle';run.player.combo=0;run.player.attackTick=0;run.player.attackBuffered=false;run.player.hitIds.clear();run.player.vx=0;run.player.vy=0;}}
+    if (hit) {const result=damageBoss(b);run.boss=result.boss;events.push(...result.events);if(result.boss.state==='dying'){run.arenaLocked=false;run.player.mode='idle';run.player.attackTick=0;run.player.hitIds.clear();run.player.vx=0;run.player.vy=0;}}
   }
 }
 export function stepStage(previous,input,stage) {
@@ -51,9 +51,8 @@ export function stepStage(previous,input,stage) {
     if (--run.deathTicks<=0) run=restoreCheckpoint(run,stage);
     return {run,events};
   }
-  const intro=run.boss.state==='intro';
-  const terrain=boundaries(stage,run.arenaLocked);
-  if (!intro && run.boss.state!=='dying' && run.boss.state!=='dead') {
+  const terrain=stageTerrain(stage,run.arenaLocked);
+  if (run.boss.state!=='dying' && run.boss.state!=='dead') {
     const result=stepPlayer(run.player,input,terrain,stage.pitDeathY);run.player=result.player;events.push(...result.events);
   }
   if (run.player.mode==='dead') return death(run,events);
@@ -67,7 +66,7 @@ export function stepStage(previous,input,stage) {
     for (const pickup of stage.pickups) if (!run.consumedPickupIds.includes(pickup.id) && intersects(run.player,{...pickup,w:16,h:16})) {
       run.consumedPickupIds.push(pickup.id);run.player.hp=Math.min(3,run.player.hp+1);events.push({type:'stage:pickup',id:pickup.id,consumedPickupIds:[...run.consumedPickupIds]});
     }
-    const solids=boundaries(stage,run.arenaLocked);
+    const solids=stageTerrain(stage,run.arenaLocked);
     for (let i=0;i<run.enemies.length;i++) {
       const result=stepEnemy(run.enemies[i],run.player,solids);run.enemies[i]=result.enemy;events.push(...result.events);run.projectiles.push(...result.projectiles);
       const enemy=result.enemy; if (enemy.state==='dead') continue;
@@ -84,9 +83,10 @@ export function stepStage(previous,input,stage) {
   }
   if (run.player.mode==='dead') return death(run,events);
   if (bossResult.events.some(e=>e.type==='boss:defeated')) {run.outcome='clear';run.arenaLocked=false;events.push({type:'stage:clear',elapsedTicks:run.elapsedTicks,deaths:run.deaths});return {run,events};}
+  for (const event of events) if (event.type==='dive-impact') event.canDamage=!interactionLocked;
   if (!interactionLocked) {
     if (isAttackActive(run.player)) damageTargets(run,null,terrain,events);
-    for (const event of events.filter(e=>e.type==='dive-impact')) damageTargets(run,{x:event.x-24,y:event.y-12,w:48,h:24},terrain,events);
+    for (const event of events.filter(e=>e.type==='dive-impact')) damageTargets(run,diveImpactRect(event.x,event.y),terrain,events);
   }
   return {run,events};
 }
