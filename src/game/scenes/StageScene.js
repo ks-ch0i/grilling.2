@@ -5,6 +5,7 @@ import { createStageRun, stepStage, checkpointData } from '../sim/stage.js';
 import { diveImpactRect } from '../sim/combat.js';
 import { PlayerView } from '../render/PlayerView.js';
 import { EnemyView } from '../render/EnemyView.js';
+import { bossDirection } from '../render/bossDirection.js';
 import { getAppStore } from '../storage/appStore.js';
 import { createRunCoordinator } from '../storage/runCoordinator.js';
 import { markRunActive,clearRunActive } from '../storage/reloadRecovery.js';
@@ -25,6 +26,7 @@ export class StageScene extends Phaser.Scene {
     this.hud=this.add.text(12,10,'',{fontFamily:'monospace',fontSize:'14px',color:'#ffffff'}).setScrollFactor(0).setDepth(10);
     this.hearts=[0,1,2].map(i=>this.add.sprite(105+i*25,32,'objects',7).setOrigin(.5,1).setScale(.5).setScrollFactor(0).setDepth(10));
     this.hudGraphics=this.add.graphics().setScrollFactor(0).setDepth(10);
+    this.bossDirectionGraphics=this.add.graphics().setScrollFactor(0).setDepth(11);
     this.message=this.add.text(320,120,'',{fontFamily:'monospace',fontSize:'20px',color:'#ffffff',stroke:'#17131c',strokeThickness:4}).setOrigin(.5).setScrollFactor(0).setDepth(10);
     this.cameras.main.setBounds(0,0,this.stage.world.width,this.stage.world.height);this.cameras.main.roundPixels=true;
     this.inputController=new InputController(window,this.game.canvas);
@@ -102,6 +104,9 @@ export class StageScene extends Phaser.Scene {
     this.hud.setText(`FOREST 1${showBoss?'                         FOREST GUARDIAN':''}`);
     this.hearts.forEach((heart,i)=>heart.setFrame(i<p.hp?7:6));
     this.hudGraphics.clear();if(showBoss){this.hudGraphics.fillStyle(0x312c2d);this.hudGraphics.fillRect(390,29,220,8);this.hudGraphics.fillStyle(0xe99166);this.hudGraphics.fillRect(390,29,Math.round(220*boss.hp/boss.maxHp),8);}
+    const direction=this.run.outcome?null:bossDirection(boss,{scrollX:cam.scrollX,width:640}),arrow=this.bossDirectionGraphics;
+    arrow.clear();if(direction){const x=direction==='right'?626:14,y=Phaser.Math.Clamp(Math.round(boss.y+boss.h/2-cam.scrollY),72,280),tip=direction==='right'?x+5:x-5,base=direction==='right'?x-5:x+5;
+      arrow.fillStyle(0xffdf9e).fillTriangle(tip,y,base,y-6,base,y+6);arrow.lineStyle(1,0x392a29).strokeTriangle(tip,y,base,y-6,base,y+6);}
     this.message.setText(this.run.outcome==='clear'?'STAGE CLEAR':p.mode==='dead'?'RESPAWNING':boss.state==='intro'?'숲의 수호자 등장':this.checkpointNotice?'CHECKPOINT':'');
   }
   drawWorld(){
