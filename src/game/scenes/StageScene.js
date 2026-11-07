@@ -91,7 +91,7 @@ export class StageScene extends Phaser.Scene {
   }
   resumeGame(){if(!this.paused||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();this.audio.resumeMusic();this.audio.playMusic('forest');}else this.audio.resumeMusic();}
   exportCheckpointData(){return checkpointData(this.run);}
-  restoreCheckpointData(data){this.run=createStageRun(this.stage,data);this.pauseReset();this.coordinator.flush();this.renderWorld();}
+  restoreCheckpointData(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
   renderWorld(){
     const p=this.run.player,cam=this.cameras.main,boss=this.run.boss;
     const target=boss.state==='intro'?((p.x+p.w/2-16)+(boss.x+boss.w/2+56))/2:p.x+p.w/2+p.horizontalFacing*60;

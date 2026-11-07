@@ -11,6 +11,9 @@ function startAttack(p, events) {
   p.mode = 'attack'; p.attackTick = 0; p.hitIds.clear();
   events.push({ type: 'swing', aim: { ...p.aim } });
 }
+export function canStartAttack(player) {
+  return ['idle', 'run', 'jump', 'fall'].includes(player.mode);
+}
 export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   let p = { ...state, hitIds: new Set(state.hitIds), aim: { ...state.aim } };
   const events = [];
@@ -37,7 +40,7 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
       p.mode = 'dive'; p.diveUsed = true; p.attackTick = 0; p.hitIds.clear();
     } else {
       if (input.jumpPressed && p.grounded) { p.vy = C.JUMP_SPEED; p.grounded = false; p.jumpCut = false; events.push({ type: 'jump' }); }
-      if (input.attackPressed && p.mode !== 'attack') startAttack(p, events);
+      if (input.attackPressed && canStartAttack(p)) startAttack(p, events);
     }
   }
   if (p.mode === 'roll') { p.vx = p.rollDirection * C.ROLL_SPEED; p.rollInvulnerable = true; }

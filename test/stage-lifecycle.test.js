@@ -55,6 +55,15 @@ test('dive landing during boss intro does not apply damage',()=>{
  Object.assign(r.boss,{state:'intro',stateTicks:20});const result=tick(r),impact=result.events.find(e=>e.type==='dive-impact');
  assert.equal(impact.canDamage,false);assert.equal(result.run.enemies[0].hp,near.hp);
 });
+test('attack input is accepted during boss intro and transition while damage stays locked',()=>{
+ for(const state of ['intro','transition']){
+  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:276,grounded:true});
+  const enemy=r.enemies.find(e=>e.id==='soldier-1');Object.assign(enemy,{x:225,y:276,state:'hurt',stateTicks:30});r.enemies=[enemy];
+  Object.assign(r.boss,{state,stateTicks:30});let events=[];
+  for(let i=0;i<7;i++){const next=stepStage(r,{...input,attackPressed:i===0,aimX:250,aimY:290},stage);r=next.run;events.push(...next.events);}
+  assert.equal(events.filter(e=>e.type==='swing').length,1,state);assert.equal(r.enemies[0].hp,enemy.hp,state);assert.equal(events.some(e=>e.type==='enemy:hurt'),false,state);
+ }
+});
 test('simultaneous lethal collision wins over the player swing',()=>{
  let r=createStageRun(stage);r.player.x=11010;r.player.hp=1;r.player.mode='attack';r.player.attackTick=4;r.player.aim={x:1,y:0};
  Object.assign(r.boss,{hp:1,state:'attack',stateTicks:5,phase:2,transitioned:true,hitboxes:[{x:11000,y:260,w:40,h:44,ticks:5}]});r.arenaLocked=true;
