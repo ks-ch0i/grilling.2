@@ -1,6 +1,6 @@
 import { validateStage } from '../content/forestStage.js';
 import { createPlayer, stepPlayer, isAttackActive } from './player.js';
-import { intersects } from './geometry.js';
+import { intersects, moveAxis } from './geometry.js';
 import { applyPlayerDamage, registerAttackHit, diveImpactRect } from './combat.js';
 import { createEnemy, damageEnemy, enemyAttackRect, stepEnemy, stepProjectile } from './enemies.js';
 import { createBoss, damageBoss, stepBoss } from './boss.js';
@@ -28,8 +28,16 @@ export function checkpointData(run) {
   return {stageId:run.stageId,checkpoint:run.checkpoint,consumedPickupIds:[...run.consumedPickupIds],elapsedTicks:run.elapsedTicks,deaths:run.deaths};
 }
 export function restoreCheckpoint(run,stage) { return createStageRun(stage,checkpointData(run)); }
-function hurt(run,events,source) {
-  const result=applyPlayerDamage(run.player,source);run.player=result.player;events.push(...result.events);
+function hurt(run,events,source,originX) {
+  const result=applyPlayerDamage(run.player,source,{originX});run.player=result.player;events.push(...result.events);
+}
+export function separateOverlappingTargets(player,direction,targets,terrain) {
+  for(let i=0;i<targets.length;i++){
+    const overlaps=targets.filter(target=>intersects(player,target));if(!overlaps.length)break;
+    const distance=direction>0?Math.max(...overlaps.map(target=>target.x+target.w-player.x)):Math.min(...overlaps.map(target=>target.x-player.x-player.w));
+    const before=player.x,blocked=moveAxis(player,terrain,'x',distance);
+    if(blocked || player.x===before)break;
+  }
 }
 function damageTargets(run,rect,terrain,events) {
   const diving=Boolean(rect);
@@ -51,9 +59,9 @@ export function stepStage(previous,input,stage) {
     if (--run.deathTicks<=0) run=restoreCheckpoint(run,stage);
     return {run,events};
   }
-  const terrain=stageTerrain(stage,run.arenaLocked);
+  const terrain=stageTerrain(stage,run.arenaLocked);let pushCompleted;
   if (run.boss.state!=='dying' && run.boss.state!=='dead') {
-    const result=stepPlayer(run.player,input,terrain,stage.pitDeathY);run.player=result.player;events.push(...result.events);
+    const result=stepPlayer(run.player,input,terrain,stage.pitDeathY);run.player=result.player;pushCompleted=result.pushCompleted;events.push(...result.events);
   }
   if (run.player.mode==='dead') return death(run,events);
   if (run.boss.state==='dormant' && run.player.x>=stage.arena.left+16) {
@@ -70,18 +78,23 @@ export function stepStage(previous,input,stage) {
     for (let i=0;i<run.enemies.length;i++) {
       const result=stepEnemy(run.enemies[i],run.player,solids);run.enemies[i]=result.enemy;events.push(...result.events);run.projectiles.push(...result.projectiles);
       const enemy=result.enemy; if (enemy.state==='dead') continue;
-      if (intersects(enemy,run.player)) hurt(run,events,'contact');
+      if (intersects(enemy,run.player)) hurt(run,events,'contact',enemy.x+enemy.w/2);
       const hitbox=enemyAttackRect(enemy);
-      if (hitbox && !enemy.hitIds.has('player') && intersects(hitbox,run.player)) {enemy.hitIds.add('player');hurt(run,events,'enemy-attack');}
+      if (hitbox && !enemy.hitIds.has('player') && intersects(hitbox,run.player)) {enemy.hitIds.add('player');hurt(run,events,'enemy-attack',enemy.x+enemy.w/2);}
     }
-    run.projectiles=run.projectiles.map(p=>{const r=stepProjectile(p,solids,run.player);for(const event of r.events){events.push(event);hurt(run,events,'projectile');}return r.projectile;}).filter(p=>p.alive);
+    run.projectiles=run.projectiles.map(p=>{const r=stepProjectile(p,solids,run.player);for(const event of r.events){events.push(event);hurt(run,events,'projectile',r.projectile.x+r.projectile.w/2);}return r.projectile;}).filter(p=>p.alive);
   }
   const bossResult=stepBoss(run.boss,run.player,stage.arena);run.boss=bossResult.boss;events.push(...bossResult.events);
   if (!interactionLocked && !['dormant','intro','transition','dying','dead'].includes(run.boss.state)) {
-    if (intersects(run.player,run.boss)) hurt(run,events,'contact');
-    for (const box of run.boss.hitboxes) if (intersects(run.player,box)) hurt(run,events,'boss-attack');
+    if (intersects(run.player,run.boss)) hurt(run,events,'contact',run.boss.x+run.boss.w/2);
+    for (const box of run.boss.hitboxes) if (intersects(run.player,box)) hurt(run,events,'boss-attack',box.x+box.w/2);
   }
   if (run.player.mode==='dead') return death(run,events);
+  if (pushCompleted !== undefined && !interactionLocked) {
+    const targets=run.enemies.filter(enemy=>enemy.state!=='dead');
+    if (!['dormant','intro','transition','dying','dead'].includes(run.boss.state)) targets.push(run.boss);
+    separateOverlappingTargets(run.player,pushCompleted,targets,stageTerrain(stage,run.arenaLocked));
+  }
   if (bossResult.events.some(e=>e.type==='boss:defeated')) {run.outcome='clear';run.arenaLocked=false;events.push({type:'stage:clear',elapsedTicks:run.elapsedTicks,deaths:run.deaths});return {run,events};}
   for (const event of events) if (event.type==='dive-impact') event.canDamage=!interactionLocked;
   if (!interactionLocked) {

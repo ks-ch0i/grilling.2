@@ -5,7 +5,7 @@ export function createPlayer(x = 120, y = 276) {
   return { x, y, vx: 0, vy: 0, w: 16, h: 28, grounded: false, hp: 3, mode: 'idle', facing: 0,
     horizontalFacing: 1, aim: { x: 1, y: 0 }, invulnerableTicks: 0,
     rollCooldown: 0, rollTicks: 0, rollDirection: 1, rollInvulnerable: false, damageInvulnerable: false, jumpCut: false, diveCooldown: 0, diveUsed: false,
-    diveGraceTicks: 0, diveGraceActive: false, attackTick: 0, hitIds: new Set(), hurtTicks: 0 };
+    diveGraceTicks: 0, diveGraceActive: false, attackTick: 0, hitIds: new Set(), hurtTicks: 0, hurtPushTicks: 0, hurtPushDirection: 1 };
 }
 function startAttack(p, events) {
   p.mode = 'attack'; p.attackTick = 0; p.hitIds.clear();
@@ -19,6 +19,8 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   const events = [];
   if (p.mode === 'dead') return { player: p, events };
   if (p.y >= pitDeathY) return applyPlayerDamage(p, 'pit');
+  const pushing = p.mode === 'hurt' && p.hurtPushTicks > 0;
+  let pushCompleted;
   p.diveGraceActive = p.diveGraceTicks > 0;
   if (p.diveGraceTicks > 0) p.diveGraceTicks--;
   p.rollInvulnerable = false;
@@ -31,6 +33,10 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   p.aim = normalizeAim(p.x + p.w/2, p.y + p.h/2, input.aimX, input.aimY, p.aim);
   p.facing = angleToFacing8(p.aim);
   if (input.move) p.horizontalFacing = input.move;
+  if (pushing) {
+    moveAxis(p, terrain, 'x', p.hurtPushDirection * C.HURT_PUSH_DISTANCE / C.HURT_TICKS);
+    if (--p.hurtPushTicks === 0) pushCompleted = p.hurtPushDirection;
+  }
   if (p.mode === 'hurt') { if (--p.hurtTicks <= 0) p.mode = p.grounded ? 'idle' : 'fall'; }
   if (p.mode !== 'hurt' && p.mode !== 'roll' && p.mode !== 'dive') {
     if (input.rollPressed && canRoll) {
@@ -77,6 +83,6 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
     }
   }
   if (['idle', 'run', 'jump', 'fall'].includes(p.mode)) p.mode = !p.grounded ? (p.vy < 0 ? 'jump' : 'fall') : (p.vx ? 'run' : 'idle');
-  return { player: p, events };
+  return pushCompleted === undefined ? { player: p, events } : { player: p, events, pushCompleted };
 }
 export function isAttackActive(player) { return player.mode === 'attack' && player.attackTick > C.ATTACK_STARTUP && player.attackTick <= C.ATTACK_STARTUP + C.ATTACK_ACTIVE; }

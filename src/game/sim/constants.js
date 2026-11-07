@@ -14,6 +14,7 @@ export const DIVE_IMPACT_WIDTH = 62;
 export const DIVE_IMPACT_HEIGHT = 31;
 export const HURT_INVULNERABLE_TICKS = 45;
 export const HURT_TICKS = 12;
+export const HURT_PUSH_DISTANCE = 12;
 export const ATTACK_STARTUP = 4;
 export const ATTACK_ACTIVE = 5;
 export const ATTACK_RECOVERY = 10;

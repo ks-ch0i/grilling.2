@@ -70,13 +70,18 @@ export function registerAttackHit(player, target, terrain = []) {
   player.hitIds.add(target.id);
   return true;
 }
-export function applyPlayerDamage(state, source = 'contact') {
+export function applyPlayerDamage(state, source = 'contact', impact = undefined) {
   const player = { ...state, hitIds: new Set(state.hitIds) }, events = [];
   if (player.mode === 'dead') return { player, events };
   if (source !== 'pit' && (player.mode === 'roll' || player.mode === 'dive' || player.diveGraceActive || player.rollInvulnerable || player.damageInvulnerable || player.invulnerableTicks > 0)) return { player, events };
   player.hp = source === 'pit' ? 0 : Math.max(0, player.hp - 1);
   player.attackTick = 0; player.hitIds.clear();
-  if (player.hp === 0) { player.mode = 'dead'; player.vx = 0; player.vy = 0; events.push({ type: 'death', source }); }
-  else { player.mode = 'hurt'; player.hurtTicks = HURT_TICKS; player.invulnerableTicks = HURT_INVULNERABLE_TICKS; events.push({ type: 'hurt', source }); }
+  if (player.hp === 0) { player.mode = 'dead'; player.vx = 0; player.vy = 0; player.hurtPushTicks = 0; events.push({ type: 'death', source }); }
+  else {
+    const dx = player.x + player.w / 2 - impact?.originX;
+    player.hurtPushDirection = Number.isFinite(dx) && dx !== 0 ? Math.sign(dx) : (player.horizontalFacing === -1 ? 1 : -1);
+    player.hurtPushTicks = HURT_TICKS;
+    player.mode = 'hurt'; player.hurtTicks = HURT_TICKS; player.invulnerableTicks = HURT_INVULNERABLE_TICKS; events.push({ type: 'hurt', source });
+  }
   return { player, events };
 }
