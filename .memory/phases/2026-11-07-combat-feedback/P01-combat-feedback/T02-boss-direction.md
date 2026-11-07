@@ -65,4 +65,4 @@ Task: T02-boss-direction
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과: 전체 테스트 57개, 빌드, Chrome에서 테스트 상태를 설정해 등장 중 표시 없음·화면 밖 표시·재진입 시 숨김 확인. 브라우저 오류 없음.
-- commit: 이 Task의 Git 이력을 참조
+- commit: ef1f3d2

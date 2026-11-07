@@ -72,4 +72,4 @@ Task: T01-dive-protection
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과: 전체 테스트 56개, 빌드 및 Chrome 자동 입력 직접 착지 확인. 충격파 tick 378, 플레이어 HP 3·적 HP 2, 피해 재개 tick 394.
-- commit: 이 Task의 Git 이력을 참조
+- commit: ce4dfb0

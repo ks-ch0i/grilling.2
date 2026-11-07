@@ -1,0 +1,1209 @@
+{
+  "input": {},
+  "direct": {
+    "atPress": {
+      "p": {
+        "x": 758.75,
+        "y": 207.25,
+        "hp": 3,
+        "mode": "fall"
+      },
+      "e": {
+        "x": 756.5,
+        "hp": 3,
+        "state": "windup"
+      },
+      "gap": -0.25
+    },
+    "trace": [
+      {
+        "t": 367,
+        "mode": "fall",
+        "y": 207.25,
+        "hp": 3
+      },
+      {
+        "t": 368,
+        "mode": "dive",
+        "y": 213.91666666666674,
+        "hp": 3
+      },
+      {
+        "t": 369,
+        "mode": "dive",
+        "y": 220.58333333333348,
+        "hp": 3
+      },
+      {
+        "t": 370,
+        "mode": "dive",
+        "y": 227.25000000000023,
+        "hp": 3
+      },
+      {
+        "t": 371,
+        "mode": "dive",
+        "y": 233.91666666666697,
+        "hp": 3
+      },
+      {
+        "t": 372,
+        "mode": "dive",
+        "y": 240.5833333333337,
+        "hp": 3
+      },
+      {
+        "t": 373,
+        "mode": "dive",
+        "y": 247.25000000000045,
+        "hp": 3
+      },
+      {
+        "t": 374,
+        "mode": "dive",
+        "y": 253.9166666666672,
+        "hp": 3
+      },
+      {
+        "t": 375,
+        "mode": "dive",
+        "y": 260.58333333333394,
+        "hp": 3
+      },
+      {
+        "t": 376,
+        "mode": "dive",
+        "y": 267.2500000000007,
+        "hp": 3
+      },
+      {
+        "t": 377,
+        "mode": "dive",
+        "y": 273.9166666666674,
+        "hp": 3
+      },
+      {
+        "t": 378,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 379,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 380,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 381,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 382,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 383,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 384,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 385,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 386,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 387,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 388,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 389,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 390,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 391,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 392,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 393,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 394,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 395,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 396,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 397,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 398,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 399,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 400,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 401,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 402,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 403,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 404,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 405,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 406,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 407,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 408,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 409,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 410,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 411,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 412,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 413,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 414,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 415,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 416,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 417,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 418,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 419,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 420,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 421,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 422,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 423,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 424,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 425,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 426,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 427,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 428,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 429,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 430,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 431,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      }
+    ],
+    "events": [
+      {
+        "type": "jump",
+        "t": 338,
+        "player": {
+          "x": 708,
+          "y": 271.0902777777779,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 762.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "chase",
+          "stateTicks": 0,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true
+        }
+      },
+      {
+        "type": "enemy:windup",
+        "t": 347,
+        "player": {
+          "x": 723.75,
+          "y": 235.02777777777777,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 249.02777777777777
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "enemy:attack",
+        "t": 377,
+        "player": {
+          "x": 758.75,
+          "y": 273.9166666666674,
+          "hp": 3,
+          "mode": "dive"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "attack",
+          "stateTicks": 8,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 249.02777777777777
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "dive-impact",
+        "t": 378,
+        "player": {
+          "x": 758.75,
+          "y": 276,
+          "hp": 3,
+          "mode": "idle"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "hurt",
+          "stateTicks": 15,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 249.02777777777777
+          }
+        },
+        "x": 766.75,
+        "y": 304,
+        "canDamage": true
+      },
+      {
+        "type": "enemy:hurt",
+        "t": 378,
+        "player": {
+          "x": 758.75,
+          "y": 276,
+          "hp": 3,
+          "mode": "idle"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "hurt",
+          "stateTicks": 15,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 249.02777777777777
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "enemy:windup",
+        "t": 394,
+        "player": {
+          "x": 758.75,
+          "y": 276,
+          "hp": 2,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": 1,
+          "lockedFacing": 1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 766.75,
+            "y": 290
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "hurt",
+        "t": 394,
+        "player": {
+          "x": 758.75,
+          "y": 276,
+          "hp": 2,
+          "mode": "hurt"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": 1,
+          "lockedFacing": 1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 766.75,
+            "y": 290
+          }
+        },
+        "source": "contact"
+      }
+    ],
+    "player": {
+      "x": 758.75,
+      "y": 276,
+      "hp": 2,
+      "mode": "idle"
+    },
+    "enemy": {
+      "hp": 2,
+      "state": "windup"
+    }
+  },
+  "adjacent": {
+    "atPress": {
+      "p": {
+        "x": 723.75,
+        "y": 238.31249999999994,
+        "hp": 3,
+        "mode": "jump"
+      },
+      "e": {
+        "x": 756.5,
+        "hp": 3,
+        "state": "windup"
+      },
+      "gap": 34.75
+    },
+    "trace": [
+      {
+        "t": 347,
+        "mode": "jump",
+        "y": 238.31249999999994,
+        "hp": 3
+      },
+      {
+        "t": 348,
+        "mode": "dive",
+        "y": 244.97916666666669,
+        "hp": 3
+      },
+      {
+        "t": 349,
+        "mode": "dive",
+        "y": 251.64583333333343,
+        "hp": 3
+      },
+      {
+        "t": 350,
+        "mode": "dive",
+        "y": 258.31250000000017,
+        "hp": 3
+      },
+      {
+        "t": 351,
+        "mode": "dive",
+        "y": 264.9791666666669,
+        "hp": 3
+      },
+      {
+        "t": 352,
+        "mode": "dive",
+        "y": 271.64583333333366,
+        "hp": 3
+      },
+      {
+        "t": 353,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 354,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 355,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 356,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 357,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 358,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 359,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 360,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 361,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 362,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 363,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 364,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 365,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 366,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 367,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 368,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 369,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 370,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 371,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 372,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 373,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 374,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 375,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 376,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 377,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 378,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 379,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 380,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 381,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 382,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 383,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 384,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 385,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 386,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 387,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 388,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 389,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 390,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 391,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 392,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 393,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 394,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 395,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 396,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 397,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 398,
+        "mode": "idle",
+        "y": 276,
+        "hp": 3
+      },
+      {
+        "t": 399,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 400,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 401,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 402,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 403,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 404,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 405,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 406,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 407,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 408,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 409,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 410,
+        "mode": "hurt",
+        "y": 276,
+        "hp": 2
+      },
+      {
+        "t": 411,
+        "mode": "idle",
+        "y": 276,
+        "hp": 2
+      }
+    ],
+    "events": [
+      {
+        "type": "jump",
+        "t": 339,
+        "player": {
+          "x": 709.75,
+          "y": 271.0902777777779,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 761.75,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "chase",
+          "stateTicks": 0,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true
+        }
+      },
+      {
+        "type": "enemy:windup",
+        "t": 347,
+        "player": {
+          "x": 723.75,
+          "y": 238.31249999999994,
+          "hp": 3,
+          "mode": "jump"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 3,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "dive-impact",
+        "t": 353,
+        "player": {
+          "x": 723.75,
+          "y": 276,
+          "hp": 3,
+          "mode": "idle"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "hurt",
+          "stateTicks": 15,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "x": 731.75,
+        "y": 304,
+        "canDamage": true
+      },
+      {
+        "type": "enemy:hurt",
+        "t": 353,
+        "player": {
+          "x": 723.75,
+          "y": 276,
+          "hp": 3,
+          "mode": "idle"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "hurt",
+          "stateTicks": 15,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 252.31249999999994
+          }
+        },
+        "id": "soldier-1"
+      },
+      {
+        "type": "enemy:windup",
+        "t": 369,
+        "player": {
+          "x": 723.75,
+          "y": 276,
+          "hp": 3,
+          "mode": "idle"
+        },
+        "enemy": {
+          "id": "soldier-1",
+          "kind": "soldier",
+          "x": 756.5,
+          "y": 276,
+          "w": 20,
+          "h": 28,
+          "hp": 2,
+          "maxHp": 3,
+          "state": "windup",
+          "stateTicks": 30,
+          "facing": -1,
+          "lockedFacing": -1,
+          "hitIds": [],
+          "visible": true,
+          "lockedTarget": {
+            "x": 731.75,
+            "y": 290
+          }
+        },
+        "id": "soldier-1"
+      }
+    ],
+    "player": {
+      "x": 723.75,
+      "y": 276,
+      "hp": 3,
+      "mode": "idle"
+    },
+    "enemy": {
+      "hp": 2,
+      "state": "windup"
+    }
+  }
+}

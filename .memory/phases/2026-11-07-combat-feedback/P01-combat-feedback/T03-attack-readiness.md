@@ -72,4 +72,4 @@ Task: T03-attack-readiness
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과: 전체 테스트 62개와 빌드 통과. Chrome 자동 입력으로 공격·구르기·내려찍기·일시정지, 테스트 상태 설정으로 피격 표시를 확인했다. 브라우저 오류 없음.
-- commit: 이 Task의 Git 이력을 참조
+- commit: 19e390a
