@@ -13,11 +13,11 @@ function startAttack(p, events, combo) {
   p.facing = angleToFacing8(p.lockedAim);
   events.push({ type: 'swing', combo, aim: { ...p.lockedAim } });
 }
-export function stepPlayer(state, input, terrain) {
+export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   let p = { ...state, hitIds: new Set(state.hitIds), aim: { ...state.aim }, lockedAim: { ...state.lockedAim } };
   const events = [];
   if (p.mode === 'dead') return { player: p, events };
-  if (p.y >= C.PIT_Y) return applyPlayerDamage(p, 'pit');
+  if (p.y >= pitDeathY) return applyPlayerDamage(p, 'pit');
   p.rollInvulnerable = false;
   p.damageInvulnerable = p.invulnerableTicks > 0;
   const canRoll = p.rollCooldown === 0;
@@ -44,21 +44,24 @@ export function stepPlayer(state, input, terrain) {
   else if (p.mode === 'dive') p.vx = 0;
   else if (p.mode === 'hurt') p.vx = 0;
   else p.vx = input.move * C.MOVE_SPEED;
-  if (p.mode === 'dive') p.vy = C.MAX_FALL_SPEED;
+  let verticalDistance;
+  if (p.mode === 'dive') { p.vy = C.MAX_FALL_SPEED; verticalDistance = p.vy * C.DT; }
   else {
     if (!input.jumpHeld && p.vy < 0 && !p.jumpCut) { p.vy *= C.JUMP_CUT; p.jumpCut = true; }
+    const previousVy = p.vy;
     p.vy = Math.min(C.MAX_FALL_SPEED, p.vy + C.GRAVITY * C.DT);
+    verticalDistance = (previousVy + p.vy) * 0.5 * C.DT;
   }
   moveAxis(p, terrain, 'x', p.vx * C.DT);
   const downward = p.vy > 0;
-  const landed = moveAxis(p, terrain, 'y', p.vy * C.DT) && downward;
+  const landed = moveAxis(p, terrain, 'y', verticalDistance) && downward;
   p.grounded = landed;
   if (landed && p.diveUsed) {
     if (p.mode === 'dive') events.push({ type: 'dive-impact', x: p.x + p.w/2, y: p.y + p.h });
     p.diveUsed = false; p.diveCooldown = C.DIVE_COOLDOWN;
     if (p.mode === 'dive') p.mode = 'idle';
   }
-  if (p.y >= C.PIT_Y) { const death = applyPlayerDamage(p, 'pit'); return { player: death.player, events: [...events, ...death.events] }; }
+  if (p.y >= pitDeathY) { const death = applyPlayerDamage(p, 'pit'); return { player: death.player, events: [...events, ...death.events] }; }
   if (p.mode === 'roll' && --p.rollTicks === 0) { p.mode = p.grounded ? 'idle' : 'fall'; p.rollCooldown = C.ROLL_COOLDOWN; }
   else if (p.mode === 'attack') {
     p.attackTick++;
