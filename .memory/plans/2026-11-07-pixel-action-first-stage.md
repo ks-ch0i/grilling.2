@@ -12,4 +12,4 @@
 ## Phases
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | 플레이 가능 전투에서 한 스테이지 완성까지 | [P01](../phases/2026-11-07-pixel-action-first-stage/P01-first-stage/phase.md) |
+| P01 | `done` | 첫 스테이지 구현과 자동 검증 완료, 사용자 요청으로 수동 인수 미확인 상태에서 마무리 | [P01](../phases/2026-11-07-pixel-action-first-stage/P01-first-stage/phase.md) |
