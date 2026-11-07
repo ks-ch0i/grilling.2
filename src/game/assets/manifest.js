@@ -10,7 +10,7 @@ function clip(key,owner,state,texture,frames,{fps=8,loop=false,direction=null}={
 for(let direction=0;direction<8;direction++){
  clip(`hero.idle.${direction}`,'hero','idle','hero-directions',[direction],{direction});
  clip(`hero.run.${direction}`,'hero','run','hero-walk',[direction,direction+8],{direction,fps:9,loop:true});
- clip(`hero.attack.${direction}`,'hero','attack','hero-attacks',[direction],{direction});
+ clip(`hero.attack.${direction}`,'hero','attack','hero-attacks',[direction,direction+8,direction+16],{direction});
 }
 for(const [state,frames] of Object.entries({jump:[4],fall:[5],roll:[6,7,6],hurt:[9],dead:[10,11]}))clip(`hero.${state}`,'hero',state,'hero-actions',frames,{fps:10});
 clip('hero.dive','hero','dive','hero-dive',[1],{fps:10});

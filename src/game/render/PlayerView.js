@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { isAttackActive } from '../sim/player.js';
-import { playerAnimation,animationFrame } from '../assets/animation.js';
+import { playerAnimation,animationFrame,playerAttackFrame } from '../assets/animation.js';
 import { ATTACK_STARTUP,ATTACK_ACTIVE,ATTACK_RECOVERY } from '../sim/constants.js';
 import { attackRangePolygon } from '../sim/combat.js';
 import { stageTerrain } from '../sim/stage.js';
 import { attackIndicatorState } from './attackIndicator.js';
+import { attackSwordOffset } from './attackMotion.js';
 export class PlayerView {
   constructor(scene){
     this.outline=scene.add.sprite(0,0,'hero-directions',0).setOrigin(.5,1).setDepth(4.5).setTint(0xffe0ab).setTintMode(Phaser.TintModes.FILL).setAlpha(.65).setScale(1.15);
@@ -20,19 +21,20 @@ export class PlayerView {
   sync(player,scene,tick=0){
     const clip=playerAnimation(player);if(!clip)return;
     if(this.clipKey!==clip.key||tick<this.clipStart){this.clipKey=clip.key;this.clipStart=tick;}
-    const frame=animationFrame(clip,tick-this.clipStart);
+    const frame=player.mode==='attack'?playerAttackFrame(player):animationFrame(clip,tick-this.clipStart);
     if(this.body.texture.key!==clip.texture)this.body.setTexture(clip.texture,frame);else this.body.setFrame(frame);
     if(this.outline.texture.key!==clip.texture)this.outline.setTexture(clip.texture,frame);else this.outline.setFrame(frame);
     const x=Math.round(player.x+player.w/2),y=Math.round(player.y+player.h),aim=player.mode==='dive'?{x:0,y:1}:player.aim;
     this.outline.setPosition(x,y).setFlipX(clip.texture==='hero-actions'&&player.horizontalFacing<0);
     this.body.setPosition(x,y).setFlipX(clip.texture==='hero-actions'&&player.horizontalFacing<0).setAlpha(player.invulnerableTicks&&player.invulnerableTicks%4<2?.55:1);
-    const dead=player.mode==='dead';this.sword.setVisible(!dead).setPosition(x,Math.round(player.y+player.h/2)).setRotation(Math.atan2(aim.y,aim.x));
+    const dead=player.mode==='dead',aimAngle=Math.atan2(aim.y,aim.x),swordOffset=player.mode==='attack'?attackSwordOffset(player.attackTick):0,swordAngle=aimAngle+swordOffset;
+    this.sword.setVisible(!dead).setPosition(x,Math.round(player.y+player.h/2)).setRotation(swordAngle);
     const active=!scene.paused&&!scene.run.outcome&&!dead&&!['dying','dead'].includes(scene.run.boss.state);
     const indicator=attackIndicatorState(player,tick,active,this.indicatorMemory);this.indicatorMemory=indicator.memory;
     this.attackIndicator.clear();if(indicator.visible){const gx=Math.round(player.x+player.w/2-8),gy=Math.round(player.y-8);
       this.attackIndicator.fillStyle(0x392a29).fillRect(gx,gy,16,3);
       this.attackIndicator.fillStyle(indicator.flash?0xfff4cf:0xffdf9e).fillRect(gx,gy,Math.round(16*indicator.progress),3);}
-    this.slash.setVisible(!dead&&isAttackActive(player)).setPosition(Math.round(x+aim.x*19),Math.round(player.y+player.h/2+aim.y*19)).setRotation(Math.atan2(aim.y,aim.x));
+    this.slash.setVisible(!dead&&isAttackActive(player)).setPosition(Math.round(x+Math.cos(swordAngle)*19),Math.round(player.y+player.h/2+Math.sin(swordAngle)*19)).setRotation(swordAngle);
     const g=this.attackRange;g.clear();
     const locked=['intro','transition','dying','dead'].includes(scene.run.boss.state);
     if(player.mode==='attack'){
@@ -42,7 +44,7 @@ export class PlayerView {
       const center=points[0],edge=points.slice(1),last=edge.length-1;
       const arc=(scale,from,to)=>{const first=Math.floor(last*from),end=Math.max(first+1,Math.floor(last*to));g.beginPath();
         for(let i=first;i<=Math.min(last,end);i++){const p=edge[i],x=center.x+(p.x-center.x)*scale,y=center.y+(p.y-center.y)*scale;if(i===first)g.moveTo(x,y);else g.lineTo(x,y);}g.strokePath();};
-      const glow=(active?1:.55)*fade*(locked ? .4 : 1),sweep=Math.min(1,Math.max(0,(player.attackTick-1)/(ATTACK_STARTUP+ATTACK_ACTIVE-1)));
+      const glow=(active?1:.55)*fade*(locked ? .4 : 1),sweep=Math.min(1,Math.max(0,(swordOffset+Math.PI*50/180)/(Math.PI*100/180)));
       g.lineStyle(4,0x4c3030,.55*glow);arc(.98,.04,.96);
       g.lineStyle(2,0xffdf9e,.95*glow);arc(.98,.04,.96);
       g.lineStyle(2,0xfff4cf,glow);arc(.91,Math.max(0,sweep-.24),Math.min(1,sweep+.22));

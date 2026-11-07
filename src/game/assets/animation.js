@@ -1,4 +1,5 @@
 import {ANIMATIONS} from './manifest.js';
+import {ATTACK_STARTUP,ATTACK_ACTIVE} from '../sim/constants.js';
 export function playerAnimation(player){
  if(player.mode==='attack')return ANIMATIONS[`hero.attack.${player.facing}`];
  if(player.mode==='idle')return ANIMATIONS[`hero.idle.${player.facing}`];
@@ -13,3 +14,7 @@ export function bossAnimation(boss){
  return ANIMATIONS[`boss.${state}`]??ANIMATIONS['boss.idle'];
 }
 export function animationFrame(clip,elapsedTicks){const index=Math.floor(Math.max(0,elapsedTicks)*clip.fps/60);return clip.frames[clip.loop?index%clip.frames.length:Math.min(index,clip.frames.length-1)];}
+export function playerAttackFrame(player){
+ const phase=player.attackTick<=ATTACK_STARTUP?0:player.attackTick<=ATTACK_STARTUP+ATTACK_ACTIVE?1:2;
+ return ANIMATIONS[`hero.attack.${player.facing}`].frames[phase];
+}
