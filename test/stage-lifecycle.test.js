@@ -26,6 +26,13 @@ test('the player can move and jump while the boss enters',()=>{
  for(let i=0;i<20;i++)r=stepStage(r,{...input,move:1,jumpPressed:i===0,jumpHeld:true},stage).run;
  assert.equal(r.boss.state,'intro');assert.ok(r.player.x>startX+20);assert.ok(r.player.y<startY-10);assert.equal(r.outcome,null);
 });
+test('the mixed enemy pairs can react together at their actual spawn positions',()=>{
+ for(const [x,ids,partner] of [[2150,['soldier-2','wisp-1'],'wisp-1'],[6300,['soldier-3','boar-2'],'boar-2']]){
+  let r=createStageRun(stage);r.enemies=r.enemies.filter(e=>ids.includes(e.id));r.player.x=x;
+  for(let i=0;i<5;i++)r=stepStage(r,input,stage).run;
+  assert.equal(r.enemies.find(e=>e.kind==='soldier').state,'chase');assert.equal(r.enemies.find(e=>e.id===partner).state,'windup');
+ }
+});
 test('dive landing damages only enemies overlapping the impact area',()=>{
  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:275,mode:'dive',diveUsed:true,grounded:false});
  const near=r.enemies.find(e=>e.id==='soldier-1'),far=r.enemies.find(e=>e.id==='soldier-2');

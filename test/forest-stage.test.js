@@ -10,6 +10,18 @@ test('forest validates and its five pits stay open',()=>{
  const outside=structuredClone(FOREST_STAGE);outside.pickups[0].x=outside.world.width;assert.throws(()=>validateStage(outside),RangeError);
  const unsupported=structuredClone(FOREST_STAGE);unsupported.enemies[0].y--;assert.throws(()=>validateStage(unsupported),RangeError);
 });
+test('nine supported enemies form two mixed pairs away from pit approaches',()=>{
+ const enemies=FOREST_STAGE.enemies, widths={soldier:20,wisp:20,boar:28};
+ assert.equal(enemies.length,9);assert.equal(new Set(enemies.map(e=>e.id)).size,9);
+ for(const kind of Object.keys(widths))assert.equal(enemies.filter(e=>e.kind===kind).length,3,kind);
+ const pits=[[1504,1568],[3136,3200],[4960,5024],[6848,6912],[8752,8816]];
+ for(const e of enemies)for(const [left,right] of pits)assert.ok(e.x+widths[e.kind]<=left-128||e.x>=right+128,`${e.id} too close to pit`);
+ const pairs=[['wisp-1','soldier-2'],['soldier-3','boar-2']],ids=new Set(pairs.flat());
+ for(const [a,b] of pairs){const first=enemies.find(e=>e.id===a),second=enemies.find(e=>e.id===b);assert.notEqual(first.kind,second.kind);assert.equal(Math.abs(first.x-second.x),100);}
+ for(const e of enemies.filter(e=>!ids.has(e.id)))for(const other of enemies.filter(other=>other.id!==e.id))assert.ok(Math.abs(e.x-other.x)>=500,`${e.id}/${other.id}`);
+ const xs=enemies.map(e=>e.x).sort((a,b)=>a-b);assert.equal(Math.max(...xs.slice(1).map((x,i)=>x-xs[i])),1630);
+ assert.deepEqual(FOREST_STAGE.spawn,{x:120,y:276});assert.equal(FOREST_STAGE.checkpoint.x,5760);assert.deepEqual(FOREST_STAGE.pickups.map(p=>p.x),[2400,6200,9600]);assert.equal(FOREST_STAGE.arena.left,10496);
+});
 test('a normal full jump crosses each 64 pixel pit',()=>{
  for(const [start,end] of [[1504,1568],[3136,3200],[4960,5024],[6848,6912],[8752,8816]]){
   let p=createPlayer(start-24,276);p.grounded=true;

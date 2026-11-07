@@ -9,9 +9,9 @@ export const FOREST_STAGE = {
   pitDeathY:344, checkpoint:{id:'mid',x:5760,y:276},
   pickups:[{id:'heal-1',kind:'heal',x:2400,y:288},{id:'heal-2',kind:'heal',x:6200,y:288},{id:'heal-3',kind:'heal',x:9600,y:288}],
   enemies:[
-    ...[800,2600,7600].map((x,i)=>({id:`soldier-${i+1}`,kind:'soldier',x,y:276})),
-    ...[2200,5200,8300].map((x,i)=>({id:`wisp-${i+1}`,kind:'wisp',x,y:284})),
-    ...[3900,6900,9900].map((x,i)=>({id:`boar-${i+1}`,kind:'boar',x,y:284}))
+    ...[800,2300,6400].map((x,i)=>({id:`soldier-${i+1}`,kind:'soldier',x,y:276})),
+    ...[2200,5320,8070].map((x,i)=>({id:`wisp-${i+1}`,kind:'wisp',x,y:284})),
+    ...[3850,6500,9700].map((x,i)=>({id:`boar-${i+1}`,kind:'boar',x,y:284}))
   ],
   arena:{left:10496,right:11472,top:0,bottom:304}, boss:{id:'forest-guardian',x:11040,y:208}
 };
