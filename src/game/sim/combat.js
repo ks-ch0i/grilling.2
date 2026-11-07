@@ -73,7 +73,7 @@ export function registerAttackHit(player, target, terrain = []) {
 export function applyPlayerDamage(state, source = 'contact') {
   const player = { ...state, hitIds: new Set(state.hitIds) }, events = [];
   if (player.mode === 'dead') return { player, events };
-  if (source !== 'pit' && (player.mode === 'roll' || player.rollInvulnerable || player.damageInvulnerable || player.invulnerableTicks > 0)) return { player, events };
+  if (source !== 'pit' && (player.mode === 'roll' || player.mode === 'dive' || player.diveGraceActive || player.rollInvulnerable || player.damageInvulnerable || player.invulnerableTicks > 0)) return { player, events };
   player.hp = source === 'pit' ? 0 : Math.max(0, player.hp - 1);
   player.attackTick = 0; player.hitIds.clear();
   if (player.hp === 0) { player.mode = 'dead'; player.vx = 0; player.vy = 0; events.push({ type: 'death', source }); }

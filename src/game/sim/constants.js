@@ -9,6 +9,7 @@ export const ROLL_SPEED = 230;
 export const ROLL_TICKS = 18;
 export const ROLL_COOLDOWN = 24;
 export const DIVE_COOLDOWN = 36;
+export const DIVE_LANDING_PROTECTION_TICKS = 15;
 export const DIVE_IMPACT_WIDTH = 62;
 export const DIVE_IMPACT_HEIGHT = 31;
 export const HURT_INVULNERABLE_TICKS = 45;

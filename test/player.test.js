@@ -58,8 +58,13 @@ test('turning during an active swing moves the hit area with the aim',()=>{
  p=tick(p,{aimX:0,aimY:290});assert.equal(isAttackActive(p),true);assert.equal(attackIntersects(p,right),false);assert.equal(attackIntersects(p,left),true);
 });
 
-test('a dive interrupted by damage cannot be reused until landing and cooldown',()=>{
+test('a dive ignores enemy damage until landing and starts its cooldown',()=>{
  let p=grounded(); p=tick(p,{jumpPressed:true,jumpHeld:true}); for(let i=0;i<8;i++)p=tick(p,{jumpHeld:true});
- p=tick(p,{divePressed:true}); p=applyPlayerDamage(p).player; assert.equal(p.diveUsed,true);
+ p=tick(p,{divePressed:true});
+ for(const source of ['contact','enemy-attack','projectile','boss-attack']) { const result=applyPlayerDamage(p,source); assert.equal(result.player.hp,3); assert.equal(result.player.mode,'dive'); assert.equal(result.events.length,0); }
+ assert.equal(applyPlayerDamage(p,'pit').player.mode,'dead');
  for(let i=0;i<30&&!p.grounded;i++)p=tick(p); assert.equal(p.grounded,true); assert.equal(p.diveCooldown,C.DIVE_COOLDOWN);
+ assert.equal(applyPlayerDamage(p).player.hp,3);
+ for(let i=0;i<15;i++){p=tick(p);assert.equal(applyPlayerDamage(p).player.hp,3,`tick ${i+1}`);}
+ p=tick(p); assert.equal(applyPlayerDamage(p).player.hp,2);
 });

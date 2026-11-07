@@ -33,6 +33,22 @@ test('dive landing damages only enemies overlapping the impact area',()=>{
  const result=tick(r),impact=result.events.find(e=>e.type==='dive-impact');assert.equal(impact.canDamage,true);
  assert.equal(result.run.enemies[0].hp,near.hp-1);assert.equal(result.run.enemies[1].hp,far.hp);
 });
+test('diving through an enemy and landing on it preserves hp and deals one impact',()=>{
+ let r=createStageRun(stage); Object.assign(r.player,{x:200,y:240,mode:'dive',diveUsed:true,grounded:false});
+ const enemy=r.enemies.find(e=>e.id==='soldier-1'); Object.assign(enemy,{x:200,y:276,state:'attack',stateTicks:8,lockedFacing:1}); r.enemies=[enemy];
+ r.projectiles=[{id:'shot',ownerId:enemy.id,x:202,y:250,w:8,h:8,vx:0,vy:0,life:10,alive:true}];
+ let impacts=0,projectileHit=false;
+ for(let i=0;i<15&&!r.player.grounded;i++){const result=tick(r);r=result.run;impacts+=result.events.filter(e=>e.type==='dive-impact').length;projectileHit ||= result.events.some(e=>e.type==='projectile:hit'); assert.equal(r.player.hp,3);}
+ assert.equal(projectileHit,true);assert.equal(r.projectiles.length,0);assert.equal(impacts,1);assert.equal(r.enemies[0].hp,2);assert.equal(r.player.diveGraceTicks,15);
+ for(let i=0;i<15;i++){r=tick(r).run;assert.equal(r.player.hp,3);}
+ r=tick(r).run;assert.equal(r.player.hp,2);
+});
+test('boss contact and attacks cannot interrupt a diving player',()=>{
+ let r=createStageRun(stage);r.enemies=[];r.arenaLocked=true;
+ Object.assign(r.player,{x:11040,y:150,mode:'dive',diveUsed:true,grounded:false});
+ Object.assign(r.boss,{state:'attack',stateTicks:5,hitboxes:[{x:11040,y:150,w:80,h:100,ticks:5}]});
+ const result=tick(r);assert.equal(result.run.player.hp,3);assert.equal(result.run.player.mode,'dive');assert.equal(result.events.some(e=>e.type==='hurt'),false);
+});
 test('dive landing during boss intro does not apply damage',()=>{
  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:275,mode:'dive',diveUsed:true,grounded:false});
  const near=r.enemies.find(e=>e.id==='soldier-1');Object.assign(near,{x:227,y:276,state:'hurt',stateTicks:10});r.enemies=[near];

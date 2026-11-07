@@ -5,7 +5,7 @@ export function createPlayer(x = 120, y = 276) {
   return { x, y, vx: 0, vy: 0, w: 16, h: 28, grounded: false, hp: 3, mode: 'idle', facing: 0,
     horizontalFacing: 1, aim: { x: 1, y: 0 }, invulnerableTicks: 0,
     rollCooldown: 0, rollTicks: 0, rollDirection: 1, rollInvulnerable: false, damageInvulnerable: false, jumpCut: false, diveCooldown: 0, diveUsed: false,
-    attackTick: 0, hitIds: new Set(), hurtTicks: 0 };
+    diveGraceTicks: 0, diveGraceActive: false, attackTick: 0, hitIds: new Set(), hurtTicks: 0 };
 }
 function startAttack(p, events) {
   p.mode = 'attack'; p.attackTick = 0; p.hitIds.clear();
@@ -16,6 +16,8 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   const events = [];
   if (p.mode === 'dead') return { player: p, events };
   if (p.y >= pitDeathY) return applyPlayerDamage(p, 'pit');
+  p.diveGraceActive = p.diveGraceTicks > 0;
+  if (p.diveGraceTicks > 0) p.diveGraceTicks--;
   p.rollInvulnerable = false;
   p.damageInvulnerable = p.invulnerableTicks > 0;
   const canRoll = p.rollCooldown === 0;
@@ -55,7 +57,11 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   const landed = moveAxis(p, terrain, 'y', verticalDistance) && downward;
   p.grounded = landed;
   if (landed && p.diveUsed) {
-    if (p.mode === 'dive') events.push({ type: 'dive-impact', x: p.x + p.w/2, y: p.y + p.h });
+    if (p.mode === 'dive') {
+      events.push({ type: 'dive-impact', x: p.x + p.w/2, y: p.y + p.h });
+      p.diveGraceTicks = C.DIVE_LANDING_PROTECTION_TICKS;
+      p.diveGraceActive = true;
+    }
     p.diveUsed = false; p.diveCooldown = C.DIVE_COOLDOWN;
     if (p.mode === 'dive') p.mode = 'idle';
   }
