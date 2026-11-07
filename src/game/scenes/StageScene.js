@@ -4,11 +4,15 @@ import { InputController } from '../input/InputController.js';
 import { createStageRun, stepStage, checkpointData } from '../sim/stage.js';
 import { PlayerView } from '../render/PlayerView.js';
 import { EnemyView } from '../render/EnemyView.js';
+import { getAppStore } from '../storage/appStore.js';
+import { createRunCoordinator } from '../storage/runCoordinator.js';
+import { mountMenu } from '../ui/menu.js';
 const STEP=1000/60;
 export class StageScene extends Phaser.Scene {
   constructor(){super('stage');}
-  create(){
-    this.stage=FOREST_STAGE;this.run=createStageRun(this.stage);this.accumulator=0;this.checkpointNotice=0;
+  create(data={}){
+    this.stage=FOREST_STAGE;this.run=createStageRun(this.stage,data.run??{});this.accumulator=0;this.checkpointNotice=0;
+    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.store=getAppStore();
     this.worldGraphics=this.add.graphics();this.playerView=new PlayerView(this);this.enemyView=new EnemyView(this);
     this.hud=this.add.text(12,10,'',{fontFamily:'monospace',fontSize:'14px',color:'#ffffff'}).setScrollFactor(0).setDepth(10);
     this.hudGraphics=this.add.graphics().setScrollFactor(0).setDepth(10);
@@ -16,23 +20,41 @@ export class StageScene extends Phaser.Scene {
     this.cameras.main.setBounds(0,0,this.stage.world.width,this.stage.world.height);this.cameras.main.roundPixels=true;
     this.inputController=new InputController(window,this.game.canvas);
     this.pauseReset=()=>{this.accumulator=0;this.inputController.reset();};
-    window.addEventListener('blur',this.pauseReset);document.addEventListener('visibilitychange',this.pauseReset);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{window.removeEventListener('blur',this.pauseReset);document.removeEventListener('visibilitychange',this.pauseReset);this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();});
+    this.coordinator=createRunCoordinator({store:this.store}).bind(this);
+    this.onEscape=e=>{if(e.code==='Escape'&&!e.repeat&&!this.settingsOpen){e.preventDefault();if(this.paused)this.resumeGame();else this.pauseGame();}};
+    this.onBlur=()=>this.pauseGame();
+    this.onVisibility=()=>{if(document.hidden){this.pauseGame();this.coordinator.flush();}};
+    this.onPageHide=()=>this.coordinator.flush();
+    window.addEventListener('keydown',this.onEscape);window.addEventListener('blur',this.onBlur);window.addEventListener('pagehide',this.onPageHide);document.addEventListener('visibilitychange',this.onVisibility);
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{
+      if(!this.coordinator.isFinished())this.coordinator.flush();this.coordinator.dispose();
+      window.removeEventListener('keydown',this.onEscape);window.removeEventListener('blur',this.onBlur);window.removeEventListener('pagehide',this.onPageHide);document.removeEventListener('visibilitychange',this.onVisibility);
+      this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();
+    });
     this.renderWorld();
   }
   update(_time,delta){
-    if(document.hidden||!document.hasFocus()){this.pauseReset();this.renderWorld();return;}
+    if(document.hidden||!document.hasFocus())this.pauseGame();
+    if(this.paused){this.pauseReset();this.renderWorld();return;}
     this.accumulator+=Math.min(delta,STEP*8);let ticks=0;
     while(this.accumulator>=STEP&&ticks++<8){
       const result=stepStage(this.run,this.inputController.sample(this),this.stage);this.run=result.run;
       for(const event of result.events){if(event.type==='stage:checkpoint')this.checkpointNotice=120;this.events.emit(event.type,event);}
+      this.coordinator.tick();
+      if(result.events.some(event=>event.type==='stage:clear')){const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{record});return;}
       if(this.checkpointNotice>0)this.checkpointNotice--;
       this.accumulator-=STEP;
     }
     this.renderWorld();
   }
+  pauseGame(){
+    if(this.paused)return;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.run.player.attackBuffered=false;this.coordinator.flush();
+    this.pauseMenu=mountMenu('일시정지');this.pauseMenu.button('재개',()=>this.resumeGame());this.pauseMenu.button('설정',()=>{this.settingsOpen=true;this.pauseMenu.hide();this.scene.launch('settings',{onClose:()=>{this.settingsOpen=false;this.pauseMenu?.show();}});});this.pauseMenu.button('처음 화면',()=>{this.coordinator.flush();this.scene.start('title');});this.pauseMenu.focus();
+  }
+  resumeGame(){if(!this.paused||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;}
   exportCheckpointData(){return checkpointData(this.run);}
-  restoreCheckpointData(data){this.run=createStageRun(this.stage,data);this.pauseReset();this.renderWorld();}
+  restoreCheckpointData(data){this.run=createStageRun(this.stage,data);this.pauseReset();this.coordinator.flush();this.renderWorld();}
   renderWorld(){
     const p=this.run.player, cam=this.cameras.main;
     const desired=Phaser.Math.Clamp(p.x+p.w/2+p.horizontalFacing*60-320,0,this.stage.world.width-640);

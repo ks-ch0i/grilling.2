@@ -41,3 +41,8 @@ test('all three enemy kinds can be defeated through the player combat loop',()=>
   assert.equal(r.enemies[0].state,'dead',spawn.kind);assert.ok(r.player.hp>0,spawn.kind);
  }
 });
+
+test('time includes all death and respawn ticks',()=>{
+ let r=createStageRun(stage);r.player.y=344;let result=tick(r);r=result.run;const before=r.elapsedTicks;
+ result=tick(r,60);assert.equal(result.run.elapsedTicks,before+60);assert.equal(result.run.deaths,1);assert.equal(result.run.player.hp,3);
+});

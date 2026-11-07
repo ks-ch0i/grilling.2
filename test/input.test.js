@@ -10,3 +10,8 @@ test('edges ignore repeat and held mouse, simultaneous directions cancel and blu
  target.fire('mousemove',{clientX:0,clientY:0}); assert.ok(Number.isNaN(input.sample(scene).aimX));
  target.fire('blur'); f=input.sample(scene); assert.equal(f.move,0); assert.equal(f.jumpHeld,false); input.destroy(); assert.equal(target.listeners.keydown.length,0);
 });
+
+test('interactive controls do not feed gameplay keys and disabling clears queued input',()=>{
+ const target=new Target(),input=new InputController(target);target.fire('keydown',{code:'Space',target:{closest:()=>({})}});assert.equal(input.sample(scene).jumpPressed,false);
+ target.fire('keydown',{code:'Space'});input.setEnabled(false);target.fire('keydown',{code:'KeyD'});let f=input.sample(scene);assert.equal(f.jumpHeld,false);assert.equal(f.jumpPressed,false);assert.equal(f.move,0);input.setEnabled(true);target.fire('keydown',{code:'KeyD'});assert.equal(input.sample(scene).move,1);input.destroy();
+});
