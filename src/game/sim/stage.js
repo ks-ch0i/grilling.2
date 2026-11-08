@@ -6,6 +6,7 @@ import { createEnemy, damageEnemy, enemyAttackRect, stepEnemy, stepProjectile } 
 import { createBoss, damageBoss, stepBoss } from './boss.js';
 import {stepHazards} from './hazards.js';
 import {createCartZones,stepCartZones,nextRandom} from './mineCarts.js';
+import {createMineBoss,damageMineBoss,stepMineBoss,shouldDropPotion} from './mineBoss.js';
 const DEATH_TICKS=60;
 function freshPlayer(point) { const p=createPlayer(point.x,point.y);p.grounded=true;return p; }
 export function stageTerrain(stage,locked) {
@@ -25,6 +26,8 @@ export function createStageRun(stage,data={},options={}) {
     let seed=(options.seed??Math.floor(Math.random()*4294967296))>>>0;
     const random=()=>{const next=nextRandom(seed);seed=next.state;return next.value;};
     run.cartZones=createCartZones(stage,random);run.rngState=seed;run.hazards=[];
+    run.boss=createMineBoss('machine',stage.boss);run.bossSequence='machine';
+    run.bossDrop={rolled:false,spawned:false,consumed:false,x:0,y:0};
   }
   return run;
 }
@@ -55,12 +58,14 @@ export function restoreStageRun(stage,snapshot) {
     if(!template||!keys(e,Object.keys(template),['lockedTarget','vx','vy'])||!sameTypes(e,template)||!strings(e.hitIds)||e.kind!==original.kind||e.w!==original.w||e.h!==original.h||e.maxHp!==original.maxHp||!Number.isInteger(e.hp)||e.hp<0||e.hp>e.maxHp||!count(e.stateTicks)||!['idle','chase','windup','attack','return','recovery','hurt','dead'].includes(e.state)||('shotCount'in e&&!count(e.shotCount))||('lockedTarget'in e&&(!keys(e.lockedTarget,['x','y'])||!Number.isFinite(e.lockedTarget.x)||!Number.isFinite(e.lockedTarget.y))))throw new TypeError('Invalid enemy snapshot');
   }
   if(!Array.isArray(s.projectiles)||s.projectiles.some(v=>!keys(v,['id','ownerId','x','y','w','h','vx','vy','life','alive'])||typeof v.id!=='string'||typeof v.ownerId!=='string'||!['x','y','w','h','vx','vy'].every(k=>Number.isFinite(v[k]))||v.w<=0||v.h<=0||!count(v.life)||typeof v.alive!=='boolean'))throw new TypeError('Invalid projectile snapshot');
-  const b=s.boss,bt=fresh.boss;
-  if(!keys(b,Object.keys(bt))||!sameTypes(b,bt)||b.id!==bt.id||b.w!==bt.w||b.h!==bt.h||b.maxHp!==bt.maxHp||!Number.isInteger(b.hp)||b.hp<0||b.hp>b.maxHp||![1,2].includes(b.phase)||!['dormant','intro','transition','windup','attack','recovery','dying','dead'].includes(b.state)||!count(b.stateTicks)||!count(b.cycle)||!count(b.secondRootDelay)||![null,'branch','root','slam'].includes(b.attackKind)||typeof b.transitioned!=='boolean'||!Array.isArray(b.telegraphs)||!b.telegraphs.every(v=>rect(v))||!Array.isArray(b.hitboxes)||!b.hitboxes.every(v=>rect(v,true))||!(b.secondRoot===null||rect(b.secondRoot)))throw new TypeError('Invalid boss snapshot');
+  const b=s.boss,bt=stage.id==='mine-1'?createMineBoss(b?.kind,{x:stage.boss.x,y:stage.boss.y}):fresh.boss;
+  if(!keys(b,Object.keys(bt))||!sameTypes(b,bt)||b.id!==bt.id||b.w!==bt.w||b.h!==bt.h||b.maxHp!==bt.maxHp||!Number.isInteger(b.hp)||b.hp<0||b.hp>b.maxHp||![1,2].includes(b.phase)||!['dormant','intro','transition','windup','attack','recovery','dying','dead'].includes(b.state)||!count(b.stateTicks)||!count(b.cycle)||typeof b.transitioned!=='boolean'||!Array.isArray(b.telegraphs)||!b.telegraphs.every(v=>rect(v))||!Array.isArray(b.hitboxes)||!b.hitboxes.every(v=>rect(v,true)))throw new TypeError('Invalid boss snapshot');
+  if(stage.id==='forest-1'&&(!count(b.secondRootDelay)||![null,'branch','root','slam'].includes(b.attackKind)||!(b.secondRoot===null||rect(b.secondRoot))))throw new TypeError('Invalid forest boss');
   if(stage.id==='mine-1'){
     if(!count(s.rngState)||s.rngState>0xffffffff||!Array.isArray(s.cartZones)||s.cartZones.length!==5||new Set(s.cartZones.map(z=>z.centerX)).size!==5)throw new TypeError('Invalid mine random state');
     for(const [i,z] of s.cartZones.entries())if(!keys(z,['id','centerX','direction','state','ticks','cartId'])||z.id!==`cart-${i+1}`||!Number.isSafeInteger(z.centerX)||z.centerX<512||z.centerX>=stage.world.width||![-1,1].includes(z.direction)||!['countdown','warning','active'].includes(z.state)||!count(z.ticks)||!(z.cartId===null||typeof z.cartId==='string'))throw new TypeError('Invalid cart zone');
-    if(!Array.isArray(s.hazards)||s.hazards.some(h=>!keys(h,['id','ownerId','kind','x','y','w','h','vx','vy','life','alive'],['remaining','poolTicks'])||typeof h.id!=='string'||typeof h.ownerId!=='string'||!['wave','acid-shot','acid-pool','cart'].includes(h.kind)||!['x','y','w','h','vx','vy'].every(k=>Number.isFinite(h[k]))||h.w<=0||h.h<=0||!count(h.life)||typeof h.alive!=='boolean'||h.kind==='wave'&&(!Number.isFinite(h.remaining)||h.remaining<0)||h.kind==='acid-shot'&&(!count(h.poolTicks)||!h.poolTicks)))throw new TypeError('Invalid hazards');
+    if(!Array.isArray(s.hazards)||s.hazards.some(h=>!keys(h,['id','ownerId','kind','x','y','w','h','vx','vy','life','alive'],['remaining','poolTicks'])||typeof h.id!=='string'||typeof h.ownerId!=='string'||!['wave','acid-shot','acid-pool','cart','rock'].includes(h.kind)||!['x','y','w','h','vx','vy'].every(k=>Number.isFinite(h[k]))||h.w<=0||h.h<=0||!count(h.life)||typeof h.alive!=='boolean'||h.kind==='wave'&&(!Number.isFinite(h.remaining)||h.remaining<0)||h.kind==='acid-shot'&&(!count(h.poolTicks)||!h.poolTicks)))throw new TypeError('Invalid hazards');
+    if(!['machine','worm-intro','worm','done'].includes(s.bossSequence)||s.bossSequence==='machine'&&(b.kind!=='machine'||b.phase!==1)||s.bossSequence!=='machine'&&b.kind!=='worm'||s.bossSequence==='worm-intro'&&b.state!=='intro'||!keys(s.bossDrop,['rolled','spawned','consumed','x','y'])||!['rolled','spawned','consumed'].every(k=>typeof s.bossDrop[k]==='boolean')||!Number.isFinite(s.bossDrop.x)||!Number.isFinite(s.bossDrop.y)||!count(b.attackSerial)||!count(b.burrowsLeft)||![-1,1].includes(b.lockedFacing)||![null,'swipe','charge','wave','rocks','spit','burrow','tail'].includes(b.attackKind)||![null,'swipe','charge','wave','rocks','spit','burrow','tail'].includes(b.lastAttack))throw new TypeError('Invalid mine boss');
   }
   p.hitIds=new Set(p.hitIds);for(const e of s.enemies)e.hitIds=new Set(e.hitIds);
   return s;
@@ -87,7 +92,7 @@ function damageTargets(run,rect,terrain,events) {
   const b=run.boss;
   if (!['dormant','intro','transition','dying','dead'].includes(b.state)) {
     const hit=diving?intersects(rect,b):registerAttackHit(run.player,b,terrain);
-    if (hit) {const result=damageBoss(b);run.boss=result.boss;events.push(...result.events);if(result.boss.state==='dying'){run.arenaLocked=false;run.player.mode='idle';run.player.attackTick=0;run.player.hitIds.clear();run.player.vx=0;run.player.vy=0;}}
+    if (hit) {const result=run.stageId==='mine-1'?damageMineBoss(b):damageBoss(b);run.boss=result.boss;events.push(...result.events);if(result.boss.state==='dying'&&run.stageId!=='mine-1'){run.arenaLocked=false;run.player.mode='idle';run.player.attackTick=0;run.player.hitIds.clear();run.player.vx=0;run.player.vy=0;}}
   }
 }
 export function stepStage(previous,input,stage) {
@@ -98,19 +103,25 @@ export function stepStage(previous,input,stage) {
     return {run,events};
   }
   run.elapsedTicks++;
+  if(run.bossSequence==='worm-intro'){
+    const result=stepMineBoss(run.boss,run.player,stage.arena,run.rngState);run.boss=result.boss;run.rngState=result.rng;events.push(...result.events);
+    if(run.boss.state!=='intro')run.bossSequence='worm';
+    return {run,events};
+  }
   const terrain=stageTerrain(stage,run.arenaLocked);let pushCompleted;
-  if (run.boss.state!=='dying' && run.boss.state!=='dead') {
+  if (run.stageId==='mine-1'||run.boss.state!=='dying' && run.boss.state!=='dead') {
     const result=stepPlayer(run.player,input,terrain,stage.pitDeathY);run.player=result.player;pushCompleted=result.pushCompleted;events.push(...result.events);
   }
   if (run.player.mode==='dead') return death(run,events);
   if (run.boss.state==='dormant' && run.player.x>=stage.arena.left+16) {
     run.arenaLocked=true;run.boss.state='intro';run.boss.stateTicks=90;events.push({type:'boss:intro'});
   }
-  const interactionLocked=run.boss.state==='intro' || run.boss.state==='transition' || run.boss.state==='dying' || run.boss.state==='dead';
+  const interactionLocked=run.boss.state==='intro' || run.boss.state==='transition'&&run.stageId!=='mine-1' || run.boss.state==='dying' || run.boss.state==='dead';
   if (!interactionLocked) {
     for (const pickup of stage.pickups) if (!run.consumedPickupIds.includes(pickup.id) && intersects(run.player,{...pickup,w:16,h:16})) {
       run.consumedPickupIds.push(pickup.id);run.player.hp=Math.min(3,run.player.hp+1);events.push({type:'stage:pickup',id:pickup.id,consumedPickupIds:[...run.consumedPickupIds]});
     }
+    if(run.bossDrop?.spawned&&!run.bossDrop.consumed&&intersects(run.player,{x:run.bossDrop.x,y:run.bossDrop.y,w:16,h:16})){run.bossDrop.consumed=true;run.player.hp=Math.min(3,run.player.hp+1);events.push({type:'stage:pickup',id:'boss-heal'});}
     const solids=stageTerrain(stage,run.arenaLocked);
     for (let i=0;i<run.enemies.length;i++) {
       const result=stepEnemy(run.enemies[i],run.player,solids);run.enemies[i]=result.enemy;events.push(...result.events);run.projectiles.push(...result.projectiles);if(run.hazards)run.hazards.push(...result.hazards);
@@ -126,8 +137,9 @@ export function stepStage(previous,input,stage) {
       for(const event of stepped.events){events.push(event);if(event.type==='hazard:hit')hurt(run,events,'hazard',event.originX);}
     }
   }
-  const bossResult=stepBoss(run.boss,run.player,stage.arena);run.boss=bossResult.boss;events.push(...bossResult.events);
-  if (!interactionLocked && !['dormant','intro','transition','dying','dead'].includes(run.boss.state)) {
+  const bossResult=run.stageId==='mine-1'?stepMineBoss(run.boss,run.player,stage.arena,run.rngState):stepBoss(run.boss,run.player,stage.arena);run.boss=bossResult.boss;events.push(...bossResult.events);
+  if(run.stageId==='mine-1'){run.rngState=bossResult.rng;run.hazards.push(...bossResult.hazards);}
+  if (!interactionLocked && !['dormant','intro','dying','dead'].includes(run.boss.state)) {
     if (intersects(run.player,run.boss)) hurt(run,events,'contact',run.boss.x+run.boss.w/2);
     for (const box of run.boss.hitboxes) if (intersects(run.player,box)) hurt(run,events,'boss-attack',box.x+box.w/2);
   }
@@ -137,7 +149,15 @@ export function stepStage(previous,input,stage) {
     if (!['dormant','intro','transition','dying','dead'].includes(run.boss.state)) targets.push(run.boss);
     separateOverlappingTargets(run.player,pushCompleted,targets,stageTerrain(stage,run.arenaLocked));
   }
-  if (bossResult.events.some(e=>e.type==='boss:defeated')) {run.outcome='clear';run.arenaLocked=false;events.push({type:'stage:clear',elapsedTicks:run.elapsedTicks,deaths:run.deaths});return {run,events};}
+  if (bossResult.events.some(e=>e.type==='boss:defeated')) {
+    if(run.stageId==='mine-1'&&run.bossSequence==='machine'){
+      const roll=nextRandom(run.rngState);run.rngState=roll.state;run.bossDrop={rolled:true,spawned:shouldDropPotion(roll.value),consumed:false,x:run.boss.x+run.boss.w/2-8,y:stage.arena.bottom-16};
+      run.projectiles=[];run.hazards=[];run.player.attackTick=0;run.player.hitIds.clear();if(run.player.mode==='attack')run.player.mode=run.player.grounded?'idle':'fall';
+      run.boss=createMineBoss('worm',{x:(stage.arena.left+stage.arena.right)/2-48,y:stage.arena.bottom-64});run.boss.state='intro';run.boss.stateTicks=180;run.bossSequence='worm-intro';
+      events.push({type:'boss:worm-intro'});return {run,events};
+    }
+    run.outcome='clear';run.arenaLocked=false;if(run.stageId==='mine-1')run.bossSequence='done';events.push({type:'stage:clear',elapsedTicks:run.elapsedTicks,deaths:run.deaths});return {run,events};
+  }
   for (const event of events) if (event.type==='dive-impact') event.canDamage=!interactionLocked;
   if (!interactionLocked) {
     if (isAttackActive(run.player)) damageTargets(run,null,terrain,events);
