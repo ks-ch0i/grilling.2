@@ -52,3 +52,39 @@ export function drawMachineBossEffect(g,b){
     }
   }
 }
+export function drawWormBossEffect(g,b){
+  if(b.state==='transition'){
+    const progress=30-b.stateTicks,pulse=.35+.2*(Math.sin(progress*.8)+1)/2;
+    const oreX=b.x+b.w/2+22,oreY=b.y-16;
+    for(const [dx,dy,radius] of [[-9,0,6],[0,-3,8],[9,1,5]]){
+      g.fillStyle(0xff3737,pulse).fillCircle(oreX+dx,oreY+dy,radius);
+      g.lineStyle(1,0xffa076,pulse+.25).strokeCircle(oreX+dx,oreY+dy,radius-2);
+    }
+  }
+  if(b.state==='windup'&&b.attackKind==='spit'){
+    const mouthX=b.lockedFacing<0?b.x+12:b.x+b.w-12,mouthY=b.y+11;
+    g.fillStyle(0x66f3bb,.22).fillCircle(mouthX,mouthY,7);
+    g.lineStyle(1,0xb5ffe2,.9).strokeCircle(mouthX,mouthY,4);
+  }
+  if(b.state==='windup'&&b.attackKind==='tail')for(const r of b.telegraphs){
+    strokeInRect(g,r,[[.08,.76],[.28,.56],[.52,.6],[.73,.38],[.94,.18]],3,0x5d705d,.62);
+    strokeInRect(g,r,[[.12,.94],[.35,.74],[.6,.78],[.82,.53]],1,0xabe2bd,.72);
+  }
+  if(b.state==='attack'&&b.attackKind==='tail')for(const r of b.hitboxes){
+    const sweep=b.lockedFacing<0?[[.94,.2],[.75,.42],[.54,.57],[.29,.72],[.07,.9]]:[[.07,.2],[.25,.42],[.48,.57],[.72,.72],[.94,.9]];
+    strokeInRect(g,r,sweep,8,0x30413f,.92);strokeInRect(g,r,sweep,5,0x52a995,.98);strokeInRect(g,r,sweep,2,0xcaffdb,1);
+  }
+  if(b.state==='windup'&&b.attackKind==='charge')for(const r of b.telegraphs){
+    const x=b.lockedFacing<0?b.x+4:b.x+b.w-4,y=r.y+r.h-5;
+    for(let i=0;i<3;i++){const px=x-b.lockedFacing*i*7,py=y-(i%2)*4;g.fillStyle(i%2?0x9b8062:0xd2b88a,.8).fillTriangle(px-3,py,px,py-6,px+4,py);}
+  }
+  if(b.state==='attack'&&b.attackKind==='charge'){
+    const x=b.lockedFacing<0?b.x+b.w-2:b.x+2,y=b.y+b.h-3;
+    for(let i=0;i<3;i++){const px=x-b.lockedFacing*i*5,py=y-(i%2)*3;g.fillStyle(0xc2a27a,.82).fillTriangle(px-3,py,px,py-5,px+4,py);}
+  }
+  if(b.state==='attack'&&b.attackKind==='burrow')for(const r of b.hitboxes){
+    const x=r.x+r.w/2,y=r.y+r.h-2;
+    g.fillStyle(0x8a7255,.9).fillTriangle(x-10,y,x-4,y-13,x+1,y);
+    g.fillStyle(0xc2a47a,.9).fillTriangle(x+1,y,x+7,y-18,x+12,y);
+  }
+}

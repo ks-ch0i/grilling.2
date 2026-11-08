@@ -19,7 +19,7 @@ const specs=[
   ['mine-insect-original.png','characters/insect/poses.png',4,4,40,40],
   ['mine-bat-original.png','characters/bat/poses.png',4,4,40,40],
   ['mine-machine-attack-original.png','characters/machine/poses.png',6,4,112,112],
-  ['mine-worm-spaced-original.png','characters/worm/poses.png',4,2,128,112],
+  ['mine-worm-attack-original.png','characters/worm/poses.png',6,4,128,112],
   ['mine-cart-original.png','world/mine/cart.png',1,1,48,32],
   ['mine-mineral-original.png','world/mine/mineral.png',1,1,16,16]
 ];

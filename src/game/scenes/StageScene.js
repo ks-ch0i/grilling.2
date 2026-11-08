@@ -26,7 +26,7 @@ export class StageScene extends Phaser.Scene {
     this.terrainBase=this.add.graphics().setDepth(-6);for(const r of this.stage.solids){this.terrainBase.fillStyle(0x392a29);this.terrainBase.fillRect(r.x,r.y,r.w,r.h);this.terrainBase.fillStyle(0x9aa36d);this.terrainBase.fillRect(r.x,r.y,r.w,2);}
     this.terrainViews=this.stage.solids.map(r=>this.add.tileSprite(r.x,r.y,r.w,r.h,mine?(r.y===304?'mine-ground':'mine-platform'):(r.y===304?'ground':'platform')).setOrigin(0,0).setDepth(-5));
     this.pickupViews=this.stage.pickups.map(p=>this.add.sprite(p.x+8,p.y+16,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(1));
-    this.worldGraphics=this.add.graphics().setDepth(1);this.light=mine?this.add.graphics().setDepth(-4):null;this.playerView=new PlayerView(this);this.enemyView=new EnemyView(this);this.mineHazardView=mine?new MineHazardView(this):null;this.visualEffects=[];
+    this.worldGraphics=this.add.graphics().setDepth(1);this.light=mine?this.add.graphics().setDepth(-4):null;this.bossBlackout=mine?this.add.rectangle(0,0,640,360,0x050409,0).setOrigin(0,0).setScrollFactor(0).setDepth(2).setVisible(false):null;this.playerView=new PlayerView(this);this.enemyView=new EnemyView(this);this.mineHazardView=mine?new MineHazardView(this):null;this.visualEffects=[];
     this.hud=this.add.text(12,10,'',{fontFamily:'monospace',fontSize:'14px',color:'#ffffff'}).setScrollFactor(0).setDepth(10);
     this.hearts=[0,1,2].map(i=>this.add.sprite(105+i*25,32,'objects',7).setOrigin(.5,1).setScale(.5).setScrollFactor(0).setDepth(10));
     this.hudGraphics=this.add.graphics().setScrollFactor(0).setDepth(10);
@@ -44,7 +44,7 @@ export class StageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{
       if(!this.coordinator.isFinished())this.coordinator.flush();this.coordinator.dispose();
       window.removeEventListener('keydown',this.onEscape);window.removeEventListener('blur',this.onBlur);window.removeEventListener('pagehide',this.onPageHide);document.removeEventListener('visibilitychange',this.onVisibility);
-      this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.light?.destroy();
+      this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
     });
     this.renderWorld();
     if(data.recovered)this.pauseGame('마지막 저장 지점에서 복구했습니다.');
@@ -114,6 +114,7 @@ export class StageScene extends Phaser.Scene {
   restoreStageSnapshot(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
   renderWorld(){
     const p=this.run.player,cam=this.cameras.main,boss=this.run.boss;
+    const blackout=boss.kind==='worm'&&boss.state==='transition';this.bossBlackout?.setVisible(blackout).setAlpha(blackout ? 0.9 : 0);
     const target=boss.state==='intro'?((p.x+p.w/2-16)+(boss.x+boss.w/2+56))/2:p.x+p.w/2+p.horizontalFacing*60;
     const desired=Phaser.Math.Clamp(target-320,0,this.stage.world.width-640);
     cam.scrollX=Math.round(cam.scrollX+(desired-cam.scrollX)*.12);this.backdrop.tilePositionX=Math.round(cam.scrollX*.15);

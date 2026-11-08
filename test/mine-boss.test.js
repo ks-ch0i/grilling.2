@@ -41,6 +41,13 @@ test('worm phase 2 warns and retargets its second underground strike',()=>{
  const moved={...player,x:11100};for(let i=0;i<18;i++)b=stepMineBoss(b,moved,arena,1).boss;assert.equal(b.state,'windup');assert.equal(b.stateTicks,45);assert.notEqual(b.targetX,first);const second=b.targetX;
  for(let i=0;i<20;i++)b=stepMineBoss(b,{...moved,x:11200},arena,1).boss;assert.equal(b.targetX,second);
 });
+test('worm transition lasts 30 ticks while the player can keep moving',()=>{
+ let run=createStageRun(stage,{}, {seed:3});run.enemies=[];run.boss=createMineBoss('worm',{x:stage.arena.right-100,y:240});
+ Object.assign(run.boss,{state:'transition',stateTicks:30,hp:9,phase:1,transitioned:true});run.bossSequence='worm';run.arenaLocked=true;
+ Object.assign(run.player,{x:stage.arena.left+100,y:276,grounded:true,hp:3,mode:'idle'});const startX=run.player.x;
+ for(let i=0;i<29;i++){run=stepStage(run,{...input,move:1},stage).run;assert.equal(run.boss.state,'transition');}
+ assert.ok(run.player.x>startX);run=stepStage(run,{...input,move:1},stage).run;assert.notEqual(run.boss.state,'transition');assert.equal(run.boss.phase,2);
+});
 test('worm snapshots survive introduction and second warning; only worm death clears',()=>{
  let r=createStageRun(stage,{}, {seed:2});r.boss=createMineBoss('worm',{x:10936,y:240});Object.assign(r.boss,{state:'intro',stateTicks:180});r.bossSequence='worm-intro';r.arenaLocked=true;r.bossDrop={rolled:true,spawned:true,consumed:false,x:11000,y:288};
  assert.deepEqual(stepStage(round(r),input,stage),stepStage(r,input,stage));assert.equal(parseSave(JSON.stringify({...freshSave(),run:snapshotStageRun(r)})).ok,true);

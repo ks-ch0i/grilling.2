@@ -5,7 +5,7 @@ const entries=[
  ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1]
  ,['mine-backdrop','/assets/world/mine/backdrop.png',640,304,1],['mine-ground','/assets/world/mine/ground.png',64,56,1],['mine-platform','/assets/world/mine/platform.png',64,16,1],
  ['golem','/assets/characters/golem/poses.png',48,48,16],['insect','/assets/characters/insect/poses.png',40,40,16],['bat','/assets/characters/bat/poses.png',40,40,16],
- ['machine','/assets/characters/machine/poses.png',112,112,24],['worm','/assets/characters/worm/poses.png',128,112,8],['mine-cart','/assets/world/mine/cart.png',48,32,1],['mine-mineral','/assets/world/mine/mineral.png',16,16,1]
+ ['machine','/assets/characters/machine/poses.png',112,112,24],['worm','/assets/characters/worm/poses.png',128,112,24],['mine-cart','/assets/world/mine/cart.png',48,32,1],['mine-mineral','/assets/world/mine/mineral.png',16,16,1]
 ];
 export const ASSETS=Object.freeze(entries.map(([key,url,frameWidth,frameHeight,count])=>Object.freeze({key,url,frameWidth,frameHeight,count,origin:Object.freeze({x:.5,y:1})})));
 const clips={};
@@ -44,7 +44,18 @@ clip('machine.mineralAttack','machine','mineralAttack','machine',[19,20],{fps:10
 clip('machine.hurt','machine','hurt','machine',[21],{fps:8});
 clip('machine.transition','machine','transition','machine',[1]);
 clip('machine.dead','machine','dead','machine',[22,23],{fps:8});
-for(const [state,frames] of Object.entries({intro:[0,1],idle:[1],windup:[2],attack:[3,4],transition:[6],dead:[6,7]}))clip(`worm.${state}`,'worm',state,'worm',frames,{fps:4,loop:state==='idle'});
+clip('worm.intro','worm','intro','worm',[0,1],{fps:4});
+clip('worm.idle','worm','idle','worm',[2,3],{fps:4,loop:true});
+clip('worm.spitWindup','worm','spitWindup','worm',[4,5],{fps:8,loop:true});
+clip('worm.spitAttack','worm','spitAttack','worm',[6,7],{fps:10});
+clip('worm.burrowWindup','worm','burrowWindup','worm',[8,9],{fps:8,loop:true});
+clip('worm.burrowAttack','worm','burrowAttack','worm',[10,11],{fps:10});
+clip('worm.tailWindup','worm','tailWindup','worm',[12,13],{fps:8,loop:true});
+clip('worm.tailAttack','worm','tailAttack','worm',[14,15],{fps:10});
+clip('worm.transition','worm','transition','worm',[16,17],{fps:4});
+clip('worm.chargeWindup','worm','chargeWindup','worm',[18,19],{fps:8,loop:true});
+clip('worm.chargeAttack','worm','chargeAttack','worm',[20,21],{fps:12,loop:true});
+clip('worm.dead','worm','dead','worm',[22,23],{fps:8});
 export const ANIMATIONS=Object.freeze(clips);
 export function preloadAssets(loader,textures=null){for(const asset of ASSETS){if(textures?.exists(asset.key))continue;if(asset.count>1)loader.spritesheet(asset.key,asset.url,{frameWidth:asset.frameWidth,frameHeight:asset.frameHeight});else loader.image(asset.key,asset.url);}}
 export function validateAssets(textures){

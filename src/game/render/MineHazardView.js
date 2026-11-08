@@ -8,7 +8,12 @@ export class MineHazardView {
     active.add(h.id);let sprite=this.carts.get(h.id);if(!sprite){sprite=this.scene.add.sprite(0,0,'mine-cart').setDepth(5);this.carts.set(h.id,sprite);}
     sprite.setPosition(h.x+h.w/2,h.y+h.h/2).setDisplaySize(h.w+8,h.h+8).setFlipX(h.vx<0);
    }else if(h.kind==='acid-pool'){g.fillStyle(0x5bf0a5,.7).fillEllipse(h.x+h.w/2,h.y+h.h/2,h.w,h.h+3);g.lineStyle(1,0xc8ffcf,.9).strokeEllipse(h.x+h.w/2,h.y+h.h/2,h.w,h.h+3);}
-   else if(h.kind==='acid-shot'){g.fillStyle(0x80ffc1,.95).fillCircle(h.x+h.w/2,h.y+h.h/2,5);}
+   else if(h.kind==='acid-shot'){
+    const cx=h.x+h.w/2,cy=h.y+h.h/2,angle=Math.atan2(h.vy,h.vx),ux=Math.cos(angle),uy=Math.sin(angle),px=-uy,py=ux;
+    const tipX=cx+ux*4,tipY=cy+uy*4,baseX=cx-ux*2,baseY=cy-uy*2;
+    g.fillStyle(0x286b58,.96).fillTriangle(tipX,tipY,baseX+px*3,baseY+py*3,baseX-px*3,baseY-py*3);
+    g.fillStyle(0x8cffc4,.98).fillCircle(baseX,baseY,2);
+   }
    else if(h.kind==='rock'){
     const x=Math.round(h.x),y=Math.round(h.y),w=Math.round(h.w),height=Math.round(h.h);
     g.fillStyle(0x504137,.98).fillPoints([{x:x+w*.24,y},{x:x+w*.65,y:y+1},{x:x+w,y:y+height*.28},{x:x+w*.84,y:y+height*.52},{x:x+w*.94,y:y+height*.78},{x:x+w*.68,y:y+height},{x:x+w*.25,y:y+height*.92},{x,y:y+height*.68},{x:x+w*.12,y:y+height*.38}],true);

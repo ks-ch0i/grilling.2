@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import {enemyAttackRect} from '../sim/enemies.js';
 import {enemyAnimation,bossAnimation,animationFrame} from '../assets/animation.js';
-import {drawForestBossEffect,drawMachineBossEffect} from './bossEffects.js';
+import {drawForestBossEffect,drawMachineBossEffect,drawWormBossEffect} from './bossEffects.js';
 export class EnemyView {
   constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(3);this.bossEffects=scene.add.graphics().setDepth(4.4);this.enemies=new Map();this.projectiles=[];this.boss=null;this.bossClip='';this.bossStart=0;}
   sync(run){
@@ -30,10 +30,7 @@ export class EnemyView {
     if(key==='boss'&&b.state==='transition')this.boss.setTint(0xffd5a0);else if(b.phase===2)this.boss.setTint(0xffc6b5);else this.boss.clearTint();
     if(key==='boss')drawForestBossEffect(this.bossEffects,b);
     else if(key==='machine')drawMachineBossEffect(this.bossEffects,b);
-    else{
-      for(const r of b.telegraphs){g.fillStyle(0xffce59,.25);g.fillRect(r.x,r.y,r.w,r.h);g.lineStyle(2,0xffd577);g.strokeRect(r.x,r.y,r.w,r.h);}
-      for(const r of b.hitboxes){g.fillStyle(0xff5438,.45);g.fillRect(r.x,r.y,r.w,r.h);}
-    }
+    else if(key==='worm')drawWormBossEffect(this.bossEffects,b);
   }
   destroy(){this.graphics.destroy();this.bossEffects.destroy();for(const view of this.enemies.values()){view.outline.destroy();view.sprite.destroy();}for(const p of this.projectiles)p.destroy();this.boss?.destroy();this.bossOutline?.destroy();}
 }

@@ -1,6 +1,6 @@
 # Task: T03 거대 벌레 공격 모션과 전환
 
-## Status: pending
+## Status: done
 
 ## Goal
 거대 벌레의 산성 발사, 땅속 이동, 꼬리 휘두르기, 2페이즈 돌진 및 전환을 기존 판정에 맞는 동작으로 표현한다.
@@ -13,7 +13,8 @@
 
 ### I01. 벌레 공격별 포즈 시트와 렌더링
 - Related Files:
-  - `public/assets/source/mine-worm-spaced-original.png` — 24개 벌레 포즈 원본; modify
+  - `public/assets/source/mine-worm-attack-original.png` — 24개 벌레 포즈 원본; new
+  - `public/assets/source/mine-worm-spaced-original.png` — 기존 8포즈 원본; retain
   - `public/assets/characters/worm/poses.png` — 패킹 출력; modify
   - `scripts/pack-art.mjs` :: `specs` — 6×4 셀 패킹; modify
   - `src/game/assets/manifest.js` :: `ASSETS`, `clips`, `clip` — 벌레 공격별 클립; modify
@@ -56,12 +57,12 @@
   4. Destroy `bossBlackout` in the existing Phaser SHUTDOWN cleanup. Do not add a sound toggle or change settings/save schema.
 
 ## Acceptance Criteria
-- [ ] Every worm attack has a distinct windup and active pose; danger effects align with existing `telegraphs`/`hitboxes`.
-- [ ] Existing burrow trail and separately retargeted second phase-two strike remain readable and unchanged.
-- [ ] The map darkens for exactly the existing 30 transition ticks; worm ore glows red and the short roar plays once.
-- [ ] Player movement remains available during the mine worm transition; transition does not lengthen or add damage.
-- [ ] Acid pool remains 240 ticks and charge, tail, spit, and burrow collision behavior remains unchanged.
-- [ ] No generic boss warning/hitbox rectangle remains after the per-attack visuals are present; ordinary enemy warnings remain.
+- [x] Every worm attack has a distinct windup and active pose; danger effects align with existing `telegraphs`/`hitboxes`.
+- [x] Existing burrow trail and separately retargeted second phase-two strike remain readable and unchanged.
+- [x] The map darkens for exactly the existing 30 transition ticks; worm ore glows red and the short roar plays once.
+- [x] Player movement remains available during the mine worm transition; transition does not lengthen or add damage.
+- [x] Acid pool remains 240 ticks and charge, tail, spit, and burrow collision behavior remains unchanged.
+- [x] No generic boss warning/hitbox rectangle remains after the per-attack visuals are present; ordinary enemy warnings remain.
 
 ## Validation
 - `node scripts/pack-art.mjs` — regenerates the 24-frame worm sprite sheet.
@@ -81,6 +82,6 @@ Task: T03-worm-attack-motion
 ```
 
 ## Progress
-- [ ] 구현 완료
-- [ ] 검증 통과
+- [x] 구현 완료
+- [x] 검증 통과 — asset pack, 지정 테스트 21개, production build 통과
 - commit: pending

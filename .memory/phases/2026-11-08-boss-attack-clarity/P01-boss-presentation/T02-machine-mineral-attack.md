@@ -94,4 +94,4 @@ Task: T02-machine-mineral-attack
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과 — asset pack, 지정 테스트 35개, production build 통과
-- commit: pending
+- commit: `e6b34c7`

@@ -14,8 +14,9 @@ export function bossAnimation(boss){
   return ANIMATIONS[`machine.${state}`];
  }
  if(boss.kind==='worm'){
+  if(['windup','attack'].includes(boss.state)&&['spit','burrow','tail','charge'].includes(boss.attackKind))return ANIMATIONS[`worm.${boss.attackKind}${boss.state==='windup'?'Windup':'Attack'}`];
   const state=boss.state==='intro'?'intro':boss.state==='transition'?'transition':['dying','dead'].includes(boss.state)?'dead':['windup','attack'].includes(boss.state)?boss.state:'idle';
-  return ANIMATIONS[`worm.${state}`];
+  return ANIMATIONS[`worm.${state}`]??ANIMATIONS['worm.idle'];
  }
  let state='idle';
  if(boss.state==='intro')state='intro';else if(boss.state==='transition')state='transition';else if(['dying','dead'].includes(boss.state))state='dead';
