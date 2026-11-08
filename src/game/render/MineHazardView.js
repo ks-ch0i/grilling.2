@@ -1,7 +1,7 @@
 export class MineHazardView {
- constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(5);this.carts=new Map();this.warned=new Set();this.drop=scene.add.sprite(0,0,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(5);}
+ constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(5);this.carts=new Map();this.minerals=new Map();this.warned=new Set();this.drop=scene.add.sprite(0,0,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(5);}
  sync(run){
-  const g=this.graphics;g.clear();const active=new Set();
+  const g=this.graphics;g.clear();const active=new Set(),activeMinerals=new Set();
   for(const h of run.hazards){
    if(!h.alive)continue;
    if(h.kind==='cart'){
@@ -9,10 +9,23 @@ export class MineHazardView {
     sprite.setPosition(h.x+h.w/2,h.y+h.h/2).setDisplaySize(h.w+8,h.h+8).setFlipX(h.vx<0);
    }else if(h.kind==='acid-pool'){g.fillStyle(0x5bf0a5,.7).fillEllipse(h.x+h.w/2,h.y+h.h/2,h.w,h.h+3);g.lineStyle(1,0xc8ffcf,.9).strokeEllipse(h.x+h.w/2,h.y+h.h/2,h.w,h.h+3);}
    else if(h.kind==='acid-shot'){g.fillStyle(0x80ffc1,.95).fillCircle(h.x+h.w/2,h.y+h.h/2,5);}
-   else if(h.kind==='rock'){g.fillStyle(0x9e8262).fillRect(h.x,h.y,h.w,h.h);g.lineStyle(2,0xffd287).strokeRect(h.x,h.y,h.w,h.h);}
-   else if(h.kind==='wave'){g.fillStyle(0xe7ac61,.5).fillRect(h.x,h.y,h.w,h.h);g.lineStyle(2,0xffdf9f).strokeRect(h.x,h.y,h.w,h.h);}
+   else if(h.kind==='rock'){
+    const x=Math.round(h.x),y=Math.round(h.y),w=Math.round(h.w),height=Math.round(h.h);
+    g.fillStyle(0x504137,.98).fillPoints([{x:x+w*.24,y},{x:x+w*.65,y:y+1},{x:x+w,y:y+height*.28},{x:x+w*.84,y:y+height*.52},{x:x+w*.94,y:y+height*.78},{x:x+w*.68,y:y+height},{x:x+w*.25,y:y+height*.92},{x,y:y+height*.68},{x:x+w*.12,y:y+height*.38}],true);
+    g.fillStyle(0x9b8060,.95).fillTriangle(x+w*.2,y+height*.32,x+w*.58,y+height*.14,x+w*.5,y+height*.56);
+    g.fillStyle(0x715b47,.95).fillTriangle(x+w*.5,y+height*.56,x+w*.82,y+height*.38,x+w*.68,y+height*.85);
+   }else if(h.kind==='mineral'){
+    activeMinerals.add(h.id);let sprite=this.minerals.get(h.id);if(!sprite){sprite=this.scene.add.sprite(0,0,'mine-mineral').setOrigin(.5,.5).setDepth(5.5);this.minerals.set(h.id,sprite);}
+    sprite.setPosition(Math.round(h.x+h.w/2),Math.round(h.y+h.h/2)).setDisplaySize(h.w,h.h).setRotation(Math.atan2(h.vy,h.vx));
+   }else if(h.kind==='wave'){
+    const x=Math.round(h.x+h.w/2),y=Math.round(h.y),bottom=Math.round(h.y+h.h);
+    g.fillStyle(0x80503a,.96).fillTriangle(x-4,bottom,x,y+2,x+4,bottom);
+    g.fillStyle(0xd88f54,.98).fillTriangle(x-2,bottom,x,y+8,x+2,bottom);
+    g.lineStyle(1,0xffdf9f,.95).lineBetween(x,y+7,x,bottom-2);
+   }
   }
   for(const [id,sprite] of this.carts)if(!active.has(id)){sprite.destroy();this.carts.delete(id);}
+  for(const [id,sprite] of this.minerals)if(!activeMinerals.has(id)){sprite.destroy();this.minerals.delete(id);}
   for(const z of run.cartZones){
    if(z.state==='countdown'){this.warned.delete(z.id);continue;}
    const cart=z.state==='active'?run.hazards.find(h=>h.id===z.cartId&&h.alive):null;
@@ -30,5 +43,5 @@ export class MineHazardView {
   }
   const d=run.bossDrop;this.drop.setVisible(d.spawned&&!d.consumed).setPosition(d.x+8,d.y+16);
  }
- destroy(){this.graphics.destroy();this.drop.destroy();for(const sprite of this.carts.values())sprite.destroy();this.carts.clear();}
+ destroy(){this.graphics.destroy();this.drop.destroy();for(const sprite of this.carts.values())sprite.destroy();for(const sprite of this.minerals.values())sprite.destroy();this.carts.clear();this.minerals.clear();}
 }

@@ -1,5 +1,8 @@
 import {nextRandom} from './mineCarts.js';
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+export const MINERAL_TARGET_HALF_WIDTH=120;
+const MACHINE_CLOSE_RANGE=120;
+const MINERAL_FLIGHT_TICKS=60,MINERAL_GRAVITY=650,MINERAL_SIZE=12;
 export function shouldDropPotion(random){return random<.4;}
 export function createMineBoss(kind,spawn){
  if(!['machine','worm'].includes(kind))throw new TypeError('Unknown mine boss');
@@ -17,9 +20,22 @@ export function damageMineBoss(state,amount=1){
  return {boss,events};
 }
 export function selectMachineAttack(boss,player,rng){
- const near=Math.abs((player.x+player.w/2)-(boss.x+boss.w/2))<=120;
- const candidates=(near?['swipe','charge']:['wave','rocks']).filter(k=>k!==boss.lastAttack);
+ const near=Math.abs((player.x+player.w/2)-(boss.x+boss.w/2))<=MACHINE_CLOSE_RANGE;
+ const candidates=near?['charge']:['wave','rocks','mineral'].filter(k=>k!==boss.lastAttack);
  const next=nextRandom(rng);return {kind:candidates[Math.floor(next.value*candidates.length)],rng:next.state};
+}
+function emitMinerals(boss,player,arena,rng,id){
+ const countRoll=nextRandom(rng);rng=countRoll.state;const count=5+Math.floor(countRoll.value*3);
+ const playerCenterX=player.x+player.w/2,targets=[];
+ for(let i=0;i<count;i++){
+  const roll=nextRandom(rng);rng=roll.state;
+  targets.push(clamp(playerCenterX-MINERAL_TARGET_HALF_WIDTH+roll.value*MINERAL_TARGET_HALF_WIDTH*2,arena.left+16,arena.right-16));
+ }
+ targets.sort((a,b)=>a-b);boss.lockedFacing=playerCenterX<boss.x+boss.w/2?-1:1;
+ const x0=boss.lockedFacing<0?boss.x-MINERAL_SIZE:boss.x+boss.w,y0=boss.y+22,y1=arena.bottom-MINERAL_SIZE;
+ const vy=(y1-y0)*60/MINERAL_FLIGHT_TICKS-MINERAL_GRAVITY*(MINERAL_FLIGHT_TICKS+1)/(2*60);
+ const hazards=targets.map((landingCenter,index)=>({ownerId:boss.id,id:`${id}-mineral-${index}`,kind:'mineral',x:x0,y:y0,w:MINERAL_SIZE,h:MINERAL_SIZE,vx:(landingCenter-MINERAL_SIZE/2-x0)*60/MINERAL_FLIGHT_TICKS,vy,life:MINERAL_FLIGHT_TICKS,alive:true}));
+ return {hazards,rng};
 }
 function beginWindup(b,player,arena,rng,events,repeat=false){
  if(b.kind==='machine'){const choice=selectMachineAttack(b,player,rng);b.attackKind=choice.kind;rng=choice.rng;}
@@ -27,13 +43,12 @@ function beginWindup(b,player,arena,rng,events,repeat=false){
  b.lockedFacing=player.x+player.w/2<b.x+b.w/2?-1:1;b.targetX=clamp(player.x+player.w/2,arena.left+40,arena.right-40);
  b.state='windup';b.stateTicks=repeat?45:b.phase===2?45:60;b.trailStartX=b.x+b.w/2;
  const front=(width,height)=>({x:b.lockedFacing<0?b.x-width:b.x+b.w,y:arena.bottom-height,w:width,h:height});
- if(b.attackKind==='swipe')b.telegraphs=[front(80,56)];
- else if(b.attackKind==='tail')b.telegraphs=[front(90,48)];
+ if(b.attackKind==='tail')b.telegraphs=[front(90,48)];
  else if(b.attackKind==='burrow')b.telegraphs=[{x:b.targetX-24,y:arena.bottom-64,w:48,h:64}];
  else if(b.attackKind==='rocks')b.telegraphs=[-50,0,50].map(offset=>({x:clamp(b.targetX+offset-10,arena.left+16,arena.right-36),y:arena.top,w:20,h:arena.bottom-arena.top}));
  else if(b.attackKind==='wave')b.telegraphs=[{x:arena.left+16,y:arena.bottom-30,w:arena.right-arena.left-32,h:30}];
  else if(b.attackKind==='charge')b.telegraphs=[{x:b.lockedFacing<0?arena.left+16:b.x+b.w,y:arena.bottom-b.h,w:b.lockedFacing<0?Math.max(1,b.x-arena.left-16):Math.max(1,arena.right-16-b.x-b.w),h:b.h}];
- else b.telegraphs=[front(80,48)];
+ else b.telegraphs=[];
  events.push({type:'boss:windup',kind:b.attackKind,boss:b.kind});return rng;
 }
 export function stepMineBoss(state,player,arena,rng){
@@ -46,7 +61,7 @@ export function stepMineBoss(state,player,arena,rng){
  }else if(boss.state==='windup'&&--boss.stateTicks<=0){
   boss.state='attack';boss.stateTicks=boss.attackKind==='charge'?72:18;boss.attackSerial++;
   const id=`${boss.id}-${boss.attackSerial}`,base={ownerId:boss.id,alive:true};
-  if(['swipe','tail','burrow'].includes(boss.attackKind)){
+  if(['tail','burrow'].includes(boss.attackKind)){
    boss.hitboxes=boss.telegraphs.map(r=>({...r,ticks:18}));
    if(boss.attackKind==='burrow')boss.x=clamp(boss.targetX-boss.w/2,arena.left+16,arena.right-16-boss.w);
   }else if(boss.attackKind==='wave'){
@@ -55,6 +70,8 @@ export function stepMineBoss(state,player,arena,rng){
    for(const [i,r] of boss.telegraphs.entries())hazards.push({...base,id:`${id}-rock-${i}`,kind:'rock',x:r.x,y:arena.top,w:20,h:20,vx:0,vy:140,life:180});
   }else if(boss.attackKind==='spit'){
    hazards.push({...base,id:`${id}-acid`,kind:'acid-shot',x:boss.x+boss.w/2-4,y:boss.y,w:8,h:8,vx:boss.lockedFacing*110,vy:-180,life:180,poolTicks:240});
+  }else if(boss.attackKind==='mineral'){
+   const minerals=emitMinerals(boss,player,arena,rng,id);rng=minerals.rng;hazards.push(...minerals.hazards);
   }
   boss.lastAttack=boss.attackKind;boss.telegraphs=[];events.push({type:'boss:attack',kind:boss.attackKind,boss:boss.kind});
  }else if(boss.state==='attack'){

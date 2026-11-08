@@ -3,7 +3,7 @@ import {ASSETS,validateAssets} from '../src/game/assets/manifest.js';
 async function inspect(bytes,asset){
  const {data,info}=await sharp(bytes,{failOn:'error'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  assert.equal(info.width%asset.frameWidth,0);assert.equal(info.height%asset.frameHeight,0);assert.equal(info.width*info.height/(asset.frameWidth*asset.frameHeight),asset.count);
- if(asset.count>1||['sword','mine-cart'].includes(asset.key)){
+ if(asset.count>1||['sword','mine-cart','mine-mineral'].includes(asset.key)){
   let transparent=false;const cols=info.width/asset.frameWidth;
   for(let frame=0;frame<asset.count;frame++){let opaque=0;const x0=(frame%cols)*asset.frameWidth,y0=Math.floor(frame/cols)*asset.frameHeight;
    for(let y=0;y<asset.frameHeight;y++)for(let x=0;x<asset.frameWidth;x++){const a=data[((y0+y)*info.width+x0+x)*4+3];if(a===0)transparent=true;if(a>127){opaque++;assert.ok(x>0&&x<asset.frameWidth-1&&y>0&&y<asset.frameHeight-1,`${asset.key} frame ${frame} touches border`);}}

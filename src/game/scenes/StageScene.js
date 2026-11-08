@@ -80,11 +80,21 @@ export class StageScene extends Phaser.Scene {
     if(event.type==='roll')this.showEffect(2,player.x+player.w/2,player.y+player.h);
     if(event.type==='dive-impact'){this.showEffect(3,event.x,event.y);this.showImpactWave(event.x,event.y,event.canDamage);}
     if(event.type==='stage:pickup')this.showEffect(4,player.x+player.w/2,player.y+player.h/2);
+    if(event.type==='hazard:shatter'||event.type==='hazard:impact')this.showMineralBurst(event);
     if(event.type==='boss:intro')this.audio.playMusic(this.stage.id==='mine-1'?'mine-boss':'forest-boss');
     if(event.type==='stage:death')this.audio.playMusic(this.stage.id==='mine-1'?'mine':'forest');
     if(['enemy:hurt','boss:death','hurt'].includes(event.type)&&this.store.getSave().settings.screenShake)this.cameras.main.shake(70,.0015);
   }
   showEffect(frame,x,y){const sprite=this.add.sprite(Math.round(x),Math.round(y),'effects',frame).setDepth(7).setScale(.7);this.visualEffects.push({sprite,until:this.run.elapsedTicks+20});}
+  showMineralBurst(event){
+    const sprite=this.add.graphics().setDepth(7),duration=12,base=(event.id?.length??0)*.17;
+    const pieces=Array.from({length:7},(_,i)=>{const angle=base+i*Math.PI*2/7,speed=5+(i%3)*2;return {angle,speed,size:2+i%2};});
+    const draw=elapsed=>{const progress=Math.min(1,elapsed/duration);sprite.clear();for(const [i,piece] of pieces.entries()){
+      const x=event.x+Math.cos(piece.angle)*piece.speed*progress,y=event.y+Math.sin(piece.angle)*piece.speed*progress+progress*progress*4;
+      sprite.fillStyle(i%2?0x7de1cf:0xffca72,1-progress*.75).fillTriangle(x,y-piece.size,x-piece.size,y+piece.size,x+piece.size,y+piece.size);
+    }};
+    draw(0);this.visualEffects.push({sprite,start:this.run.elapsedTicks,until:this.run.elapsedTicks+duration,fade:duration,draw});
+  }
   showImpactWave(x,y,canDamage){
     const r=diveImpactRect(x,y),sprite=this.add.graphics().setDepth(7),duration=18;
     const draw=elapsed=>{const progress=Math.min(1,(elapsed+2)/12),w=r.w*progress,h=r.h*progress;sprite.clear();

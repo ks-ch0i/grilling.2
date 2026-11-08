@@ -1,6 +1,6 @@
 # Task: T02 채굴 기계와 광물 분출
 
-## Status: pending
+## Status: done
 
 ## Goal
 채굴 기계의 외형과 네 공격을 읽기 쉽게 만들고, 플레이어 위치 주변에 광물을 분출하는 새 공격을 기존 결정적 시뮬레이션·저장 규칙에 추가한다.
@@ -13,7 +13,8 @@
 
 ### I01. 기계·광물 이미지와 공격별 클립
 - Related Files:
-  - `public/assets/source/mine-machine-original.png` — 24개 기계 포즈 원본; modify
+  - `public/assets/source/mine-machine-attack-original.png` — 24개 기계 포즈 원본; new
+  - `public/assets/source/mine-machine-original.png` — 이전 기계 원본 기록; retain, unused
   - `public/assets/characters/machine/poses.png` — 패킹 출력; modify
   - `public/assets/source/mine-mineral-original.png` — 단일 광물 발사체 원본, 16×16; new
   - `public/assets/world/mine/mineral.png` — 단일 투명 광물 텍스처; new
@@ -42,7 +43,7 @@
   2. Replace `selectMachineAttack(boss,player,rng)` candidates. Distance remains center-to-center `<=120` game pixels for close range. Close candidates are always `['charge']`, even when `lastAttack==='charge'`, so the charge may repeat after recovery. Far candidates are `['wave','rocks','mineral']` with the existing last-attack filter, so a far attack does not repeat immediately. Continue advancing the seeded `nextRandom` exactly once per selection and return `{kind,rng}`.
   3. Keep machine windup at 60 ticks, charge active at 72 ticks, other existing machine attack active at 18 ticks, phase/recovery rules, wave dimensions/speed, rock count/velocity, player damage, and 45-tick invulnerability. The new `mineral` attack emits once when the 60-tick windup ends; no separate damage tick or warning rectangle is added.
   4. At emission, face the player’s current center. Let `N=60` flight ticks, `g=650` px/s², projectile height `h=12`, origin `(x0,y0)` at the forward emitter, and floor contact top `y1=arena.bottom-h`. Pick `count=5+floor(random*3)`. Pick each landing x independently from `[playerCenterX-120,playerCenterX+120]`, clamp to `[arena.left+16,arena.right-16]`, and sort by x for deterministic rendering. The ±120px half-width is an initial tuning default based on the existing close-range threshold; keep it in one named constant for T04 play adjustment. Use seeded `nextRandom` for count and positions, never `Math.random`.
-  5. Set `vx=(landingX-x0)*60/N`. With semi-implicit `stepHazards` gravity, set `vy=(y1-y0)*60/N - g*(N+1)/(2*60)` so the crystal reaches floor height in 60 ticks. Initialize the hazard with `life:N`, unique id `${boss.id}-${attackSerial}-mineral-${index}`, and `alive:true`. Use a 12×12 direct-contact box.
+  5. Treat each picked landing x as the crystal center, so `vx=(landingCenterX-6-x0)*60/N` lands its 12px box centered on that target. With semi-implicit `stepHazards` gravity, set `vy=(y1-y0)*60/N - g*(N+1)/(2*60)` so the crystal reaches floor height in 60 ticks. Initialize the hazard with `life:N`, unique id `${boss.id}-${attackSerial}-mineral-${index}`, and `alive:true`. Use a 12×12 direct-contact box.
   6. In `stepHazards`, process `mineral` with gravity 650 and swept substeps like `rock`. A player collision during flight marks that mineral dead and emits one `hazard:hit`; it emits a shatter visual event at the collision point and cannot later land. On floor collision, mark it dead and emit `hazard:impact`; use a fixed 24×16 ground impact box centered on its x to emit `hazard:hit` only if the player overlaps at that instant. Do not add a persistent pool, bounce, or second hit from the same crystal.
   7. Add `'mineral'` to the hazard-kind validator and `'mineral'` to both `attackKind` and `lastAttack` allowed values in `restoreStageRun`. Preserve existing required snapshot fields; validate live mineral snapshots round-trip deterministically. `stepStage` already applies `hurt()` for `hazard:hit`; route `hazard:impact` and the direct-hit shatter event only to presentation.
   8. In `EnemyView.sync(run)`, during `machine/mineral/windup`, tint the muzzle red and oscillate the displayed machine sprite by at most 1 screen pixel without changing simulation `boss.x/y`. Display the claw lifting before `wave`, its ground contact at wave start, smaller falling debris before `rocks`, and the drill windup/recoil before `charge`. Render each effect from existing `telegraphs`, `hitboxes`, or the selected machine state; no yellow/red boss rectangles.
@@ -66,12 +67,12 @@
   5. Assert existing 30px wave, charge, rock and worm hazards keep their established behavior and the player takes no more than one heart per crystal because the existing invulnerability window is preserved.
 
 ## Acceptance Criteria
-- [ ] The close machine has only drill charge; no drill swipe is selectable or rendered.
-- [ ] The far machine chooses wave, falling rocks, or mineral spray without consecutive duplicates.
-- [ ] Mineral windup glow/tremor lasts 60 ticks; 5–7 crystals target the launch-time player area and fly for 60 ticks.
-- [ ] Each crystal causes at most one 1-heart hit, either on direct contact or on the brief landing impact; no lingering hazard remains.
-- [ ] Claw shockwave keeps its 30px height and long-jump-only evasion; existing charge and rock collision data stay unchanged.
-- [ ] Machine visuals use the selected drill-and-claw silhouette and per-attack poses; all effects align to live attack data.
+- [x] The close machine has only drill charge; no drill swipe is selectable or rendered.
+- [x] The far machine chooses wave, falling rocks, or mineral spray without consecutive duplicates.
+- [x] Mineral windup glow/tremor lasts 60 ticks; 5–7 crystals target the launch-time player area and fly for 60 ticks.
+- [x] Each crystal causes at most one 1-heart hit, either on direct contact or on the brief landing impact; no lingering hazard remains.
+- [x] Claw shockwave keeps its 30px height and long-jump-only evasion; existing charge and rock collision data stay unchanged.
+- [x] Machine visuals use the selected drill-and-claw silhouette and per-attack poses; all effects align to live attack data.
 
 ## Validation
 - `node scripts/pack-art.mjs` — regenerates the 24-frame machine sheet and single mineral image.
@@ -91,6 +92,6 @@ Task: T02-machine-mineral-attack
 ```
 
 ## Progress
-- [ ] 구현 완료
-- [ ] 검증 통과
+- [x] 구현 완료
+- [x] 검증 통과 — asset pack, 지정 테스트 35개, production build 통과
 - commit: pending

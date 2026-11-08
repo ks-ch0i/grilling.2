@@ -18,9 +18,10 @@ const specs=[
   ['mine-golem-original.png','characters/golem/poses.png',4,4,48,48],
   ['mine-insect-original.png','characters/insect/poses.png',4,4,40,40],
   ['mine-bat-original.png','characters/bat/poses.png',4,4,40,40],
-  ['mine-machine-original.png','characters/machine/poses.png',4,2,112,112],
+  ['mine-machine-attack-original.png','characters/machine/poses.png',6,4,112,112],
   ['mine-worm-spaced-original.png','characters/worm/poses.png',4,2,128,112],
-  ['mine-cart-original.png','world/mine/cart.png',1,1,48,32]
+  ['mine-cart-original.png','world/mine/cart.png',1,1,48,32],
+  ['mine-mineral-original.png','world/mine/mineral.png',1,1,16,16]
 ];
 const root='public/assets';
 async function makeAtlas([source,dest,cols,rows,cellW,cellH]){
