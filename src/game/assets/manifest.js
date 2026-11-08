@@ -1,6 +1,6 @@
 const entries=[
  ['hero-actions','/assets/characters/hero/actions.png',32,32,16],['hero-dive','/assets/characters/hero/dive.png',32,32,4],['hero-walk','/assets/characters/hero/walk.png',32,32,16],['hero-directions','/assets/characters/hero/directions.png',32,32,8],['hero-attacks','/assets/characters/hero/attacks.png',32,32,24],
- ['soldier','/assets/characters/soldier/poses.png',40,40,16],['wisp','/assets/characters/wisp/poses.png',32,32,16],['boar','/assets/characters/boar/poses.png',48,32,16],['boss','/assets/characters/boss/poses.png',112,112,8],
+ ['soldier','/assets/characters/soldier/poses.png',40,40,16],['wisp','/assets/characters/wisp/poses.png',32,32,16],['boar','/assets/characters/boar/poses.png',48,32,16],['boss','/assets/characters/boss/poses.png',112,112,24],
  ['objects','/assets/world/forest/objects.png',64,64,8],['effects','/assets/effects/effects.png',48,48,8],['sword','/assets/characters/hero/sword.png',32,12,1],
  ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1]
  ,['mine-backdrop','/assets/world/mine/backdrop.png',640,304,1],['mine-ground','/assets/world/mine/ground.png',64,56,1],['mine-platform','/assets/world/mine/platform.png',64,16,1],
@@ -19,7 +19,16 @@ for(const [state,frames] of Object.entries({jump:[4],fall:[5],roll:[6,7,6],hurt:
 clip('hero.dive','hero','dive','hero-dive',[1],{fps:10});
 for(const owner of ['soldier','wisp','boar'])for(const [state,frames] of Object.entries({idle:[0,1],chase:[4,5,6,7],windup:[8,9],attack:[10,11,12],recovery:[0],hurt:[13],dead:[14,15]}))clip(`${owner}.${state}`,owner,state,owner,frames,{fps:7,loop:['idle','chase'].includes(state)});
 for(const owner of ['golem','insect','bat'])for(const [state,frames] of Object.entries({idle:[0,1],chase:[2,3,4,5],windup:[8,9],attack:[10,11],return:[2,3],recovery:[0],hurt:[12,13],dead:[14,15]}))clip(`${owner}.${state}`,owner,state,owner,frames,{fps:7,loop:['idle','chase','return'].includes(state)});
-for(const [state,frames] of Object.entries({intro:[0,1],idle:[0,1],branchWindup:[2],branchAttack:[3],root:[4],slam:[5],transition:[6],dead:[7]}))clip(`boss.${state}`,'boss',state,'boss',frames,{fps:4,loop:state==='idle'});
+clip('boss.idle','boss','idle','boss',[0,1],{fps:4,loop:true});
+clip('boss.intro','boss','intro','boss',[2,3],{fps:4});
+clip('boss.branchWindup','boss','branchWindup','boss',[4,5],{fps:8});
+clip('boss.branchAttack','boss','branchAttack','boss',[6,7,8],{fps:15});
+clip('boss.rootWindup','boss','rootWindup','boss',[9,10],{fps:8});
+clip('boss.rootAttack','boss','rootAttack','boss',[11,12],{fps:10});
+clip('boss.slamWindup','boss','slamWindup','boss',[13,14],{fps:8});
+clip('boss.slamAttack','boss','slamAttack','boss',[15,16,17],{fps:15});
+clip('boss.transition','boss','transition','boss',[18,19,20],{fps:4});
+clip('boss.dead','boss','dead','boss',[21,22,23],{fps:8});
 for(const owner of ['machine','worm'])for(const [state,frames] of Object.entries({intro:[0,1],idle:[1],windup:[2],attack:[3,4],transition:[6],dead:[6,7]}))clip(`${owner}.${state}`,owner,state,owner,frames,{fps:4,loop:state==='idle'});
 export const ANIMATIONS=Object.freeze(clips);
 export function preloadAssets(loader,textures=null){for(const asset of ASSETS){if(textures?.exists(asset.key))continue;if(asset.count>1)loader.spritesheet(asset.key,asset.url,{frameWidth:asset.frameWidth,frameHeight:asset.frameHeight});else loader.image(asset.key,asset.url);}}

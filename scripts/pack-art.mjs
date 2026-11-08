@@ -1,4 +1,4 @@
-// Deterministic atlas packing of the original imagegen output. No drawing or new artwork.
+// Deterministic atlas packing of source art into runtime spritesheets.
 import sharp from 'sharp';
 import {mkdir} from 'node:fs/promises';
 import path from 'node:path';
@@ -11,7 +11,7 @@ const specs=[
   ['soldier-original.png','characters/soldier/poses.png',4,4,40,40],
   ['wisp-original.png','characters/wisp/poses.png',4,4,32,32],
   ['boar-spaced-original.png','characters/boar/poses.png',4,4,48,32],
-  ['boss-spaced-original.png','characters/boss/poses.png',4,2,112,112],
+  ['boss-attack-spaced-original.png','characters/boss/poses.png',6,4,112,112],
   ['terrain-ui-spaced-original.png','world/forest/objects.png',4,2,64,64],
   ['effects-original.png','effects/effects.png',4,2,48,48],
   ['sword-original.png','characters/hero/sword.png',1,1,32,12],

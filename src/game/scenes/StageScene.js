@@ -122,5 +122,15 @@ export class StageScene extends Phaser.Scene {
   drawWorld(){
     const g=this.worldGraphics,stage=this.stage;g.clear();
     if(this.run.arenaLocked){g.fillStyle(0x6d453f);for(const x of [stage.arena.left,stage.arena.right]){g.fillRect(x,0,16,304);g.lineStyle(2,0xd1a26d);g.strokeRect(x,0,16,304);}}
+    const boss=this.run.boss;
+    if(stage.id!=='mine-1'&&boss.state==='transition'){
+      const age=90-boss.stateTicks,beat=Math.sin(age*.42),base=stage.arena.bottom,cx=boss.x+boss.w/2;
+      for(const side of [-1,1]){
+        const rootX=cx+side*18,reach=25+beat*5,height=17+Math.abs(beat)*9,endX=rootX+side*reach;
+        g.lineStyle(7,0x54383b,.8).beginPath().moveTo(rootX,base).lineTo(rootX+side*4,base-height*.55).lineTo(endX,base-height).strokePath();
+        g.lineStyle(3,0x9a6458,.9).beginPath().moveTo(rootX,base).lineTo(rootX+side*4,base-height*.55).lineTo(endX,base-height).strokePath();
+        g.fillStyle(0xffd38a,.22+Math.abs(beat)*.22).fillCircle(endX,base-height,4+Math.abs(beat)*2);
+      }
+    }
   }
 }

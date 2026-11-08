@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import {enemyAttackRect} from '../sim/enemies.js';
 import {enemyAnimation,bossAnimation,animationFrame} from '../assets/animation.js';
+import {drawForestBossEffect} from './bossEffects.js';
 export class EnemyView {
   constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(3);this.enemies=new Map();this.projectiles=[];this.boss=null;this.bossClip='';this.bossStart=0;}
   sync(run){
@@ -21,11 +22,15 @@ export class EnemyView {
     if(this.boss&&this.bossKey!==key){this.boss.destroy();this.bossOutline.destroy();this.boss=null;this.bossClip='';}
     if(!this.boss){this.bossKey=key;this.bossOutline=this.scene.add.sprite(0,0,key,0).setOrigin(.5,1).setDepth(3.8).setTint(0xe6cda4).setTintMode(Phaser.TintModes.FILL).setAlpha(.55).setScale(1.04);this.boss=this.scene.add.sprite(0,0,key,0).setOrigin(.5,1).setDepth(4);}
     const clip=bossAnimation(b);if(this.bossClip!==clip.key||tick<this.bossStart){this.bossClip=clip.key;this.bossStart=tick;}
-    this.bossOutline.setVisible(b.state!=='dormant'&&b.state!=='dead').setPosition(Math.round(b.x+b.w/2),Math.round(b.y+b.h)).setFlipX(key!=='boss'&&b.lockedFacing>0).setFrame(animationFrame(clip,tick-this.bossStart));
-    this.boss.setVisible(b.state!=='dormant'&&b.state!=='dead').setPosition(Math.round(b.x+b.w/2),Math.round(b.y+b.h)).setFlipX(key!=='boss'&&b.lockedFacing>0).setFrame(animationFrame(clip,tick-this.bossStart));
-    if(b.phase===2)this.boss.setTint(0xffc6b5);else this.boss.clearTint();
-    for(const r of b.telegraphs){g.fillStyle(0xffce59,.25);g.fillRect(r.x,r.y,r.w,r.h);g.lineStyle(2,0xffd577);g.strokeRect(r.x,r.y,r.w,r.h);}
-    for(const r of b.hitboxes){g.fillStyle(0xff5438,.45);g.fillRect(r.x,r.y,r.w,r.h);}
+    const tremor=key==='boss'&&b.state==='transition'?Math.sin((90-b.stateTicks)*1.1)*1.5:0;
+    this.bossOutline.setVisible(b.state!=='dormant'&&b.state!=='dead').setPosition(Math.round(b.x+b.w/2),Math.round(b.y+b.h+tremor)).setFlipX(key!=='boss'&&b.lockedFacing>0).setFrame(animationFrame(clip,tick-this.bossStart));
+    this.boss.setVisible(b.state!=='dormant'&&b.state!=='dead').setPosition(Math.round(b.x+b.w/2),Math.round(b.y+b.h+tremor)).setFlipX(key!=='boss'&&b.lockedFacing>0).setFrame(animationFrame(clip,tick-this.bossStart));
+    if(key==='boss'&&b.state==='transition')this.boss.setTint(0xffd5a0);else if(b.phase===2)this.boss.setTint(0xffc6b5);else this.boss.clearTint();
+    if(key==='boss')drawForestBossEffect(g,b);
+    else{
+      for(const r of b.telegraphs){g.fillStyle(0xffce59,.25);g.fillRect(r.x,r.y,r.w,r.h);g.lineStyle(2,0xffd577);g.strokeRect(r.x,r.y,r.w,r.h);}
+      for(const r of b.hitboxes){g.fillStyle(0xff5438,.45);g.fillRect(r.x,r.y,r.w,r.h);}
+    }
   }
   destroy(){this.graphics.destroy();for(const view of this.enemies.values()){view.outline.destroy();view.sprite.destroy();}for(const p of this.projectiles)p.destroy();this.boss?.destroy();this.bossOutline?.destroy();}
 }

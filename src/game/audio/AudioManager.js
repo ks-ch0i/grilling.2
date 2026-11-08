@@ -3,7 +3,7 @@ export const SFX=Object.freeze({
  step:{from:110,to:65,duration:.055,type:'triangle',interval:.12},jump:{from:290,to:540,duration:.14,type:'square',interval:.08},swing:{from:600,to:180,duration:.11,type:'sawtooth',interval:.10},
  hit:{from:170,to:70,duration:.11,type:'square',interval:.10},roll:{from:180,to:90,duration:.16,type:'triangle',interval:.15},dive:{from:480,to:80,duration:.19,type:'sawtooth',interval:.15},
  hurt:{from:250,to:90,duration:.22,type:'square',interval:.15},heal:{from:420,to:760,duration:.22,type:'sine',interval:.15},enemyDeath:{from:240,to:65,duration:.28,type:'triangle',interval:.16},
- bossIntro:{from:75,to:155,duration:.55,type:'sawtooth',interval:.5},bossPhase:{from:115,to:280,duration:.5,type:'square',interval:.5},bossDeath:{from:150,to:42,duration:.65,type:'sawtooth',interval:.6},victory:{from:440,to:880,duration:.5,type:'triangle',interval:.5},
+ bossIntro:{from:75,to:155,duration:.55,type:'sawtooth',interval:.5},bossPhase:{from:220,to:70,duration:.55,type:'sawtooth',interval:.7},bossDeath:{from:150,to:42,duration:.65,type:'sawtooth',interval:.6},victory:{from:440,to:880,duration:.5,type:'triangle',interval:.5},
  cartWarning:{from:650,to:430,duration:.25,type:'square',interval:.4},acid:{from:320,to:130,duration:.18,type:'sawtooth',interval:.15},machine:{from:110,to:240,duration:.32,type:'sawtooth',interval:.3},wormEmergence:{from:60,to:200,duration:.75,type:'sawtooth',interval:.7}
 });
 export const MUSIC=Object.freeze({forest:'/assets/audio/music/magic-forest.mp3','forest-boss':'/assets/audio/music/magic-forest.mp3',boss:'/assets/audio/music/magic-forest.mp3',mine:'/assets/audio/music/mine-exploration.wav','mine-boss':'/assets/audio/music/mine-boss.wav'});
