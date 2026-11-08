@@ -1,4 +1,5 @@
 import {FOREST_STAGE} from '../content/forestStage.js';
+import {getStage} from '../content/stages.js';
 import {restoreStageRun} from '../sim/stage.js';
 export const SAVE_KEY='pixel-action.save.v1';
 const pickupIds=new Set(FOREST_STAGE.pickups.map(p=>p.id));
@@ -10,7 +11,7 @@ const settings=x=>shape(x,['musicVolume','sfxVolume','screenShake'])&&[x.musicVo
 const oldRun=x=>shape(x,['stageId','checkpoint','consumedPickupIds','elapsedTicks','deaths'])&&x.stageId==='forest-1'&&['start','mid'].includes(x.checkpoint)&&Array.isArray(x.consumedPickupIds)&&new Set(x.consumedPickupIds).size===x.consumedPickupIds.length&&x.consumedPickupIds.every(id=>typeof id==='string'&&pickupIds.has(id))&&count(x.elapsedTicks)&&count(x.deaths);
 const oldSave=x=>shape(x,['version','run','best','recent','settings'])&&x.version===1&&(x.run===null||oldRun(x.run))&&(x.best===null||record(x.best))&&(x.recent===null||record(x.recent))&&settings(x.settings);
 const records=x=>shape(x,['best','recent'])&&(x.best===null||record(x.best))&&(x.recent===null||record(x.recent));
-const snapshot=x=>{try{return x.stageId==='forest-1'&&x.outcome===null&&Boolean(restoreStageRun(FOREST_STAGE,x));}catch{return false;}};
+const snapshot=x=>{try{return x.outcome===null&&Boolean(restoreStageRun(getStage(x.stageId),x));}catch{return false;}};
 export function freshSave(){return {version:2,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};}
 export function parseSave(raw){
   if(raw===null)return {ok:true,save:freshSave()};
