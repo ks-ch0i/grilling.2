@@ -1,16 +1,16 @@
 # Current Context
 
 ## Active Plan
-[광산 두 번째 스테이지](./plans/2026-11-08-mine-second-stage.md)
+[보스 공격 가시성 개선](./plans/2026-11-08-boss-attack-clarity.md)
 
 ## Active Phase
-[P01 광산 스테이지](./phases/2026-11-08-mine-second-stage/P01-mine-stage/phase.md)
+[P01 보스 연출](./phases/2026-11-08-boss-attack-clarity/P01-boss-presentation/phase.md)
 
 ## Active Task
-[T05 전체 진행·저장 복구와 체감 검증](./phases/2026-11-08-mine-second-stage/P01-mine-stage/T05-integration-acceptance.md)
+[T01 숲 수호자 공격 모션과 효과](./phases/2026-11-08-boss-attack-clarity/P01-boss-presentation/T01-forest-guardian-motion.md)
 
 ## Status
-- T01 저장·복구 `7267a9e`, T02 광산 일반 전투 `a17e65a`, T03 연속 보스 `5a2e73c`, T04 광산 화면·음향·해금 통합 완료. T04 커밋은 이번 실행에서 생성한다. 이제 T05 전체 진행·저장 복구와 체감 검증을 수행한다.
+- 광산 계획 T01 저장·복구 `7267a9e`, T02 광산 일반 전투 `a17e65a`, T03 연속 보스 `5a2e73c`, T04 화면·흐름·음악 통합, T05 전체 진행·저장 복구와 체감 검증까지 완료했다. T05 커밋은 이번 실행에서 생성한다.
 - 사용자 추가 요청에 따라 개발 서버에서 숲·광산 시작 및 숲/기계/벌레 보스를 자유롭게 연습한다. 연습 기록은 저장하지 않는다. 배포 빌드에서 비활성화하며, 향후 관리자 인증·권한과 기능 ON/OFF는 서버 검증을 갖춘 뒤 연결해야 한다. 자세한 사용법은 [라운드 선택](../docs/round-selector.md).
 - T04 검증: `node scripts/pack-art.mjs`, 집중 테스트 21개, 전체 테스트 100개, `npm.cmd run build` 통과. 빌드에는 기존 500KB 초과 번들 경고가 있다. Orca 내부 브라우저의 `http://127.0.0.1:5173/`에서 개발용 라운드 메뉴, 광산 시작 화면, 기계 보스 연습 HUD와 일시정지를 확인했다. 광산 음악 두 파일은 브라우저에서 각각 HTTP 206으로 응답했고 `.audio-warning`은 없으며 콘솔에 Vite/Phaser 시작 로그 외 오류가 없었다. 실제 청취 평가는 이 실행 환경에서 확인할 수 없어 T05에서 사용자 확인 필요 항목으로 남긴다.
 - 기존 숲 구현과 인수 상태는 [이전 계획](./plans/2026-11-07-pixel-action-first-stage.md), [T04 완료 기록](./phases/2026-11-07-pixel-action-first-stage/P01-first-stage/T04-art-audio-acceptance.md)에 보존돼 있다. 사람이 최종 숲 버전을 직접 완주하며 청취·난이도를 평가한 결과는 확인되지 않았다.
@@ -18,7 +18,7 @@
 - 사용자가 이 게임의 기존 v1 진행·기록·설정을 새 저장 적용 때 별도 안내 없이 초기화하도록 명시했다. 손상·미래 버전 및 다른 앱 데이터는 보존한다.
 
 ## Next Step (IMPORTANT)
-T04 구현·자동 검증·Orca 내부 브라우저 화면 확인을 마치고 커밋한다. 이어 T05 blueprint를 읽고 전체 진행·저장 복구와 플레이 감각을 검증한다. 배경음 파일의 로드 및 오류 배너는 확인했지만 실제 음량·청취 평가는 사용자가 확인해야 한다.
+광산 계획은 T05 커밋으로 완료한다. 이어 보스 공격 가시성 개선 계획 P01 T01을 읽고 순차 실행한다. 이번 검증에서는 실제 사운드 청취와 사람의 플레이 감각은 미확인으로 남겼다.
 
 ## Queued Plan
 [보스 공격 가시성 개선](./plans/2026-11-08-boss-attack-clarity.md) — 결정된 세 보스의 공격 모션·효과와 광물 분출 계획을 작성했다. 광산 계획 T05가 완료·커밋될 때까지 대기한다. 두 계획이 같은 렌더러·애니메이션·에셋 파일을 수정하므로 선행 계획 완료 후 이 계획 P01 T01로 포인터를 옮긴다.
