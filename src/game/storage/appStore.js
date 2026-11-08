@@ -14,6 +14,7 @@ export function createAppStore(storageProvider=()=>window.localStorage){
     if(result.ok){dirty=false;warning=null;notify();}else report(result.reason);
     return result;
   }
+  if(first.ok&&first.migrated){dirty=true;persist();}
   return {
     getSave:()=>save,
     setSave:value=>{save=value;dirty=true;},

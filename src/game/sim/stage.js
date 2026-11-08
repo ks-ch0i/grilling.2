@@ -14,20 +14,44 @@ export function stageTerrain(stage,locked) {
 }
 export function createStageRun(stage,data={}) {
   validateStage(stage);
-  if (!data || typeof data!=='object' || (data.stageId!==undefined && data.stageId!==stage.id)) throw new TypeError('Invalid checkpoint data');
-  const checkpoint=data.checkpoint??'start'; if (!['start','mid'].includes(checkpoint)) throw new TypeError('Invalid checkpoint');
-  const consumed=data.consumedPickupIds??[];
-  if (!Array.isArray(consumed) || new Set(consumed).size!==consumed.length || consumed.some(id=>!stage.pickups.some(p=>p.id===id))) throw new TypeError('Invalid consumed pickup ids');
-  const elapsedTicks=data.elapsedTicks??0, deaths=data.deaths??0;
-  if (![elapsedTicks,deaths].every(n=>Number.isSafeInteger(n)&&n>=0)) throw new RangeError('Invalid run counters');
-  return {stageId:stage.id,checkpoint,player:freshPlayer(checkpoint==='mid'?stage.checkpoint:stage.spawn),
+  if (!data || typeof data!=='object' || Array.isArray(data)) throw new TypeError('Invalid run data');
+  if (Object.keys(data).length) return restoreStageRun(stage,data);
+  return {stageId:stage.id,player:freshPlayer(stage.spawn),
     enemies:stage.enemies.map(createEnemy),projectiles:[],boss:createBoss(stage.boss),arenaLocked:false,
-    consumedPickupIds:[...consumed],elapsedTicks,deaths,outcome:null,deathTicks:0};
+    consumedPickupIds:[],elapsedTicks:0,deaths:0,outcome:null,deathTicks:0};
 }
-export function checkpointData(run) {
-  return {stageId:run.stageId,checkpoint:run.checkpoint,consumedPickupIds:[...run.consumedPickupIds],elapsedTicks:run.elapsedTicks,deaths:run.deaths};
+export function snapshotStageRun(run) {
+  const copy=structuredClone(run);
+  copy.player.hitIds=[...copy.player.hitIds];
+  for(const enemy of copy.enemies)enemy.hitIds=[...enemy.hitIds];
+  return copy;
 }
-export function restoreCheckpoint(run,stage) { return createStageRun(stage,checkpointData(run)); }
+const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const keys=(x,required,optional=[])=>object(x)&&required.every(k=>Object.hasOwn(x,k))&&Object.keys(x).every(k=>required.includes(k)||optional.includes(k));
+const count=x=>Number.isSafeInteger(x)&&x>=0;
+const strings=x=>Array.isArray(x)&&x.every(s=>typeof s==='string'&&s.length>0)&&new Set(x).size===x.length;
+const finiteTree=x=>typeof x==='number'?Number.isFinite(x):Array.isArray(x)?x.every(finiteTree):object(x)?Object.values(x).every(finiteTree):x===null||['string','boolean'].includes(typeof x);
+const sameTypes=(x,template)=>Object.entries(template).every(([k,v])=>typeof v==='number'?Number.isFinite(x[k]):typeof v==='boolean'?typeof x[k]==='boolean':typeof v==='string'?typeof x[k]==='string':true);
+const rect=(r,ticks=false)=>keys(r,['x','y','w','h',...(ticks?['ticks']:[])])&&['x','y','w','h'].every(k=>Number.isFinite(r[k]))&&r.w>0&&r.h>0&&(!ticks||count(r.ticks));
+export function restoreStageRun(stage,snapshot) {
+  const s=structuredClone(snapshot), fresh=createStageRun(stage);
+  if(!keys(s,Object.keys(fresh))||s.stageId!==stage.id||!finiteTree(s)||!count(s.elapsedTicks)||!count(s.deaths)||!count(s.deathTicks)||typeof s.arenaLocked!=='boolean'||![null,'clear'].includes(s.outcome))throw new TypeError('Invalid run snapshot');
+  const p=s.player,pt=snapshotStageRun(fresh).player;
+  if(!keys(p,Object.keys(pt))||!sameTypes(p,pt)||!strings(p.hitIds)||!keys(p.aim,['x','y'])||!Number.isFinite(p.aim.x)||!Number.isFinite(p.aim.y)||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(p.mode)||!Number.isInteger(p.hp)||p.hp<0||p.hp>3||p.w!==16||p.h!==28)throw new TypeError('Invalid player snapshot');
+  for(const k of ['invulnerableTicks','rollCooldown','rollTicks','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks'])if(!count(p[k]))throw new RangeError('Invalid player timer');
+  if((p.mode==='dead')!==(p.hp===0)||p.mode==='dead'&&s.deathTicks===0)throw new TypeError('Invalid death snapshot');
+  if(!strings(s.consumedPickupIds)||s.consumedPickupIds.some(id=>!stage.pickups.some(pickup=>pickup.id===id)))throw new TypeError('Invalid pickup snapshot');
+  if(!Array.isArray(s.enemies)||s.enemies.length!==fresh.enemies.length||new Set(s.enemies.map(e=>e?.id)).size!==s.enemies.length)throw new TypeError('Invalid enemies');
+  for(const e of s.enemies){
+    const original=fresh.enemies.find(v=>v.id===e.id), template=original&&{...original,hitIds:[]};
+    if(!template||!keys(e,Object.keys(template),['lockedTarget'])||!sameTypes(e,template)||!strings(e.hitIds)||e.kind!==original.kind||e.w!==original.w||e.h!==original.h||e.maxHp!==original.maxHp||!Number.isInteger(e.hp)||e.hp<0||e.hp>e.maxHp||!count(e.stateTicks)||!['idle','chase','windup','attack','recovery','hurt','dead'].includes(e.state)||('lockedTarget'in e&&(!keys(e.lockedTarget,['x','y'])||!Number.isFinite(e.lockedTarget.x)||!Number.isFinite(e.lockedTarget.y))))throw new TypeError('Invalid enemy snapshot');
+  }
+  if(!Array.isArray(s.projectiles)||s.projectiles.some(v=>!keys(v,['id','ownerId','x','y','w','h','vx','vy','life','alive'])||typeof v.id!=='string'||typeof v.ownerId!=='string'||!['x','y','w','h','vx','vy'].every(k=>Number.isFinite(v[k]))||v.w<=0||v.h<=0||!count(v.life)||typeof v.alive!=='boolean'))throw new TypeError('Invalid projectile snapshot');
+  const b=s.boss,bt=fresh.boss;
+  if(!keys(b,Object.keys(bt))||!sameTypes(b,bt)||b.id!==bt.id||b.w!==bt.w||b.h!==bt.h||b.maxHp!==bt.maxHp||!Number.isInteger(b.hp)||b.hp<0||b.hp>b.maxHp||![1,2].includes(b.phase)||!['dormant','intro','transition','windup','attack','recovery','dying','dead'].includes(b.state)||!count(b.stateTicks)||!count(b.cycle)||!count(b.secondRootDelay)||![null,'branch','root','slam'].includes(b.attackKind)||typeof b.transitioned!=='boolean'||!Array.isArray(b.telegraphs)||!b.telegraphs.every(v=>rect(v))||!Array.isArray(b.hitboxes)||!b.hitboxes.every(v=>rect(v,true))||!(b.secondRoot===null||rect(b.secondRoot)))throw new TypeError('Invalid boss snapshot');
+  p.hitIds=new Set(p.hitIds);for(const e of s.enemies)e.hitIds=new Set(e.hitIds);
+  return s;
+}
 function hurt(run,events,source,originX) {
   const result=applyPlayerDamage(run.player,source,{originX});run.player=result.player;events.push(...result.events);
 }
@@ -54,11 +78,12 @@ function damageTargets(run,rect,terrain,events) {
 }
 export function stepStage(previous,input,stage) {
   if (previous.outcome) return {run:previous,events:[]};
-  let run=structuredClone(previous), events=[]; run.elapsedTicks++;
+  let run=structuredClone(previous), events=[];
   if (run.player.mode==='dead') {
-    if (--run.deathTicks<=0) run=restoreCheckpoint(run,stage);
+    if (--run.deathTicks<=0) {const deaths=run.deaths;run=createStageRun(stage);run.deaths=deaths;}
     return {run,events};
   }
+  run.elapsedTicks++;
   const terrain=stageTerrain(stage,run.arenaLocked);let pushCompleted;
   if (run.boss.state!=='dying' && run.boss.state!=='dead') {
     const result=stepPlayer(run.player,input,terrain,stage.pitDeathY);run.player=result.player;pushCompleted=result.pushCompleted;events.push(...result.events);
@@ -69,8 +94,6 @@ export function stepStage(previous,input,stage) {
   }
   const interactionLocked=run.boss.state==='intro' || run.boss.state==='transition' || run.boss.state==='dying' || run.boss.state==='dead';
   if (!interactionLocked) {
-    const cp={x:stage.checkpoint.x,y:stage.checkpoint.y,w:16,h:28};
-    if (run.checkpoint==='start' && intersects(run.player,cp)) {run.checkpoint='mid';events.push({type:'stage:checkpoint',checkpoint:'mid'});}
     for (const pickup of stage.pickups) if (!run.consumedPickupIds.includes(pickup.id) && intersects(run.player,{...pickup,w:16,h:16})) {
       run.consumedPickupIds.push(pickup.id);run.player.hp=Math.min(3,run.player.hp+1);events.push({type:'stage:pickup',id:pickup.id,consumedPickupIds:[...run.consumedPickupIds]});
     }
@@ -104,6 +127,6 @@ export function stepStage(previous,input,stage) {
   return {run,events};
 }
 function death(run,events) {
-  run.deaths++;run.deathTicks=DEATH_TICKS;run.arenaLocked=false;run.boss.hitboxes=[];run.boss.telegraphs=[];
-  events.push({type:'stage:death',checkpoint:run.checkpoint,deaths:run.deaths});return {run,events};
+  run.deaths++;run.elapsedTicks=0;run.deathTicks=DEATH_TICKS;run.arenaLocked=false;run.boss.hitboxes=[];run.boss.telegraphs=[];
+  events.push({type:'stage:death',deaths:run.deaths});return {run,events};
 }

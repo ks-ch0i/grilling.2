@@ -3,7 +3,7 @@ import {getAppStore} from '../storage/appStore.js';
 import {mountMenu,formatTicks} from '../ui/menu.js';
 export class ResultScene extends Phaser.Scene {
   constructor(){super('result');}
-  create(data){const menu=mountMenu('스테이지 클리어');const best=getAppStore().getSave().best;
+  create(data){const menu=mountMenu('스테이지 클리어');const best=getAppStore().getSave().records['forest-1'].best;
     menu.text(`이번 기록: ${formatTicks(data.record.elapsedTicks)} / 사망 ${data.record.deaths}회`);
     menu.text(best?`최고 기록: ${formatTicks(best.elapsedTicks)} / 사망 ${best.deaths}회`:'최고 기록: 없음');
     menu.button('처음 화면',()=>this.scene.start('title'));menu.focus();this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>menu.remove());

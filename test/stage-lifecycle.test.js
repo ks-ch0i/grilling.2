@@ -1,20 +1,34 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {FOREST_STAGE as stage} from '../src/game/content/forestStage.js';
-import {createStageRun,stepStage,restoreCheckpoint,checkpointData} from '../src/game/sim/stage.js';
+import {createStageRun,stepStage,restoreStageRun,snapshotStageRun} from '../src/game/sim/stage.js';
 const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:12000,aimY:290};
 const tick=(r,n=1)=>{let events=[];for(let i=0;i<n;i++){const next=stepStage(r,input,stage);r=next.run;events.push(...next.events);}return {run:r,events};};
-test('checkpoint, full health pickup and respawn preserve consumption and counters',()=>{
+test('death resets pickups, enemies and elapsed time but preserves deaths',()=>{
  const original=JSON.stringify(stage);let r=createStageRun(stage);
  r.player.x=2400;let result=tick(r);r=result.run;assert.equal(r.player.hp,3);assert.deepEqual(r.consumedPickupIds,['heal-1']);assert.ok(result.events.some(e=>e.type==='stage:pickup'));
- r.player.x=5760;result=tick(r);r=result.run;assert.equal(r.checkpoint,'mid');assert.ok(result.events.some(e=>e.type==='stage:checkpoint'));
  r.enemies[0].hp=1;r.enemies[0].state='dead';r.projectiles.push({id:'p',x:0,y:0,w:8,h:8,vx:0,vy:0,life:50,alive:true});r.player.y=344;r.player.invulnerableTicks=40;
  result=tick(r);r=result.run;assert.equal(r.deaths,1);assert.equal(r.player.mode,'dead');assert.ok(result.events.some(e=>e.type==='stage:death'));
- r=tick(r,60).run;assert.equal(r.player.x,stage.checkpoint.x);assert.equal(r.player.hp,3);assert.equal(r.enemies[0].hp,3);assert.equal(r.projectiles.length,0);assert.deepEqual(r.consumedPickupIds,['heal-1']);assert.equal(r.deaths,1);assert.equal(JSON.stringify(stage),original);
- assert.deepEqual(checkpointData(restoreCheckpoint(r,stage)),checkpointData(r));
+ r=tick(r,60).run;assert.equal(r.player.x,stage.spawn.x);assert.equal(r.player.hp,3);assert.equal(r.enemies[0].hp,3);assert.equal(r.projectiles.length,0);assert.deepEqual(r.consumedPickupIds,[]);assert.equal(r.deaths,1);assert.equal(r.elapsedTicks,0);assert.equal(JSON.stringify(stage),original);
+ assert.deepEqual(snapshotStageRun(restoreStageRun(stage,snapshotStageRun(r))),snapshotStageRun(r));
 });
-test('death before checkpoint returns to start and checkpoint data is validated',()=>{
+test('death returns to start and snapshots are validated',()=>{
  let r=createStageRun(stage);r.player.y=344;r=tick(r).run;r=tick(r,60).run;assert.equal(r.player.x,stage.spawn.x);
  assert.throws(()=>createStageRun(stage,{checkpoint:'other'}),TypeError);assert.throws(()=>createStageRun(stage,{consumedPickupIds:['missing']}),TypeError);
+});
+test('combat snapshot JSON round trip preserves the next tick, including sets and boss attack',()=>{
+ let r=createStageRun(stage);Object.assign(r.player,{x:10900,y:276,hp:2,mode:'attack',attackTick:5,invulnerableTicks:12});
+ r.player.hitIds.add('soldier-1');Object.assign(r.enemies[0],{state:'windup',stateTicks:20,lockedTarget:{x:900,y:290}});
+ r.enemies[0].hitIds.add('player');r.projectiles.push({id:'p',ownerId:'wisp-1',x:800,y:260,w:8,h:8,vx:60,vy:0,life:20,alive:true});
+ Object.assign(r.boss,{hp:8,phase:2,transitioned:true,state:'attack',stateTicks:5,attackKind:'root',hitboxes:[{x:11000,y:256,w:48,h:48,ticks:5}]});r.arenaLocked=true;
+ const saved=JSON.parse(JSON.stringify(snapshotStageRun(r))),restored=restoreStageRun(stage,saved);
+ assert.ok(restored.player.hitIds instanceof Set);assert.ok(restored.enemies[0].hitIds instanceof Set);
+ assert.deepEqual(stepStage(restored,input,stage),stepStage(r,input,stage));
+ const broken=structuredClone(saved);broken.enemies[0].stateTicks=-1;assert.throws(()=>restoreStageRun(stage,broken),TypeError);
+});
+test('restoring mid-death does not add another death and resumes countdown',()=>{
+ let r=createStageRun(stage);r.player.y=344;r=tick(r).run;r=tick(r,20).run;
+ const restored=restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(r))));
+ assert.equal(restored.deaths,1);assert.deepEqual(tick(restored,40),tick(r,40));assert.equal(tick(restored,40).run.deaths,1);
 });
 test('arena locks on entry, death unlocks, and restore resets boss',()=>{
  let r=createStageRun(stage);r.player.x=stage.arena.left+16;r=tick(r).run;assert.equal(r.arenaLocked,true);assert.equal(r.boss.state,'intro');
@@ -93,7 +107,7 @@ test('all three enemy kinds can be defeated through the player combat loop',()=>
  }
 });
 
-test('time includes all death and respawn ticks',()=>{
+test('time resets at death and stays zero until the next attempt',()=>{
  let r=createStageRun(stage);r.player.y=344;let result=tick(r);r=result.run;const before=r.elapsedTicks;
- result=tick(r,60);assert.equal(result.run.elapsedTicks,before+60);assert.equal(result.run.deaths,1);assert.equal(result.run.player.hp,3);
+ result=tick(r,60);assert.equal(before,0);assert.equal(result.run.elapsedTicks,0);assert.equal(result.run.deaths,1);assert.equal(result.run.player.hp,3);assert.equal(tick(result.run).run.elapsedTicks,1);
 });

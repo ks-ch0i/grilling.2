@@ -6,7 +6,7 @@ ground.push({x:left,y:304,w:11520-left,h:56});
 export const FOREST_STAGE = {
   id:'forest-1', world:{width:11520,height:360}, spawn:{x:120,y:276},
   solids:[...ground,...[1800,3488,5504,7360,9120].map(x=>({x,y:256,w:128,h:16})),...[1216,2800,4384,6624,9504].map(x=>({x,y:288,w:32,h:16}))],
-  pitDeathY:344, checkpoint:{id:'mid',x:5760,y:276},
+  pitDeathY:344,
   pickups:[{id:'heal-1',kind:'heal',x:2400,y:288},{id:'heal-2',kind:'heal',x:6200,y:288},{id:'heal-3',kind:'heal',x:9600,y:288}],
   enemies:[
     ...[800,2300,6400].map((x,i)=>({id:`soldier-${i+1}`,kind:'soldier',x,y:276})),
@@ -27,11 +27,11 @@ export function validateStage(stage) {
   const supported=(r)=>stage.solids.some(s=>s.y===r.y+r.h && s.x<r.x+r.w && s.x+s.w>r.x);
   const ids=new Set();
   const id=(item)=>{ if (!item || typeof item.id!=='string' || !item.id || ids.has(item.id)) throw new TypeError('Duplicate or invalid id'); ids.add(item.id); };
-  if (stage.checkpoint?.id!=='mid' || stage.boss?.id!=='forest-guardian') throw new TypeError('Invalid checkpoint or boss id');
-  id(stage.checkpoint); id(stage.boss);
-  rect({...stage.spawn,w:16,h:28},'spawn'); rect({...stage.checkpoint,w:16,h:28},'checkpoint');
+  if (stage.boss?.id!=='forest-guardian') throw new TypeError('Invalid boss id');
+  id(stage.boss);
+  rect({...stage.spawn,w:16,h:28},'spawn');
   rect({...stage.boss,w:80,h:96},'boss');
-  for (const point of [{...stage.spawn,w:16,h:28},{...stage.checkpoint,w:16,h:28},{...stage.boss,w:80,h:96}]) if (!supported(point)) throw new RangeError('Spawn is not supported');
+  for (const point of [{...stage.spawn,w:16,h:28},{...stage.boss,w:80,h:96}]) if (!supported(point)) throw new RangeError('Spawn is not supported');
   for (const pickup of stage.pickups) { id(pickup); if (pickup.kind!=='heal') throw new TypeError('Invalid pickup kind'); rect({...pickup,w:16,h:16},'pickup'); }
   const dimensions={soldier:[20,28],wisp:[20,20],boar:[28,20]};
   for (const enemy of stage.enemies) { id(enemy); const d=dimensions[enemy.kind]; if (!d) throw new TypeError('Invalid enemy kind'); rect({...enemy,w:d[0],h:d[1]},'enemy'); if (!supported({...enemy,w:d[0],h:d[1]})) throw new RangeError('Enemy spawn is not supported'); }

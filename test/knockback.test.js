@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createPlayer, stepPlayer } from '../src/game/sim/player.js';
 import { applyPlayerDamage } from '../src/game/sim/combat.js';
 import { intersects } from '../src/game/sim/geometry.js';
-import { createStageRun, stepStage, restoreCheckpoint } from '../src/game/sim/stage.js';
+import { createStageRun, stepStage } from '../src/game/sim/stage.js';
 import { FOREST_STAGE as stage } from '../src/game/content/forestStage.js';
 
 const floor=[{x:-1000,y:304,w:2000,h:56}];
@@ -52,7 +52,7 @@ test('deep contact separates after push, while a solid wall prevents escape and 
  let r=step(setup(stage)).run;assert.equal(r.player.hp,2);for(let i=0;i<12;i++)r=step(r).run;assert.equal(r.player.x,184);assert.equal(intersects(r.player,r.enemies[0]),false);
  const world=structuredClone(stage);world.solids.push({x:180,y:200,w:20,h:104});r=step(setup(world),world).run;for(let i=0;i<12;i++)r=step(r,world).run;assert.equal(r.player.x,200);assert.equal(intersects(r.player,r.enemies[0]),true);
  for(let i=0;i<34;i++)r=step(r,world).run;assert.equal(r.player.hp,1);assert.equal(r.player.x,200);
- const restored=restoreCheckpoint(r,world);assert.equal(restored.player.hurtPushTicks,0);
+ const restored=createStageRun(world);assert.equal(restored.player.hurtPushTicks,0);
 });
 test('two overlapping enemies cause one hit and do not reset the initial knockback',()=>{
  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:276,grounded:true});r.enemies=r.enemies.slice(0,2);

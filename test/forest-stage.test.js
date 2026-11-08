@@ -20,7 +20,7 @@ test('nine supported enemies form two mixed pairs away from pit approaches',()=>
  for(const [a,b] of pairs){const first=enemies.find(e=>e.id===a),second=enemies.find(e=>e.id===b);assert.notEqual(first.kind,second.kind);assert.equal(Math.abs(first.x-second.x),100);}
  for(const e of enemies.filter(e=>!ids.has(e.id)))for(const other of enemies.filter(other=>other.id!==e.id))assert.ok(Math.abs(e.x-other.x)>=500,`${e.id}/${other.id}`);
  const xs=enemies.map(e=>e.x).sort((a,b)=>a-b);assert.equal(Math.max(...xs.slice(1).map((x,i)=>x-xs[i])),1630);
- assert.deepEqual(FOREST_STAGE.spawn,{x:120,y:276});assert.equal(FOREST_STAGE.checkpoint.x,5760);assert.deepEqual(FOREST_STAGE.pickups.map(p=>p.x),[2400,6200,9600]);assert.equal(FOREST_STAGE.arena.left,10496);
+ assert.deepEqual(FOREST_STAGE.spawn,{x:120,y:276});assert.equal('checkpoint' in FOREST_STAGE,false);assert.deepEqual(FOREST_STAGE.pickups.map(p=>p.x),[2400,6200,9600]);assert.equal(FOREST_STAGE.arena.left,10496);
 });
 test('a normal full jump crosses each 64 pixel pit',()=>{
  for(const [start,end] of [[1504,1568],[3136,3200],[4960,5024],[6848,6912],[8752,8816]]){

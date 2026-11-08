@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { FOREST_STAGE } from '../content/forestStage.js';
 import { InputController } from '../input/InputController.js';
-import { createStageRun, stepStage, checkpointData } from '../sim/stage.js';
+import { createStageRun, stepStage, snapshotStageRun } from '../sim/stage.js';
 import { diveImpactRect } from '../sim/combat.js';
 import { PlayerView } from '../render/PlayerView.js';
 import { EnemyView } from '../render/EnemyView.js';
@@ -15,12 +15,11 @@ const STEP=1000/60;
 export class StageScene extends Phaser.Scene {
   constructor(){super('stage');}
   create(data={}){
-    this.stage=FOREST_STAGE;this.run=createStageRun(this.stage,data.run??{});this.accumulator=0;this.checkpointNotice=0;
+    this.stage=FOREST_STAGE;this.run=createStageRun(this.stage,data.run??{});this.accumulator=0;
     this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.store=getAppStore();this.audio=getAudioManager();markRunActive();
     this.backdrop=this.add.tileSprite(0,0,640,304,'forest').setOrigin(0,0).setScrollFactor(0).setDepth(-20).setTint(0xb8b8b8);
     this.terrainBase=this.add.graphics().setDepth(-6);for(const r of this.stage.solids){this.terrainBase.fillStyle(0x392a29);this.terrainBase.fillRect(r.x,r.y,r.w,r.h);this.terrainBase.fillStyle(0x9aa36d);this.terrainBase.fillRect(r.x,r.y,r.w,2);}
     this.terrainViews=this.stage.solids.map(r=>this.add.tileSprite(r.x,r.y,r.w,r.h,r.y===304?'ground':'platform').setOrigin(0,0).setDepth(-5));
-    this.checkpointView=this.add.sprite(this.stage.checkpoint.x+8,304,'objects',4).setOrigin(.5,1).setScale(.8).setDepth(1);
     this.pickupViews=this.stage.pickups.map(p=>this.add.sprite(p.x+8,p.y+16,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(1));
     this.worldGraphics=this.add.graphics().setDepth(1);this.playerView=new PlayerView(this);this.enemyView=new EnemyView(this);this.visualEffects=[];
     this.hud=this.add.text(12,10,'',{fontFamily:'monospace',fontSize:'14px',color:'#ffffff'}).setScrollFactor(0).setDepth(10);
@@ -43,7 +42,7 @@ export class StageScene extends Phaser.Scene {
       this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();
     });
     this.renderWorld();
-    if(data.recovered)this.pauseGame('화면이 다시 로드되어 마지막 체크포인트에서 복구했습니다.');
+    if(data.recovered)this.pauseGame('마지막 저장 지점에서 복구했습니다.');
   }
   update(_time,delta){
     if(document.hidden||!document.hasFocus())this.pauseGame();
@@ -53,12 +52,14 @@ export class StageScene extends Phaser.Scene {
       const previousBossHp=this.run.boss.hp;
       const result=stepStage(this.run,this.inputController.sample(this),this.stage);this.run=result.run;
       if(this.run.boss.hp<previousBossHp){const boss=this.run.boss;this.showEffect(1,boss.x+boss.w/2,boss.y+boss.h/2);this.audio.playSfx('hit');}
-      for(const event of result.events){if(event.type==='stage:checkpoint')this.checkpointNotice=120;this.playEventSound(event);this.events.emit(event.type,event);}
+      for(const event of result.events){
+        if(event.type==='stage:death'){for(const effect of this.visualEffects)effect.sprite.destroy();this.visualEffects=[];}
+        this.playEventSound(event);this.events.emit(event.type,event);
+      }
       this.visualEffects=this.visualEffects.filter(effect=>{if(effect.until>this.run.elapsedTicks){if(effect.draw)effect.draw(this.run.elapsedTicks-effect.start);if(effect.fade)effect.sprite.setAlpha((effect.until-this.run.elapsedTicks)/effect.fade*(effect.strength??1));return true;}effect.sprite.destroy();return false;});
       if(this.run.player.mode==='run'&&this.run.player.grounded&&this.run.elapsedTicks%18===0)this.audio.playSfx('step');
       this.coordinator.tick();
       if(result.events.some(event=>event.type==='stage:clear')){clearRunActive();this.audio.pauseMusic();const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{record});return;}
-      if(this.checkpointNotice>0)this.checkpointNotice--;
       this.accumulator-=STEP;
     }
     this.renderWorld();
@@ -90,15 +91,14 @@ export class StageScene extends Phaser.Scene {
     this.pauseMenu=mountMenu('일시정지',notice);this.pauseMenu.button('재개',()=>this.resumeGame());this.pauseMenu.button('설정',()=>{this.settingsOpen=true;this.pauseMenu.hide();this.scene.launch('settings',{onClose:()=>{this.settingsOpen=false;this.pauseMenu?.show();}});});this.pauseMenu.button('처음 화면',()=>{clearRunActive();this.coordinator.flush();this.scene.start('title');});this.pauseMenu.focus();
   }
   resumeGame(){if(!this.paused||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();this.audio.resumeMusic();this.audio.playMusic('forest');}else this.audio.resumeMusic();}
-  exportCheckpointData(){return checkpointData(this.run);}
-  restoreCheckpointData(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
+  exportStageSnapshot(){return snapshotStageRun(this.run);}
+  restoreStageSnapshot(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
   renderWorld(){
     const p=this.run.player,cam=this.cameras.main,boss=this.run.boss;
     const target=boss.state==='intro'?((p.x+p.w/2-16)+(boss.x+boss.w/2+56))/2:p.x+p.w/2+p.horizontalFacing*60;
     const desired=Phaser.Math.Clamp(target-320,0,this.stage.world.width-640);
     cam.scrollX=Math.round(cam.scrollX+(desired-cam.scrollX)*.12);this.backdrop.tilePositionX=Math.round(cam.scrollX*.15);
     this.pickupViews.forEach((view,i)=>view.setVisible(!this.run.consumedPickupIds.includes(this.stage.pickups[i].id)));
-    this.checkpointView.setTint(this.run.checkpoint==='mid'?0xffe7a0:0xffffff);
     this.drawWorld();this.enemyView.sync(this.run);this.playerView.sync(p,this,this.run.elapsedTicks);
     const showBoss=boss.state!=='dormant'&&boss.state!=='dead';
     this.hud.setText(`FOREST 1${showBoss?'                         FOREST GUARDIAN':''}`);
@@ -107,7 +107,7 @@ export class StageScene extends Phaser.Scene {
     const direction=this.run.outcome?null:bossDirection(boss,{scrollX:cam.scrollX,width:640}),arrow=this.bossDirectionGraphics;
     arrow.clear();if(direction){const x=direction==='right'?626:14,y=Phaser.Math.Clamp(Math.round(boss.y+boss.h/2-cam.scrollY),72,280),tip=direction==='right'?x+5:x-5,base=direction==='right'?x-5:x+5;
       arrow.fillStyle(0xffdf9e).fillTriangle(tip,y,base,y-6,base,y+6);arrow.lineStyle(1,0x392a29).strokeTriangle(tip,y,base,y-6,base,y+6);}
-    this.message.setText(this.run.outcome==='clear'?'STAGE CLEAR':p.mode==='dead'?'RESPAWNING':boss.state==='intro'?'숲의 수호자 등장':this.checkpointNotice?'CHECKPOINT':'');
+    this.message.setText(this.run.outcome==='clear'?'STAGE CLEAR':p.mode==='dead'?'RESPAWNING':boss.state==='intro'?'숲의 수호자 등장':'');
   }
   drawWorld(){
     const g=this.worldGraphics,stage=this.stage;g.clear();
