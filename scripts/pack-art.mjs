@@ -14,7 +14,13 @@ const specs=[
   ['boss-spaced-original.png','characters/boss/poses.png',4,2,112,112],
   ['terrain-ui-spaced-original.png','world/forest/objects.png',4,2,64,64],
   ['effects-original.png','effects/effects.png',4,2,48,48],
-  ['sword-original.png','characters/hero/sword.png',1,1,32,12]
+  ['sword-original.png','characters/hero/sword.png',1,1,32,12],
+  ['mine-golem-original.png','characters/golem/poses.png',4,4,48,48],
+  ['mine-insect-original.png','characters/insect/poses.png',4,4,40,40],
+  ['mine-bat-original.png','characters/bat/poses.png',4,4,40,40],
+  ['mine-machine-original.png','characters/machine/poses.png',4,2,112,112],
+  ['mine-worm-spaced-original.png','characters/worm/poses.png',4,2,128,112],
+  ['mine-cart-original.png','world/mine/cart.png',1,1,48,32]
 ];
 const root='public/assets';
 async function makeAtlas([source,dest,cols,rows,cellW,cellH]){
@@ -53,3 +59,6 @@ for(const [name,h] of [['ground.png',56],['platform.png',16]]){
   const first=await sharp(objects).extract({left:0,top:0,width:64,height:64}).png().toBuffer();
   await sharp(first).trim({background:'#00000000'}).resize(64,h,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/forest',name));
 }
+await mkdir(path.join(root,'world/mine'),{recursive:true});
+await sharp(path.join(root,'source/mine-backdrop-original.png')).resize(640,304,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/mine/backdrop.png'));
+for(const [name,h] of [['ground.png',56],['platform.png',16]])await sharp(path.join(root,'source/mine-terrain-original.png')).resize(64,h,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/mine',name));

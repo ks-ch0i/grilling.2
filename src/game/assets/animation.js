@@ -8,6 +8,10 @@ export function playerAnimation(player){
 }
 export function enemyAnimation(enemy){return ANIMATIONS[`${enemy.kind}.${enemy.state}`]??ANIMATIONS[`${enemy.kind}.idle`];}
 export function bossAnimation(boss){
+ if(['machine','worm'].includes(boss.kind)){
+  const state=boss.state==='intro'?'intro':boss.state==='transition'?'transition':['dying','dead'].includes(boss.state)?'dead':['windup','attack'].includes(boss.state)?boss.state:'idle';
+  return ANIMATIONS[`${boss.kind}.${state}`];
+ }
  let state='idle';
  if(boss.state==='intro')state='intro';else if(boss.state==='transition')state='transition';else if(['dying','dead'].includes(boss.state))state='dead';
  else if(['windup','attack'].includes(boss.state)){if(boss.attackKind==='branch')state=boss.state==='windup'?'branchWindup':'branchAttack';else state=boss.attackKind;}

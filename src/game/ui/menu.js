@@ -1,8 +1,8 @@
-import {FOREST_STAGE} from '../content/forestStage.js';
+import {getStage} from '../content/stages.js';
 import {createStageRun,snapshotStageRun} from '../sim/stage.js';
 export function formatTicks(ticks){const seconds=Math.floor(ticks/60);return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
-export function createNewRun(save){return {...save,run:snapshotStageRun(createStageRun(FOREST_STAGE))};}
-export function menuState(save){return {canContinue:save.run!==null,hasRecords:Object.values(save.records).some(r=>r.best!==null||r.recent!==null)};}
+export function createNewRun(save,stageId='forest-1'){if(!save.unlockedStageIds.includes(stageId))throw new TypeError('Stage is locked');return {...save,run:snapshotStageRun(createStageRun(getStage(stageId)))};}
+export function menuState(save){return {canContinue:save.run!==null,hasRecords:Object.values(save.records).some(r=>r.best!==null||r.recent!==null),unlockedStageIds:[...save.unlockedStageIds]};}
 export function mountMenu(title,subtitle=''){
   const root=document.createElement('section');root.className='game-overlay';root.setAttribute('aria-label',title);
   const panel=document.createElement('div');panel.className='game-panel';root.append(panel);

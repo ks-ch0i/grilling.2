@@ -12,6 +12,7 @@ export class SettingsScene extends Phaser.Scene {
     this.menu.checkbox('화면 흔들림',settings.screenShake,v=>change({screenShake:v}));
     this.menu.text('조작: A/D 이동 · Space 점프 · 마우스 왼쪽 공격 · Shift 구르기 · E 내려베기 · Esc 일시정지');
     this.menu.text('배경음: Magic Forest — Kevin MacLeod (incompetech.com), CC BY 4.0');
+    this.menu.text('광산 탐험·보스 음악: 프로젝트 자체 합성, 외부 음원 없음');
     this.fullscreenButton=this.menu.button('',()=>this.toggleFullscreen());this.fullscreenError=this.menu.text('');this.fullscreenError.setAttribute('role','status');
     this.menu.button('뒤로',()=>this.close());this.fullscreenChanged=()=>{this.fullscreenButton.textContent=document.fullscreenElement?'전체화면 종료':'전체화면';if(document.fullscreenElement)this.fullscreenError.textContent='';};
     this.onKey=e=>{if(e.code==='Escape'&&!e.repeat){e.preventDefault();this.close();}};

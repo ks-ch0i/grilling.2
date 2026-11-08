@@ -1,6 +1,6 @@
 import {FOREST_STAGE} from '../content/forestStage.js';
 import {getStage} from '../content/stages.js';
-import {restoreStageRun} from '../sim/stage.js';
+import {createStageRun,restoreStageRun,snapshotStageRun} from '../sim/stage.js';
 export const SAVE_KEY='pixel-action.save.v1';
 const pickupIds=new Set(FOREST_STAGE.pickups.map(p=>p.id));
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -36,5 +36,7 @@ export function writeSave(storage,save){
 export function recordCompletion(save,stageId,result){
   if(!['forest-1','mine-1'].includes(stageId)||!record(result))throw new TypeError('Invalid record');
   const previous=save.records[stageId];
-  return {...save,run:null,records:{...save.records,[stageId]:{recent:{...result},best:!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best}}}};
+  const unlockedStageIds=stageId==='forest-1'&&!save.unlockedStageIds.includes('mine-1')?[...save.unlockedStageIds,'mine-1']:save.unlockedStageIds;
+  const run=stageId==='forest-1'?snapshotStageRun(createStageRun(getStage('mine-1'))):null;
+  return {...save,run,unlockedStageIds,records:{...save.records,[stageId]:{recent:{...result},best:!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best}}}};
 }

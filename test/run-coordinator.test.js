@@ -11,5 +11,5 @@ test('pickup and death flush actual state and dispose removes listeners',()=>{
 test('save cadence survives time reset, errors surface and clear is exactly once',()=>{
  const s=setup();s.setData({elapsedTicks:300});for(let i=0;i<59;i++)s.coordinator.tick();assert.equal(s.writes.length,0);s.fail();s.coordinator.tick();assert.deepEqual(s.errors,['unavailable']);
  s.setData({elapsedTicks:0,deaths:1});s.events.emit('stage:death');for(let i=0;i<60;i++)s.coordinator.tick();assert.equal(s.writes.length,3);
- s.setData({elapsedTicks:120,deaths:2});s.events.emit('stage:clear');s.events.emit('stage:clear');s.coordinator.tick();s.coordinator.flush();assert.equal(s.writes.length,4);assert.deepEqual(s.getSave().records['forest-1'].best,{elapsedTicks:120,deaths:2});assert.equal(s.getSave().run,null);s.coordinator.dispose();
+ s.setData({elapsedTicks:120,deaths:2});s.events.emit('stage:clear');s.events.emit('stage:clear');s.coordinator.tick();s.coordinator.flush();assert.equal(s.writes.length,4);assert.deepEqual(s.getSave().records['forest-1'].best,{elapsedTicks:120,deaths:2});assert.equal(s.getSave().run.stageId,'mine-1');s.coordinator.dispose();
 });
