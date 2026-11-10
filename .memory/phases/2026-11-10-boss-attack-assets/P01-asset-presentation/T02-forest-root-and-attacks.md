@@ -123,7 +123,7 @@ Task: T02-forest-root-and-attacks
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과
-- commit: recorded in phase.md after commit
+- commit: 5cf501e
 - 접지24틱 뒤 60/30틱 지연과 2페이즈30틱 추가 발생, 위치 잠금, 별도 rootEffects24틱 수명을 구현했다. 사전 바닥 표시를 제거하고 회복 중 두 번째 뿌리를 새 시트로 표시한다.
 - 이전 저장의 누락된 표시 필드만 보충하며 malformed 새 필드는 거부한다. 112개 경과 상태의 다음 step/표시 JSON 왕복과 사망·전환 취소를 검사했다.
 - 지정 집중 검사39/39 및 빌드 통과. 기존 번들 경고 외 오류 없음. 직접 게임 플레이·실제 청취는 하지 않았다.

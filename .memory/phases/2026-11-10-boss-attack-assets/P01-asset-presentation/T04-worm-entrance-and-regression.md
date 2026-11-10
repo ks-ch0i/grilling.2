@@ -155,7 +155,7 @@ Task: T04-worm-entrance-and-regression
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과
-- commit: recorded in phase.md after commit
+- commit: babddcd
 - 남은 intro ticks를 유일한 시간 근거로240틱/96·120·144 경계를 구현했다. 실루엣과 완전한 본체를 분리하고 body/outline/HUD 공개와 포효를 동기화했다.
 - 기존 등장 이벤트의 소리를 바닥 돌출 이벤트로 옮겼고, 180틱·45틱 이전 저장을 남은 시간 그대로 복구한다. 연습 시작도240틱이다.
 - 암전 Rectangle의 fillAlpha=0이면 객체 alpha를 높여도 검정이 칠해지지 않는 기존 설정을 fillAlpha=1로 바로잡았다. 새 전체 화면 암전도 불투명 fill+객체 alpha를 사용한다.

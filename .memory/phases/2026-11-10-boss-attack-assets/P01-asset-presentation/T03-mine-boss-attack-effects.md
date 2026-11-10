@@ -120,7 +120,7 @@ Task: T03-mine-boss-attack-effects
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과
-- commit: recorded in phase.md after commit
+- commit: ced5df5
 - 보스 ownerId+kind 조합만 새 시트로 표시하고 일반 적·광차·물약은 기존 경로에 남겼다. 낙석 예고를 HUD 아래에 배치하고 꼬리 양방향 접점, 위상·수명·스냅샷 불변성을 검사했다.
 - 지정 집중 검사32/32·빌드 통과. T01에서 관찰한 런타임 PNG의 core를 기존 피해 영역에 연결한다. 직접 플레이·청취 없이 검증했다.
 - 잠복 중 본체 접촉 피해 제거는 승인된 추가 범위가 아니므로 규칙을 변경하지 않았다. 기존 번들 경고 외 새 인접 결함은 발견하지 않았다.
