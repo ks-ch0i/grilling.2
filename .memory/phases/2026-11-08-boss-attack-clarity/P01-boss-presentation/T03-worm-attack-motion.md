@@ -84,4 +84,4 @@ Task: T03-worm-attack-motion
 ## Progress
 - [x] 구현 완료
 - [x] 검증 통과 — asset pack, 지정 테스트 21개, production build 통과
-- commit: pending
+- commit: `8eb7f2d`
