@@ -5,7 +5,8 @@ const entries=[
  ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1]
  ,['mine-backdrop','/assets/world/mine/backdrop.png',640,304,1],['mine-ground','/assets/world/mine/ground.png',64,56,1],['mine-platform','/assets/world/mine/platform.png',64,16,1],
  ['golem','/assets/characters/golem/poses.png',48,48,16],['insect','/assets/characters/insect/poses.png',40,40,16],['bat','/assets/characters/bat/poses.png',40,40,16],
- ['machine','/assets/characters/machine/poses.png',112,112,24],['worm','/assets/characters/worm/poses.png',128,112,24],['mine-cart','/assets/world/mine/cart.png',48,32,1],['mine-mineral','/assets/world/mine/mineral.png',16,16,1]
+ ['machine','/assets/characters/machine/poses.png',112,112,24],['worm','/assets/characters/worm/poses.png',128,112,24],['mine-cart','/assets/world/mine/cart.png',48,32,1],['mine-mineral','/assets/world/mine/mineral.png',16,16,1],
+ ['boss-forest-fx','/assets/effects/boss/forest.png',128,128,16],['boss-machine-fx','/assets/effects/boss/machine.png',128,128,16],['boss-worm-fx','/assets/effects/boss/worm.png',128,128,16],['worm-entrance-fx','/assets/effects/boss/worm-entrance.png',256,192,8]
 ];
 export const ASSETS=Object.freeze(entries.map(([key,url,frameWidth,frameHeight,count])=>Object.freeze({key,url,frameWidth,frameHeight,count,origin:Object.freeze({x:.5,y:1})})));
 const clips={};
@@ -25,6 +26,8 @@ clip('boss.branchWindup','boss','branchWindup','boss',[4,5],{fps:8});
 clip('boss.branchAttack','boss','branchAttack','boss',[6,7,8],{fps:15});
 clip('boss.rootWindup','boss','rootWindup','boss',[9,10],{fps:8});
 clip('boss.rootAttack','boss','rootAttack','boss',[11,12],{fps:10});
+clip('boss.rootHold','boss','rootHold','boss',[11]);
+clip('boss.rootPulse','boss','rootPulse','boss',[12]);
 clip('boss.slamWindup','boss','slamWindup','boss',[13,14],{fps:8});
 clip('boss.slamAttack','boss','slamAttack','boss',[15,16,17],{fps:15});
 clip('boss.transition','boss','transition','boss',[18,19,20],{fps:4});

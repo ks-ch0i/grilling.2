@@ -18,3 +18,10 @@ test('invalid real image fixture and missing runtime textures are rejected',asyn
  const missing=validateAssets({exists:()=>false});assert.equal(missing.ok,false);assert.ok(missing.errors.some(e=>e.includes('hero-actions')));
  const broken=validateAssets({exists:()=>true,get:()=>({getSourceImage:()=>({width:1,height:1}),has:()=>false})});assert.equal(broken.ok,false);assert.ok(broken.errors.some(e=>e.includes('Missing frame')));
 });
+test('non-attack boss frames retain the exact baseline pixels',async()=>{
+ const specs=[['boss','boss',[0,1,2,3,18,19,20,21,22,23],112],['machine','mine-machine',[0,1,2,3,21,22,23],112],['worm','mine-worm',[0,1,2,3,16,17,22,23],128]];
+ for(const [kind,base,frames,w] of specs){
+  const runtime=await readFile(`public/assets/characters/${kind}/poses.png`),original=await readFile(`public/assets/source/${base}-base-poses-v1.png`);
+  for(const frame of frames){const region={left:(frame%6)*w,top:Math.floor(frame/6)*112,width:w,height:112};assert.deepEqual(await sharp(runtime).extract(region).raw().toBuffer(),await sharp(original).extract(region).raw().toBuffer(),`${kind}:${frame}`);}
+ }
+});
