@@ -4,8 +4,9 @@ import {enemyAnimation,bossAnimation,animationFrame} from '../assets/animation.j
 import {drawMachineBossEffect,drawWormBossEffect} from './bossEffects.js';
 import {AttackSpriteLayer} from './AttackSpriteLayer.js';
 import {collectForestAttackItems} from './forestAttackPresentation.js';
+import {collectMineBodyItems} from './mineAttackPresentation.js';
 export class EnemyView {
-  constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(3);this.bossEffects=scene.add.graphics().setDepth(4.4);this.forestLayer=new AttackSpriteLayer(scene);this.enemies=new Map();this.projectiles=[];this.boss=null;this.bossClip='';this.bossStart=0;}
+  constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(3);this.bossEffects=scene.add.graphics().setDepth(4.4);this.forestLayer=new AttackSpriteLayer(scene);this.mineLayer=new AttackSpriteLayer(scene);this.enemies=new Map();this.projectiles=[];this.boss=null;this.bossClip='';this.bossStart=0;}
   sync(run){
     const g=this.graphics,tick=run.elapsedTicks;g.clear();this.bossEffects.clear();const activeIds=new Set();
     for(const e of run.enemies){
@@ -32,8 +33,9 @@ export class EnemyView {
     this.boss.setVisible(b.state!=='dormant'&&b.state!=='dead').setPosition(Math.round(b.x+b.w/2+tremor),Math.round(b.y+b.h+forestTremor)).setFlipX(flip).setFrame(animationFrame(clip,tick-this.bossStart));
     if(key==='boss'&&b.state==='transition')this.boss.setTint(0xffd5a0);else if(b.phase===2)this.boss.setTint(0xffc6b5);else this.boss.clearTint();
     this.forestLayer.sync(key==='boss'?collectForestAttackItems(b,tick):[]);
+    this.mineLayer.sync(key!=='boss'?collectMineBodyItems(b,tick,this.scene.stage.arena):[]);
     if(key==='machine')drawMachineBossEffect(this.bossEffects,b);
     else if(key==='worm')drawWormBossEffect(this.bossEffects,b);
   }
-  destroy(){this.graphics.destroy();this.bossEffects.destroy();this.forestLayer.destroy();for(const view of this.enemies.values()){view.outline.destroy();view.sprite.destroy();}for(const p of this.projectiles)p.destroy();this.boss?.destroy();this.bossOutline?.destroy();}
+  destroy(){this.graphics.destroy();this.bossEffects.destroy();this.forestLayer.destroy();this.mineLayer.destroy();for(const view of this.enemies.values()){view.outline.destroy();view.sprite.destroy();}for(const p of this.projectiles)p.destroy();this.boss?.destroy();this.bossOutline?.destroy();}
 }

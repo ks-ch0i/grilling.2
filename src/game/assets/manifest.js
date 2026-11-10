@@ -37,7 +37,7 @@ clip('machine.idle','machine','idle','machine',[2,3],{fps:4,loop:true});
 clip('machine.windup','machine','windup','machine',[4,5],{fps:8});
 clip('machine.attack','machine','attack','machine',[6,7],{fps:10});
 clip('machine.chargeWindup','machine','chargeWindup','machine',[4,5],{fps:8});
-clip('machine.chargeAttack','machine','chargeAttack','machine',[6,7],{fps:10});
+clip('machine.chargeAttack','machine','chargeAttack','machine',[6,7],{fps:10,loop:true});
 clip('machine.rocksWindup','machine','rocksWindup','machine',[8,9],{fps:8});
 clip('machine.rocksAttack','machine','rocksAttack','machine',[10,11],{fps:10});
 clip('machine.waveWindup','machine','waveWindup','machine',[12,13],{fps:8});
