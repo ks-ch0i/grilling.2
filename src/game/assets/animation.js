@@ -1,5 +1,6 @@
 import {ANIMATIONS} from './manifest.js';
 import {ATTACK_STARTUP,ATTACK_ACTIVE} from '../sim/constants.js';
+import {ROOT_DELAY_TICKS} from '../sim/boss.js';
 export function playerAnimation(player){
  if(player.mode==='attack')return ANIMATIONS[`hero.attack.${player.facing}`];
  if(player.mode==='idle')return ANIMATIONS[`hero.idle.${player.facing}`];
@@ -19,6 +20,12 @@ export function bossAnimation(boss){
   return ANIMATIONS[`worm.${state}`]??ANIMATIONS['worm.idle'];
  }
  let state='idle';
+ if(boss.attackKind==='root'&&!['dormant','intro','transition','dying','dead'].includes(boss.state)){
+  const effects=boss.rootEffects??[];
+  if(effects.some(e=>e.age<4))return ANIMATIONS['boss.rootPulse'];
+  if(effects.some(e=>e.age<12)||boss.secondRootDelay>0||boss.state==='windup'&&boss.stateTicks<=ROOT_DELAY_TICKS[boss.phase])return ANIMATIONS['boss.rootHold'];
+  if(boss.state==='windup')return ANIMATIONS['boss.rootWindup'];
+ }
  if(boss.state==='intro')state='intro';else if(boss.state==='transition')state='transition';else if(['dying','dead'].includes(boss.state))state='dead';
  else if(['windup','attack'].includes(boss.state)&&['branch','root','slam'].includes(boss.attackKind))state=`${boss.attackKind}${boss.state==='windup'?'Windup':'Attack'}`;
  return ANIMATIONS[`boss.${state}`]??ANIMATIONS['boss.idle'];

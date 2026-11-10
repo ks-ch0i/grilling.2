@@ -7,11 +7,11 @@
 [P01 보스 공격·등장 에셋 연결](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/phase.md)
 
 ## Active Task
-[T01 공격 에셋 원화·패킹·공통 스프라이트 계약](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/T01-asset-pipeline-and-sheets.md)
+[T02 숲 공격과 접지 기준 뿌리 연결](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/T02-forest-root-and-attacks.md)
 
 ## Status
-- 계획 및 4개 상세 청사진 생성 완료. done: 0/4. T01 구현 시작 준비 완료.
-- 이번 `/memory-plan`에서는 `.memory/` 문서만 작성했다. 게임 코드·원화 제작·자산 패킹·테스트·빌드는 실행하지 않았다.
+- done: 1/4. T01을 `6840c83`으로 완료했고 T02를 구현 중이다.
+- T01 원화7종·패킹·공통 스프라이트 계층을 구현했다. 집중 검사13/13과 빌드, PNG 픽셀/투명도 및 재패킹 해시 검사를 통과했다.
 - 확정 결정: [공격 및 등장 에셋 D01~D19](./decisions/2026-11-10-boss-attack-assets.md), [공격 방식 검토](./decisions/2026-11-10-boss-attack-method-review.md).
 - 범위는 숲·기계·벌레 보스의 공격 자세와 외부 공격 에셋이다. 기본 외형·색감·게임상 크기를 유지하며 플레이어 피격 표현은 현행 유지한다.
 - 뿌리는 큰 팔 접지 뒤 1페이즈 60틱에 한 번, 2페이즈 30틱·60틱에 두 번 발생한다. 사전 바닥 예고를 제거하고 본체가 회복 상태여도 뿌리의 표시 수명을 유지한다.
@@ -22,4 +22,4 @@
 - 광산 보스의 체력·공격 선택·RNG·물약40% 단일 롤·피해 규칙과 개발 전용 연습 기능은 기존 기준이다. 과거 타이틀 복귀 원인 조사는 재개하지 않는다. 이전 빌드의 번들 용량 경고와 관리자 인증 구현은 이번 Task 범위에 넣지 않았다.
 
 ## Next Step (IMPORTANT)
-T01 청사진을 읽고 기존 보스 PNG 3종을 관찰·기준선으로 보존한 뒤, 실제 원화와 `scripts/pack-art.mjs`, `src/game/assets/manifest.js`, 공통 FX 계약을 함께 구현한다. T01 → T02 → T03 → T04 순서이며 각 파일에 정확한 입력·출력·검증·커밋 메시지가 있다. `/memory-execute` 또는 'current 보고 이어서 해줘' 요청에서 실행을 시작한다.
+T02 청사진을 읽고 `src/game/sim/boss.js`의 접지24틱·발생60/30틱과 rootEffects 저장 호환을 구현한다. 숲 외부 에셋과 회복 상태의 두 번째 뿌리를 연결한 뒤 검증·커밋하고 T03으로 진행한다. 사용자가 잔여 Task 연속 실행을 요청했다.

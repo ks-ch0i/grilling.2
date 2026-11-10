@@ -24,7 +24,7 @@ clip('boss.idle','boss','idle','boss',[0,1],{fps:4,loop:true});
 clip('boss.intro','boss','intro','boss',[2,3],{fps:4});
 clip('boss.branchWindup','boss','branchWindup','boss',[4,5],{fps:8});
 clip('boss.branchAttack','boss','branchAttack','boss',[6,7,8],{fps:15});
-clip('boss.rootWindup','boss','rootWindup','boss',[9,10],{fps:8});
+clip('boss.rootWindup','boss','rootWindup','boss',[9,10],{fps:5});
 clip('boss.rootAttack','boss','rootAttack','boss',[11,12],{fps:10});
 clip('boss.rootHold','boss','rootHold','boss',[11]);
 clip('boss.rootPulse','boss','rootPulse','boss',[12]);

@@ -59,8 +59,13 @@ export function restoreStageRun(stage,snapshot) {
   }
   if(!Array.isArray(s.projectiles)||s.projectiles.some(v=>!keys(v,['id','ownerId','x','y','w','h','vx','vy','life','alive'])||typeof v.id!=='string'||typeof v.ownerId!=='string'||!['x','y','w','h','vx','vy'].every(k=>Number.isFinite(v[k]))||v.w<=0||v.h<=0||!count(v.life)||typeof v.alive!=='boolean'))throw new TypeError('Invalid projectile snapshot');
   const b=s.boss,bt=stage.id==='mine-1'?createMineBoss(b?.kind,{x:stage.boss.x,y:stage.boss.y}):fresh.boss;
+  if(stage.id==='forest-1'&&object(b)&&!Object.hasOwn(b,'rootEffects')){
+    b.rootEffects=[];
+    if(b.attackKind==='root'&&Array.isArray(b.hitboxes))b.rootEffects=b.hitboxes.filter(h=>rect(h,true)&&h.w===48&&h.h===48&&h.ticks>0&&h.ticks<=12).map(({x,y,w,h,ticks})=>({x,y,w,h,age:12-ticks,strike:b.secondRootDelay>0?1:b.phase===2&&b.state==='recovery'?2:1}));
+  }
   if(!keys(b,Object.keys(bt))||!sameTypes(b,bt)||b.id!==bt.id||b.w!==bt.w||b.h!==bt.h||b.maxHp!==bt.maxHp||!Number.isInteger(b.hp)||b.hp<0||b.hp>b.maxHp||![1,2].includes(b.phase)||!['dormant','intro','transition','windup','attack','recovery','dying','dead'].includes(b.state)||!count(b.stateTicks)||!count(b.cycle)||typeof b.transitioned!=='boolean'||!Array.isArray(b.telegraphs)||!b.telegraphs.every(v=>rect(v))||!Array.isArray(b.hitboxes)||!b.hitboxes.every(v=>rect(v,true)))throw new TypeError('Invalid boss snapshot');
   if(stage.id==='forest-1'&&(!count(b.secondRootDelay)||![null,'branch','root','slam'].includes(b.attackKind)||!(b.secondRoot===null||rect(b.secondRoot))))throw new TypeError('Invalid forest boss');
+  if(stage.id==='forest-1'&&(!Array.isArray(b.rootEffects)||b.rootEffects.length>2||new Set(b.rootEffects.map(e=>e?.strike)).size!==b.rootEffects.length||!b.rootEffects.every(e=>keys(e,['x','y','w','h','age','strike'])&&rect({x:e.x,y:e.y,w:e.w,h:e.h})&&e.w===48&&e.h===48&&count(e.age)&&e.age<24&&[1,2].includes(e.strike))))throw new TypeError('Invalid root effects');
   if(stage.id==='mine-1'){
     if(!count(s.rngState)||s.rngState>0xffffffff||!Array.isArray(s.cartZones)||s.cartZones.length!==5||new Set(s.cartZones.map(z=>z.centerX)).size!==5)throw new TypeError('Invalid mine random state');
     for(const [i,z] of s.cartZones.entries())if(!keys(z,['id','centerX','direction','state','ticks','cartId'])||z.id!==`cart-${i+1}`||!Number.isSafeInteger(z.centerX)||z.centerX<512||z.centerX>=stage.world.width||![-1,1].includes(z.direction)||!['countdown','warning','active'].includes(z.state)||!count(z.ticks)||!(z.cartId===null||typeof z.cartId==='string'))throw new TypeError('Invalid cart zone');
@@ -167,5 +172,6 @@ export function stepStage(previous,input,stage) {
 }
 function death(run,events) {
   run.deaths++;run.elapsedTicks=0;run.deathTicks=DEATH_TICKS;run.arenaLocked=false;run.boss.hitboxes=[];run.boss.telegraphs=[];
+  if(run.stageId==='forest-1'){run.boss.rootEffects=[];run.boss.secondRootDelay=0;run.boss.secondRoot=null;}
   events.push({type:'stage:death',deaths:run.deaths});return {run,events};
 }
