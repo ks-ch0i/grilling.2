@@ -1,4 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {AudioManager,SFX} from '../src/game/audio/AudioManager.js';
+import {EVENT_SFX} from '../src/game/audio/eventSounds.js';
 function fixture(){let now=1,plays=0,pauses=0,closed=0,recoveries=0,listeners=new Set(),voices=[];
  const param={setValueAtTime(){},exponentialRampToValueAtTime(){}};
  const ctx={state:'suspended',currentTime:0,destination:{},resume(){this.state='running';return Promise.resolve();},close(){closed++;},createOscillator(){const o={frequency:param,connect(){},disconnect(){},start(){},stop(){},type:'',onended:null};voices.push(o);return o;},createGain(){return{gain:param,connect(){},disconnect(){}};}};
@@ -19,4 +20,5 @@ test('mine music changes tracks and the same boss track keeps playing through bo
 });
 test('every promised sound has a bounded, reproducible synthesis recipe',()=>{for(const id of ['step','jump','swing','hit','roll','dive','hurt','heal','enemyDeath','bossIntro','bossPhase','bossDeath','victory','cartWarning','acid','machine','wormEmergence']){assert.ok(SFX[id].duration>0&&SFX[id].duration<=1);assert.ok(SFX[id].from>0&&SFX[id].to>0&&SFX[id].interval>0);}});
 test('boss phase cue uses the short descending roar recipe',()=>{assert.deepEqual(SFX.bossPhase,{from:220,to:70,duration:.55,type:'sawtooth',interval:.7});});
+test('worm emergence roar is descending and belongs only to the floor-burst event',()=>{assert.equal(EVENT_SFX['boss:worm-intro'],undefined);assert.equal(EVENT_SFX['boss:worm-burst'],'wormEmergence');assert.equal(EVENT_SFX['boss:transition'],'bossPhase');assert.deepEqual(SFX.wormEmergence,{from:180,to:45,duration:.75,type:'sawtooth',interval:.7});});
 test('failed audio unlock is reported instead of throwing',async()=>{const errors=[];let recoveries=0;const a=new AudioManager({createContext:()=>{throw Error('blocked')},onError:e=>errors.push(e),onRecovered:()=>recoveries++});assert.equal(await a.unlock(),false);assert.equal(errors.length,1);assert.equal(recoveries,0);});

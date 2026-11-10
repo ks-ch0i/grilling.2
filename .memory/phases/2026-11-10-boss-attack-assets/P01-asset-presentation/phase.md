@@ -5,13 +5,14 @@
 | :--- | :--- | :--- | :--- |
 | T01 | `done ✅` | 본체 원화·외부 효과 시트와 고정 좌표 패킹·공통 스프라이트 계약 | [T01](./T01-asset-pipeline-and-sheets.md) |
 | T02 | `done ✅` | 숲 공격 연결·접지 기준 뿌리 시간·두 번째 뿌리·저장 호환 | [T02](./T02-forest-root-and-attacks.md) |
-| T03 | `in_progress 🔵` | 기계·벌레의 외부 공격 및 보스 소유 hazard 스프라이트 | [T03](./T03-mine-boss-attack-effects.md) |
-| T04 | `pending` | 4초 벌레 등장·포효·연습/복구 연결과 전체 회귀 검증 | [T04](./T04-worm-entrance-and-regression.md) |
+| T03 | `done ✅` | 기계·벌레의 외부 공격 및 보스 소유 hazard 스프라이트 | [T03](./T03-mine-boss-attack-effects.md) |
+| T04 | `in_progress 🔵` | 4초 벌레 등장·포효·연습/복구 연결과 전체 회귀 검증 | [T04](./T04-worm-entrance-and-regression.md) |
 
 ## Progress
-- done: 2/4 (active: T03)
+- done: 3/4 (active: T04)
 - T01: `6840c83`. Built-in imagegen 원화7종, 고정 격자 패킹, 기준선 픽셀 보존, 공통 FxItem/layer. 집중 검사13/13·빌드 통과, 패킹 SHA256 재현 확인. 기존 약1,458KB 번들 경고 유지.
 - T02: `5cf501e`. 숲 외부 스프라이트, 접지24틱+60/30틱 뿌리, 회복 중 독립 표시, 이전 저장 보충. 집중 검사39/39·빌드 통과.
+- T03: `ced5df5`. 기계·벌레 전용 공격/위험체 스프라이트와 소유자 분리, HUD 아래 낙석 예고. 집중 검사32/32·빌드 통과.
 
 ## Execution Rules
 - T01 → T02 → T03 → T04 순서로 실행한다. 각 Task 파일에 선행 Task가 제공하는 계약을 다시 명시한다.

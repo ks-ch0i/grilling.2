@@ -20,7 +20,7 @@ test('stage and boss practice targets start with full health and valid state',()
   assert.deepEqual(snapshotStageRun(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshot)))),snapshot);
   if(target.id.endsWith('-start'))assert.equal(run.player.x,stage.spawn.x);
   else assert.ok(run.player.x>=stage.arena.left+16);
-  if(target.id==='mine-worm'){assert.equal(run.boss.kind,'worm');assert.equal(run.bossSequence,'worm-intro');assert.equal(run.boss.stateTicks,180);}
+  if(target.id==='mine-worm'){assert.equal(run.boss.kind,'worm');assert.equal(run.bossSequence,'worm-intro');assert.equal(run.boss.stateTicks,240);}
   if(target.id==='mine-machine')assert.equal(run.boss.kind,'machine');
   assert.doesNotThrow(()=>stepStage(run,input,stage));
  }

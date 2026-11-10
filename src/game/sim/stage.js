@@ -7,6 +7,7 @@ import { createBoss, damageBoss, stepBoss } from './boss.js';
 import {stepHazards} from './hazards.js';
 import {createCartZones,stepCartZones,nextRandom} from './mineCarts.js';
 import {createMineBoss,damageMineBoss,stepMineBoss,shouldDropPotion} from './mineBoss.js';
+import {WORM_INTRO_TICKS,WORM_INTRO_BURST_TICK} from './wormIntro.js';
 const DEATH_TICKS=60;
 function freshPlayer(point) { const p=createPlayer(point.x,point.y);p.grounded=true;return p; }
 export function stageTerrain(stage,locked) {
@@ -67,6 +68,7 @@ export function restoreStageRun(stage,snapshot) {
   if(stage.id==='forest-1'&&(!count(b.secondRootDelay)||![null,'branch','root','slam'].includes(b.attackKind)||!(b.secondRoot===null||rect(b.secondRoot))))throw new TypeError('Invalid forest boss');
   if(stage.id==='forest-1'&&(!Array.isArray(b.rootEffects)||b.rootEffects.length>2||new Set(b.rootEffects.map(e=>e?.strike)).size!==b.rootEffects.length||!b.rootEffects.every(e=>keys(e,['x','y','w','h','age','strike'])&&rect({x:e.x,y:e.y,w:e.w,h:e.h})&&e.w===48&&e.h===48&&count(e.age)&&e.age<24&&[1,2].includes(e.strike))))throw new TypeError('Invalid root effects');
   if(stage.id==='mine-1'){
+    if(s.bossSequence==='worm-intro'&&(b.stateTicks<1||b.stateTicks>WORM_INTRO_TICKS))throw new TypeError('Invalid worm intro timer');
     if(!count(s.rngState)||s.rngState>0xffffffff||!Array.isArray(s.cartZones)||s.cartZones.length!==5||new Set(s.cartZones.map(z=>z.centerX)).size!==5)throw new TypeError('Invalid mine random state');
     for(const [i,z] of s.cartZones.entries())if(!keys(z,['id','centerX','direction','state','ticks','cartId'])||z.id!==`cart-${i+1}`||!Number.isSafeInteger(z.centerX)||z.centerX<512||z.centerX>=stage.world.width||![-1,1].includes(z.direction)||!['countdown','warning','active'].includes(z.state)||!count(z.ticks)||!(z.cartId===null||typeof z.cartId==='string'))throw new TypeError('Invalid cart zone');
     if(!Array.isArray(s.hazards)||s.hazards.some(h=>!keys(h,['id','ownerId','kind','x','y','w','h','vx','vy','life','alive'],['remaining','poolTicks'])||typeof h.id!=='string'||typeof h.ownerId!=='string'||!['wave','acid-shot','acid-pool','cart','rock','mineral'].includes(h.kind)||!['x','y','w','h','vx','vy'].every(k=>Number.isFinite(h[k]))||h.w<=0||h.h<=0||!count(h.life)||typeof h.alive!=='boolean'||h.kind==='wave'&&(!Number.isFinite(h.remaining)||h.remaining<0)||h.kind==='acid-shot'&&(!count(h.poolTicks)||!h.poolTicks)))throw new TypeError('Invalid hazards');
@@ -109,7 +111,10 @@ export function stepStage(previous,input,stage) {
   }
   run.elapsedTicks++;
   if(run.bossSequence==='worm-intro'){
+    const beforeRemaining=run.boss.stateTicks;
     const result=stepMineBoss(run.boss,run.player,stage.arena,run.rngState);run.boss=result.boss;run.rngState=result.rng;events.push(...result.events);
+    const burstRemaining=WORM_INTRO_TICKS-WORM_INTRO_BURST_TICK;
+    if(beforeRemaining>burstRemaining&&run.boss.stateTicks<=burstRemaining)events.push({type:'boss:worm-burst'});
     if(run.boss.state!=='intro')run.bossSequence='worm';
     return {run,events};
   }
@@ -158,7 +163,7 @@ export function stepStage(previous,input,stage) {
     if(run.stageId==='mine-1'&&run.bossSequence==='machine'){
       const roll=nextRandom(run.rngState);run.rngState=roll.state;run.bossDrop={rolled:true,spawned:shouldDropPotion(roll.value),consumed:false,x:run.boss.x+run.boss.w/2-8,y:stage.arena.bottom-16};
       run.projectiles=[];run.hazards=[];run.player.attackTick=0;run.player.hitIds.clear();if(run.player.mode==='attack')run.player.mode=run.player.grounded?'idle':'fall';
-      run.boss=createMineBoss('worm',{x:(stage.arena.left+stage.arena.right)/2-48,y:stage.arena.bottom-64});run.boss.state='intro';run.boss.stateTicks=180;run.bossSequence='worm-intro';
+      run.boss=createMineBoss('worm',{x:(stage.arena.left+stage.arena.right)/2-48,y:stage.arena.bottom-64});run.boss.state='intro';run.boss.stateTicks=WORM_INTRO_TICKS;run.bossSequence='worm-intro';
       events.push({type:'boss:worm-intro'});return {run,events};
     }
     run.outcome='clear';run.arenaLocked=false;if(run.stageId==='mine-1')run.bossSequence='done';events.push({type:'stage:clear',elapsedTicks:run.elapsedTicks,deaths:run.deaths});return {run,events};

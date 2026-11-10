@@ -1,0 +1,689 @@
+
+> pixel-action@1.0.0 test
+> node --test test/*.test.js
+
+TAP version 13
+# Subtest: hero has all 8 directions for idle, walking and attack
+ok 1 - hero has all 8 directions for idle, walking and attack
+  ---
+  duration_ms: 1.9583
+  ...
+# Subtest: mine enemies and each boss resolve their own poses
+ok 2 - mine enemies and each boss resolve their own poses
+  ---
+  duration_ms: 0.6631
+  ...
+# Subtest: attack poses follow attack ticks and current direction without restarting
+ok 3 - attack poses follow attack ticks and current direction without restarting
+  ---
+  duration_ms: 0.5548
+  ...
+# Subtest: enemy and boss states select clips and frame time depends on ticks
+ok 4 - enemy and boss states select clips and frame time depends on ticks
+  ---
+  duration_ms: 0.475
+  ...
+# Subtest: forest attack sheets and independent root presentation map to actual hit regions
+ok 5 - forest attack sheets and independent root presentation map to actual hit regions
+  ---
+  duration_ms: 0.7265
+  ...
+# Subtest: machine uses attack-specific poses for charge, rocks, wave and mineral spray
+ok 6 - machine uses attack-specific poses for charge, rocks, wave and mineral spray
+  ---
+  duration_ms: 0.997
+  ...
+# Subtest: worm uses distinct attack poses and draws cues inside the existing attack bounds
+ok 7 - worm uses distinct attack poses and draws cues inside the existing attack bounds
+  ---
+  duration_ms: 0.8545
+  ...
+# Subtest: real PNG files decode with valid alpha, cells and frame gutters
+ok 8 - real PNG files decode with valid alpha, cells and frame gutters
+  ---
+  duration_ms: 240.2996
+  ...
+# Subtest: invalid real image fixture and missing runtime textures are rejected
+ok 9 - invalid real image fixture and missing runtime textures are rejected
+  ---
+  duration_ms: 2.0714
+  ...
+# Subtest: non-attack boss frames retain the exact baseline pixels
+ok 10 - non-attack boss frames retain the exact baseline pixels
+  ---
+  duration_ms: 231.1735
+  ...
+# Subtest: attack readiness matches actionable player modes
+ok 11 - attack readiness matches actionable player modes
+  ---
+  duration_ms: 1.1475
+  ...
+# Subtest: unavailable modes show progress and ready transition flashes for eight ticks
+ok 12 - unavailable modes show progress and ready transition flashes for eight ticks
+  ---
+  duration_ms: 1.0482
+  ...
+# Subtest: pause, death and clock resets do not create spurious readiness flashes
+ok 13 - pause, death and clock resets do not create spurious readiness flashes
+  ---
+  duration_ms: 0.3548
+  ...
+# Subtest: attack ending tick discards input and hurt ending tick accepts it
+ok 14 - attack ending tick discards input and hurt ending tick accepts it
+  ---
+  duration_ms: 1.0828
+  ...
+# Subtest: sword sweeps 100 degrees during active ticks and returns to aim
+ok 15 - sword sweeps 100 degrees during active ticks and returns to aim
+  ---
+  duration_ms: 1.4122
+  ...
+# Subtest: identity survives order changes and cleanup destroys only removed effects
+ok 16 - identity survives order changes and cleanup destroys only removed effects
+  ---
+  duration_ms: 2.8304
+  ...
+# Subtest: unlock, sound throttling, mute, pause/resume and cleanup
+ok 17 - unlock, sound throttling, mute, pause/resume and cleanup
+  ---
+  duration_ms: 3.8364
+  ...
+# Subtest: mine music changes tracks and the same boss track keeps playing through both bosses
+ok 18 - mine music changes tracks and the same boss track keeps playing through both bosses
+  ---
+  duration_ms: 0.5249
+  ...
+# Subtest: every promised sound has a bounded, reproducible synthesis recipe
+ok 19 - every promised sound has a bounded, reproducible synthesis recipe
+  ---
+  duration_ms: 0.3854
+  ...
+# Subtest: boss phase cue uses the short descending roar recipe
+ok 20 - boss phase cue uses the short descending roar recipe
+  ---
+  duration_ms: 1.3884
+  ...
+# Subtest: worm emergence roar is descending and belongs only to the floor-burst event
+ok 21 - worm emergence roar is descending and belongs only to the floor-burst event
+  ---
+  duration_ms: 0.3927
+  ...
+# Subtest: failed audio unlock is reported instead of throwing
+ok 22 - failed audio unlock is reported instead of throwing
+  ---
+  duration_ms: 0.3135
+  ...
+# Subtest: boss direction follows viewport edges and active boss states
+ok 23 - boss direction follows viewport edges and active boss states
+  ---
+  duration_ms: 1.5682
+  ...
+# Subtest: all effect frames resolve to real registered sheets
+ok 24 - all effect frames resolve to real registered sheets
+  ---
+  duration_ms: 4.9792
+  ...
+# Subtest: active and recovery effects use explicit simulation time and anchored cores
+ok 25 - active and recovery effects use explicit simulation time and anchored cores
+  ---
+  duration_ms: 1.8294
+  ...
+# Subtest: boss intro, telegraphs and single phase transition follow fixed ticks
+ok 26 - boss intro, telegraphs and single phase transition follow fixed ticks
+  ---
+  duration_ms: 2.7451
+  ...
+# Subtest: second phase root creates a second hitbox after 30 ticks
+ok 27 - second phase root creates a second hitbox after 30 ticks
+  ---
+  duration_ms: 0.4933
+  ...
+# Subtest: roots use a distinct ground contact followed by phase-specific delays and locked targets
+ok 28 - roots use a distinct ground contact followed by phase-specific delays and locked targets
+  ---
+  duration_ms: 2.2276
+  ...
+# Subtest: phase change and death cancel pending roots and their independent effects
+ok 29 - phase change and death cancel pending roots and their independent effects
+  ---
+  duration_ms: 0.6043
+  ...
+# Subtest: eight directions and aim fallback
+ok 30 - eight directions and aim fallback
+  ---
+  duration_ms: 2.4851
+  ...
+# Subtest: sector tests full rectangles, range, directions and solid wall
+ok 31 - sector tests full rectangles, range, directions and solid wall
+  ---
+  duration_ms: 1.4401
+  ...
+# Subtest: a target takes one hit per swing and partly exposed targets remain hittable
+ok 32 - a target takes one hit per swing and partly exposed targets remain hittable
+  ---
+  duration_ms: 0.3644
+  ...
+# Subtest: the displayed attack sector is clipped by walls while exposed edges remain
+ok 33 - the displayed attack sector is clipped by walls while exposed edges remain
+  ---
+  duration_ms: 1.0497
+  ...
+# Subtest: dive impact is centered and approximately 30 percent larger in each dimension
+ok 34 - dive impact is centered and approximately 30 percent larger in each dimension
+  ---
+  duration_ms: 0.2555
+  ...
+# Subtest: soldier locks direction during windup and cancels on damage
+ok 35 - soldier locks direction during windup and cancels on damage
+  ---
+  duration_ms: 1.9486
+  ...
+# Subtest: wisp shoots once toward the locked target and projectile ends on collision
+ok 36 - wisp shoots once toward the locked target and projectile ends on collision
+  ---
+  duration_ms: 1.501
+  ...
+# Subtest: boar charge stops at a ledge, and death hides enemy after 30 ticks
+ok 37 - boar charge stops at a ledge, and death hides enemy after 30 ticks
+  ---
+  duration_ms: 0.6442
+  ...
+# Subtest: root preparation has no floor marker and body holds the planted arm until eruption
+ok 38 - root preparation has no floor marker and body holds the planted arm until eruption
+  ---
+  duration_ms: 2.6906
+  ...
+# Subtest: second root remains visible during recovery and retracts after its damage ends
+ok 39 - second root remains visible during recovery and retracts after its damage ends
+  ---
+  duration_ms: 0.6396
+  ...
+# Subtest: branch and slam cores meet the correct body edge in both directions
+ok 40 - branch and slam cores meet the correct body edge in both directions
+  ---
+  duration_ms: 7.2307
+  ...
+# Subtest: all root stages preserve their next simulation tick and presentation through JSON saves
+ok 41 - all root stages preserve their next simulation tick and presentation through JSON saves
+  ---
+  duration_ms: 95.227
+  ...
+# Subtest: legacy snapshots get only missing presentation state; malformed new state is rejected
+ok 42 - legacy snapshots get only missing presentation state; malformed new state is rejected
+  ---
+  duration_ms: 4.0731
+  ...
+# Subtest: forest validates and its five pits stay open
+ok 43 - forest validates and its five pits stay open
+  ---
+  duration_ms: 2.1995
+  ...
+# Subtest: nine supported enemies form two mixed pairs away from pit approaches
+ok 44 - nine supported enemies form two mixed pairs away from pit approaches
+  ---
+  duration_ms: 2.4874
+  ...
+# Subtest: a normal full jump crosses each 64 pixel pit
+ok 45 - a normal full jump crosses each 64 pixel pit
+  ---
+  duration_ms: 5.3161
+  ...
+# Subtest: full jumps can reach all raised platforms
+ok 46 - full jumps can reach all raised platforms
+  ---
+  duration_ms: 1.8057
+  ...
+# Subtest: a short jump reaches each low step
+ok 47 - a short jump reaches each low step
+  ---
+  duration_ms: 0.6758
+  ...
+# Subtest: edges ignore repeat and held mouse, simultaneous directions cancel and blur clears input
+ok 48 - edges ignore repeat and held mouse, simultaneous directions cancel and blur clears input
+  ---
+  duration_ms: 2.5339
+  ...
+# Subtest: interactive controls do not feed gameplay keys and disabling clears queued input
+ok 49 - interactive controls do not feed gameplay keys and disabling clears queued input
+  ---
+  duration_ms: 0.9975
+  ...
+# Subtest: valid damage pushes exactly twelve ticks away and preserves recovery input
+ok 50 - valid damage pushes exactly twelve ticks away and preserves recovery input
+  ---
+  duration_ms: 2.3533
+  ...
+# Subtest: airborne knockback preserves gravity, and equal or absent source uses facing fallback
+ok 51 - airborne knockback preserves gravity, and equal or absent source uses facing fallback
+  ---
+  duration_ms: 0.3646
+  ...
+# Subtest: immune and lethal hits do not create or reset a push; pits remain lethal
+ok 52 - immune and lethal hits do not create or reset a push; pits remain lethal
+  ---
+  duration_ms: 0.3791
+  ...
+# Subtest: contact, enemy attack and actual projectile collision use their own origins
+ok 53 - contact, enemy attack and actual projectile collision use their own origins
+  ---
+  duration_ms: 5.7675
+  ...
+# Subtest: boss hitbox direction comes from the hitbox and boss body can be separated
+ok 54 - boss hitbox direction comes from the hitbox and boss body can be separated
+  ---
+  duration_ms: 4.4876
+  ...
+# Subtest: deep contact separates after push, while a solid wall prevents escape and damage resumes
+ok 55 - deep contact separates after push, while a solid wall prevents escape and damage resumes
+  ---
+  duration_ms: 3.9399
+  ...
+# Subtest: two overlapping enemies cause one hit and do not reset the initial knockback
+ok 56 - two overlapping enemies cause one hit and do not reset the initial knockback
+  ---
+  duration_ms: 0.4525
+  ...
+# Subtest: knockback can push off a pit edge and pit death is unchanged
+ok 57 - knockback can push off a pit edge and pit death is unchanged
+  ---
+  duration_ms: 2.737
+  ...
+# Subtest: new run preserves records and settings while enabling continue
+ok 58 - new run preserves records and settings while enabling continue
+  ---
+  duration_ms: 4.3844
+  ...
+# Subtest: only unlocked stages may be started and changing stage keeps records and settings
+ok 59 - only unlocked stages may be started and changing stage keeps records and settings
+  ---
+  duration_ms: 1.7407
+  ...
+# Subtest: only promised boss owner and kind pairs select new hazard sprites
+ok 60 - only promised boss owner and kind pairs select new hazard sprites
+  ---
+  duration_ms: 2.8179
+  ...
+# Subtest: rock warnings sit below HUD and tail core joins the proper body edge
+ok 61 - rock warnings sit below HUD and tail core joins the proper body edge
+  ---
+  duration_ms: 0.6225
+  ...
+# Subtest: each burrow warning follows its locked target and clears when the strike begins
+ok 62 - each burrow warning follows its locked target and clears when the strike begins
+  ---
+  duration_ms: 0.4605
+  ...
+# Subtest: presentation is stable across JSON restore and never changes the next simulation result
+ok 63 - presentation is stable across JSON restore and never changes the next simulation result
+  ---
+  duration_ms: 8.3853
+  ...
+# Subtest: real hazard view renders boss sprites while keeping ordinary enemy geometry and cleanup
+ok 64 - real hazard view renders boss sprites while keeping ordinary enemy geometry and cleanup
+  ---
+  duration_ms: 1.736
+  ...
+# Subtest: machine selects charge at close range and varied far attacks without consecutive repetition
+ok 65 - machine selects charge at close range and varied far attacks without consecutive repetition
+  ---
+  duration_ms: 3.1969
+  ...
+# Subtest: a short jump cannot clear the 30px wave while a long jump can
+ok 66 - a short jump cannot clear the 30px wave while a long jump can
+  ---
+  duration_ms: 1.5182
+  ...
+# Subtest: machine death does not clear; drop is rolled once and worm entrance freezes exactly 240 ticks
+ok 67 - machine death does not clear; drop is rolled once and worm entrance freezes exactly 240 ticks
+  ---
+  duration_ms: 53.902
+  ...
+# Subtest: worm phase 2 warns and retargets its second underground strike
+ok 68 - worm phase 2 warns and retargets its second underground strike
+  ---
+  duration_ms: 1.7248
+  ...
+# Subtest: worm transition lasts 30 ticks while the player can keep moving
+ok 69 - worm transition lasts 30 ticks while the player can keep moving
+  ---
+  duration_ms: 2.6834
+  ...
+# Subtest: worm snapshots survive introduction and second warning; only worm death clears
+ok 70 - worm snapshots survive introduction and second warning; only worm death clears
+  ---
+  duration_ms: 4.2472
+  ...
+# Subtest: machine emits paired 30px waves and falling rocks; worm spit makes a four-second pool
+ok 71 - machine emits paired 30px waves and falling rocks; worm spit makes a four-second pool
+  ---
+  duration_ms: 0.5173
+  ...
+# Subtest: machine mineral spray launches 5–7 deterministic crystals toward the player within 120px
+ok 72 - machine mineral spray launches 5–7 deterministic crystals toward the player within 120px
+  ---
+  duration_ms: 2.5908
+  ...
+# Subtest: mineral flight collision and landing impact each damage at most once
+ok 73 - mineral flight collision and landing impact each damage at most once
+  ---
+  duration_ms: 0.7467
+  ...
+# Subtest: machine mineral hazards and attack kinds survive snapshots; removed swipe is rejected
+ok 74 - machine mineral hazards and attack kinds survive snapshots; removed swipe is rejected
+  ---
+  duration_ms: 2.9709
+  ...
+# Subtest: multiple mineral contacts preserve the existing 45-tick single-heart protection
+ok 75 - multiple mineral contacts preserve the existing 45-tick single-heart protection
+  ---
+  duration_ms: 0.7867
+  ...
+# Subtest: live boss simulation stays valid while saving active attacks
+ok 76 - live boss simulation stays valid while saving active attacks
+  ---
+  duration_ms: 507.2402
+  ...
+# Subtest: five distinct locations avoid only the starting segment and repeated random values terminate
+ok 77 - five distinct locations avoid only the starting segment and repeated random values terminate
+  ---
+  duration_ms: 2.6066
+  ...
+# Subtest: cart warns, spawns, disappears and waits 600 ticks
+ok 78 - cart warns, spawns, disappears and waits 600 ticks
+  ---
+  duration_ms: 4.497
+  ...
+# Subtest: mine enemies have specified health and golem creates opposite waves
+ok 79 - mine enemies have specified health and golem creates opposite waves
+  ---
+  duration_ms: 2.5469
+  ...
+# Subtest: waves stop at their range, a ledge, or a wall
+ok 80 - waves stop at their range, a ledge, or a wall
+  ---
+  duration_ms: 0.881
+  ...
+# Subtest: acid arcs and leaves a 120 tick puddle; persistent contact emits repeated hit opportunities
+ok 81 - acid arcs and leaves a 120 tick puddle; persistent contact emits repeated hit opportunities
+  ---
+  duration_ms: 0.7987
+  ...
+# Subtest: bat keeps the windup target and returns to its original height
+ok 82 - bat keeps the windup target and returns to its original height
+  ---
+  duration_ms: 2.09
+  ...
+# Subtest: forest clear persists its record and mine start together; mine clear preserves both records
+ok 83 - forest clear persists its record and mine start together; mine clear preserves both records
+  ---
+  duration_ms: 9.6354
+  ...
+# Subtest: mine death save restores the countdown then resets the full encounter and rerolls cart zones
+ok 84 - mine death save restores the countdown then resets the full encounter and rerolls cart zones
+  ---
+  duration_ms: 13.766
+  ...
+# Subtest: mine encounters round-trip and produce identical next ticks at each dangerous save boundary
+ok 85 - mine encounters round-trip and produce identical next ticks at each dangerous save boundary
+  ---
+  duration_ms: 15.8123
+  ...
+# Subtest: mine enemy, both bosses, cart and shockwave each deal one heart and then respect invulnerability
+ok 86 - mine enemy, both bosses, cart and shockwave each deal one heart and then respect invulnerability
+  ---
+  duration_ms: 3.0827
+  ...
+# Subtest: mine is valid, has nine enemies and three recovery items
+ok 87 - mine is valid, has nine enemies and three recovery items
+  ---
+  duration_ms: 2.2109
+  ...
+# Subtest: mine snapshot preserves random zones and hazard state through actual save parsing
+ok 88 - mine snapshot preserves random zones and hazard state through actual save parsing
+  ---
+  duration_ms: 7.9466
+  ...
+# Subtest: death regenerates cart zones while continuation preserves them
+ok 89 - death regenerates cart zones while continuation preserves them
+  ---
+  duration_ms: 6.7993
+  ...
+# Subtest: a swing destroys a cart and a persistent pool damages again after invulnerability
+ok 90 - a swing destroys a cart and a persistent pool damages again after invulnerability
+  ---
+  duration_ms: 15.9289
+  ...
+# Subtest: live mine states remain serializable through cart warnings and spawns
+ok 91 - live mine states remain serializable through cart warnings and spawns
+  ---
+  duration_ms: 281.4646
+  ...
+# Subtest: jump height depends on hold; air jump is rejected and landing restores jump
+ok 92 - jump height depends on hold; air jump is rejected and landing restores jump
+  ---
+  duration_ms: 5.9673
+  ...
+# Subtest: axis collisions stop at walls, ceilings, thin platforms and falling into pits kills
+ok 93 - axis collisions stop at walls, ceilings, thin platforms and falling into pits kills
+  ---
+  duration_ms: 1.273
+  ...
+# Subtest: roll protects every movement tick, then cooldown prevents restart
+ok 94 - roll protects every movement tick, then cooldown prevents restart
+  ---
+  duration_ms: 0.5942
+  ...
+# Subtest: damage grants immunity and death happens once
+ok 95 - damage grants immunity and death happens once
+  ---
+  duration_ms: 0.5206
+  ...
+# Subtest: dive requires air, falls vertically and starts cooldown at landing
+ok 96 - dive requires air, falls vertically and starts cooldown at landing
+  ---
+  duration_ms: 0.4192
+  ...
+# Subtest: attacks track current aim without queuing another swing
+ok 97 - attacks track current aim without queuing another swing
+  ---
+  duration_ms: 0.4875
+  ...
+# Subtest: attack has four startup, five active and ten recovery ticks
+ok 98 - attack has four startup, five active and ten recovery ticks
+  ---
+  duration_ms: 0.8546
+  ...
+# Subtest: turning during an active swing moves the hit area with the aim
+ok 99 - turning during an active swing moves the hit area with the aim
+  ---
+  duration_ms: 1.7658
+  ...
+# Subtest: a dive ignores enemy damage until landing and starts its cooldown
+ok 100 - a dive ignores enemy damage until landing and starts its cooldown
+  ---
+  duration_ms: 0.6529
+  ...
+# Subtest: only a reload of an active tab with a saved run triggers recovery
+ok 101 - only a reload of an active tab with a saved run triggers recovery
+  ---
+  duration_ms: 1.446
+  ...
+# Subtest: unavailable session storage cannot prevent normal play
+ok 102 - unavailable session storage cannot prevent normal play
+  ---
+  duration_ms: 0.553
+  ...
+# Subtest: round selector is available only in development and can be disabled
+ok 103 - round selector is available only in development and can be disabled
+  ---
+  duration_ms: 1.067
+  ...
+# Subtest: stage and boss practice targets start with full health and valid state
+ok 104 - stage and boss practice targets start with full health and valid state
+  ---
+  duration_ms: 17.6758
+  ...
+# Subtest: creating practice rounds does not change the saved run or records
+ok 105 - creating practice rounds does not change the saved run or records
+  ---
+  duration_ms: 0.8807
+  ...
+# Subtest: pickup and death flush actual state and dispose removes listeners
+ok 106 - pickup and death flush actual state and dispose removes listeners
+  ---
+  duration_ms: 3.3886
+  ...
+# Subtest: save cadence survives time reset, errors surface and clear is exactly once
+ok 107 - save cadence survives time reset, errors surface and clear is exactly once
+  ---
+  duration_ms: 2.2151
+  ...
+# Subtest: v2 validates complete snapshots, records and settings
+ok 108 - v2 validates complete snapshots, records and settings
+  ---
+  duration_ms: 9.3985
+  ...
+# Subtest: recognized v1 is reset and written once without touching unrelated keys
+ok 109 - recognized v1 is reset and written once without touching unrelated keys
+  ---
+  duration_ms: 2.1834
+  ...
+# Subtest: v1 reset write failure is visible and can retry
+ok 110 - v1 reset write failure is visible and can retry
+  ---
+  duration_ms: 0.7782
+  ...
+# Subtest: storage errors are returned and writes validate before touching storage
+ok 111 - storage errors are returned and writes validate before touching storage
+  ---
+  duration_ms: 0.5036
+  ...
+# Subtest: records are stage-specific and ties retain the earlier paired deaths
+ok 112 - records are stage-specific and ties retain the earlier paired deaths
+  ---
+  duration_ms: 9.6584
+  ...
+# Subtest: corrupt, malformed v1 and future saves are never overwritten
+ok 113 - corrupt, malformed v1 and future saves are never overwritten
+  ---
+  duration_ms: 1.6013
+  ...
+# Subtest: failed writes retry and initially unreadable existing slots remain protected
+ok 114 - failed writes retry and initially unreadable existing slots remain protected
+  ---
+  duration_ms: 7.8003
+  ...
+# Subtest: death resets pickups, enemies and elapsed time but preserves deaths
+ok 115 - death resets pickups, enemies and elapsed time but preserves deaths
+  ---
+  duration_ms: 19.1807
+  ...
+# Subtest: death returns to start and snapshots are validated
+ok 116 - death returns to start and snapshots are validated
+  ---
+  duration_ms: 24.7577
+  ...
+# Subtest: combat snapshot JSON round trip preserves the next tick, including sets and boss attack
+ok 117 - combat snapshot JSON round trip preserves the next tick, including sets and boss attack
+  ---
+  duration_ms: 25.0906
+  ...
+# Subtest: restoring mid-death does not add another death and resumes countdown
+ok 118 - restoring mid-death does not add another death and resumes countdown
+  ---
+  duration_ms: 9.9188
+  ...
+# Subtest: arena locks on entry, death unlocks, and restore resets boss
+ok 119 - arena locks on entry, death unlocks, and restore resets boss
+  ---
+  duration_ms: 5.9204
+  ...
+# Subtest: the player can move and jump while the boss enters
+ok 120 - the player can move and jump while the boss enters
+  ---
+  duration_ms: 7.5577
+  ...
+# Subtest: the mixed enemy pairs can react together at their actual spawn positions
+ok 121 - the mixed enemy pairs can react together at their actual spawn positions
+  ---
+  duration_ms: 3.149
+  ...
+# Subtest: dive landing damages only enemies overlapping the impact area
+ok 122 - dive landing damages only enemies overlapping the impact area
+  ---
+  duration_ms: 0.8027
+  ...
+# Subtest: diving through an enemy and landing on it preserves hp and deals one impact
+ok 123 - diving through an enemy and landing on it preserves hp and deals one impact
+  ---
+  duration_ms: 4.0212
+  ...
+# Subtest: boss contact and attacks cannot interrupt a diving player
+ok 124 - boss contact and attacks cannot interrupt a diving player
+  ---
+  duration_ms: 1.7412
+  ...
+# Subtest: dive landing during boss intro does not apply damage
+ok 125 - dive landing during boss intro does not apply damage
+  ---
+  duration_ms: 4.5711
+  ...
+# Subtest: attack input is accepted during boss intro and transition while damage stays locked
+ok 126 - attack input is accepted during boss intro and transition while damage stays locked
+  ---
+  duration_ms: 1.3856
+  ...
+# Subtest: simultaneous lethal collision wins over the player swing
+ok 127 - simultaneous lethal collision wins over the player swing
+  ---
+  duration_ms: 0.6169
+  ...
+# Subtest: boss death unlocks arena and emits clear once after victory
+ok 128 - boss death unlocks arena and emits clear once after victory
+  ---
+  duration_ms: 10.1606
+  ...
+# Subtest: all three enemy kinds can be defeated through the player combat loop
+ok 129 - all three enemy kinds can be defeated through the player combat loop
+  ---
+  duration_ms: 26.8096
+  ...
+# Subtest: time resets at death and stays zero until the next attempt
+ok 130 - time resets at death and stays zero until the next attempt
+  ---
+  duration_ms: 3.8647
+  ...
+# Subtest: intro overlays actually paint black, cover HUD and clear across scene reuse
+ok 131 - intro overlays actually paint black, cover HUD and clear across scene reuse
+  ---
+  duration_ms: 5.6164
+  ...
+# Subtest: body and outline share one visibility decision and reveal starts its clip at zero
+ok 132 - body and outline share one visibility decision and reveal starts its clip at zero
+  ---
+  duration_ms: 1.0678
+  ...
+# Subtest: four-second timeline hides the body until blackout ends and has exact stage boundaries
+ok 133 - four-second timeline hides the body until blackout ends and has exact stage boundaries
+  ---
+  duration_ms: 7.5412
+  ...
+# Subtest: practice intro freezes exactly 240 ticks and emits one roar at floor burst rather than creation
+ok 134 - practice intro freezes exactly 240 ticks and emits one roar at floor burst rather than creation
+  ---
+  duration_ms: 33.3116
+  ...
+# Subtest: intro snapshots preserve remaining time and do not replay already-passed burst audio
+ok 135 - intro snapshots preserve remaining time and do not replay already-passed burst audio
+  ---
+  duration_ms: 76.4188
+  ...
+1..135
+# tests 135
+# suites 0
+# pass 135
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1085.2869

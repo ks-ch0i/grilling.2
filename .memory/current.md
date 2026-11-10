@@ -7,10 +7,11 @@
 [P01 보스 공격·등장 에셋 연결](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/phase.md)
 
 ## Active Task
-[T03 기계·벌레 외부 공격 스프라이트 연결](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/T03-mine-boss-attack-effects.md)
+[T04 4초 벌레 등장·포효 연결과 전체 회귀 검증](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/T04-worm-entrance-and-regression.md)
 
 ## Status
-- done: 2/4. T01 `6840c83`, T02 `5cf501e` 완료. T03을 구현 중이다.
+- done: 3/4. T01 `6840c83`, T02 `5cf501e`, T03 `ced5df5` 완료. T04를 구현 중이다.
+- T03 집중 검사32/32·빌드 통과. 보스 소유 위험체만 새 에셋을 사용하고 일반 적/광차 표현은 유지했다.
 - T02 집중 검사39/39·빌드 통과. 회복 중 뿌리 표시와 이전 저장 호환을 검증했다.
 - T01 원화7종·패킹·공통 스프라이트 계층을 구현했다. 집중 검사13/13과 빌드, PNG 픽셀/투명도 및 재패킹 해시 검사를 통과했다.
 - 확정 결정: [공격 및 등장 에셋 D01~D19](./decisions/2026-11-10-boss-attack-assets.md), [공격 방식 검토](./decisions/2026-11-10-boss-attack-method-review.md).
@@ -23,4 +24,4 @@
 - 광산 보스의 체력·공격 선택·RNG·물약40% 단일 롤·피해 규칙과 개발 전용 연습 기능은 기존 기준이다. 과거 타이틀 복귀 원인 조사는 재개하지 않는다. 이전 빌드의 번들 용량 경고와 관리자 인증 구현은 이번 Task 범위에 넣지 않았다.
 
 ## Next Step (IMPORTANT)
-T03 청사진을 읽고 `mineAttackPresentation.js`, `EnemyView.js`, `MineHazardView.js`에 보스 전용 효과를 연결한다. 일반 적 hazard와 광차를 보존하고 지정 검증·커밋 후 T04로 진행한다. 사용자가 잔여 Task 연속 실행을 요청했다.
+T04 청사진을 읽고 240틱 벌레 등장 타임라인, 실루엣·전체 암전·외형 공개, 96틱 포효와 연습/복구를 연결한다. 집중 및 전체 검사·패킹·빌드를 마치고 Task별 커밋과 완료 포인터를 동기화한다. 직접 게임 플레이는 하지 않는다.

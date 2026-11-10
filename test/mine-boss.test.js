@@ -20,16 +20,16 @@ test('a short jump cannot clear the 30px wave while a long jump can',()=>{
  function jump(hold){let p=createPlayer(120,276);p.grounded=true;let best=Infinity;for(let i=0;i<40;i++){p=stepPlayer(p,{...input,jumpPressed:i===0,jumpHeld:i<hold},floor,344).player;best=Math.min(best,p.y+p.h);}return best;}
  assert.ok(jump(1)>wave.y);assert.ok(jump(40)<wave.y);
 });
-test('machine death does not clear; drop is rolled once and worm entrance freezes exactly 180 ticks',()=>{
+test('machine death does not clear; drop is rolled once and worm entrance freezes exactly 240 ticks',()=>{
  let r=createStageRun(stage,{}, {seed:40});Object.assign(r.player,{x:11010,y:276,grounded:true,hp:2,mode:'attack',attackTick:4,aim:{x:1,y:0}});Object.assign(r.boss,{state:'recovery',stateTicks:50,hp:1});r.arenaLocked=true;
  let result=stepStage(r,input,stage);r=result.run;assert.equal(r.boss.state,'dying');assert.equal(r.outcome,null);assert.ok(result.events.some(e=>e.type==='boss:machine-defeated'));
  const x=r.player.x;r=stepStage(r,{...input,move:-1},stage).run;assert.ok(r.player.x<x);
  r.hazards.push({id:'pool',ownerId:'i',kind:'acid-pool',x:11000,y:298,w:28,h:6,vx:0,vy:0,life:100,alive:true});
  r.projectiles.push({id:'p',ownerId:'e',x:11000,y:200,w:8,h:8,vx:0,vy:0,life:100,alive:true});
  for(let i=0;i<88;i++)r=stepStage(r,input,stage).run;const expected=nextRandom(r.rngState);result=stepStage(r,input,stage);r=result.run;
- assert.equal(r.bossSequence,'worm-intro');assert.equal(r.boss.stateTicks,180);assert.equal(r.player.hp,2);assert.equal(r.bossDrop.rolled,true);assert.equal(r.bossDrop.spawned,shouldDropPotion(expected.value));assert.equal(r.rngState,expected.state);assert.deepEqual(r.hazards,[]);assert.deepEqual(r.projectiles,[]);assert.equal(r.outcome,null);
+ assert.equal(r.bossSequence,'worm-intro');assert.equal(r.boss.stateTicks,240);assert.equal(r.player.hp,2);assert.equal(r.bossDrop.rolled,true);assert.equal(r.bossDrop.spawned,shouldDropPotion(expected.value));assert.equal(r.rngState,expected.state);assert.deepEqual(r.hazards,[]);assert.deepEqual(r.projectiles,[]);assert.equal(r.outcome,null);
  assert.equal(shouldDropPotion(.399),true);assert.equal(shouldDropPotion(.4),false);const saved=round(r);assert.deepEqual(saved.bossDrop,r.bossDrop);
- const position={x:r.player.x,y:r.player.y,hp:r.player.hp};for(let i=0;i<179;i++){r=stepStage(r,{...input,move:1,jumpPressed:true},stage).run;assert.deepEqual({x:r.player.x,y:r.player.y,hp:r.player.hp},position);}
+ const position={x:r.player.x,y:r.player.y,hp:r.player.hp};for(let i=0;i<239;i++){r=stepStage(r,{...input,move:1,jumpPressed:true},stage).run;assert.deepEqual({x:r.player.x,y:r.player.y,hp:r.player.hp},position);}
  assert.equal(r.bossSequence,'worm-intro');assert.equal(r.boss.stateTicks,1);r=stepStage(r,input,stage).run;assert.equal(r.bossSequence,'worm');assert.equal(r.boss.kind,'worm');assert.equal(r.boss.hp,18);assert.equal(r.bossDrop.rolled,true);
 });
 test('worm phase 2 warns and retargets its second underground strike',()=>{

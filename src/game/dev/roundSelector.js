@@ -1,6 +1,7 @@
 import {getStage} from '../content/stages.js';
 import {createStageRun} from '../sim/stage.js';
 import {createMineBoss} from '../sim/mineBoss.js';
+import {WORM_INTRO_TICKS} from '../sim/wormIntro.js';
 
 // Client-side development convenience only. Production access requires a
 // separately authenticated and authorized server-side implementation.
@@ -24,7 +25,7 @@ export function createPracticeRun(targetId,options={}){
   if(targetId==='mine-worm'){
     run.arenaLocked=true;run.bossSequence='worm-intro';
     run.boss=createMineBoss('worm',{x:(stage.arena.left+stage.arena.right)/2-48,y:stage.arena.bottom-64});
-    run.boss.state='intro';run.boss.stateTicks=180;
+    run.boss.state='intro';run.boss.stateTicks=WORM_INTRO_TICKS;
     run.bossDrop={rolled:true,spawned:false,consumed:false,x:0,y:0};
   }
   return run;
