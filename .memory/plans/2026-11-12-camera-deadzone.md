@@ -6,7 +6,7 @@ Replace continuous horizontal camera centering with an invisible 384×80-pixel p
 ## Phases
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Add deterministic camera target math and connect it to the stage scene. | [P01](../phases/2026-11-12-camera-deadzone/P01-camera-follow/phase.md) |
+| P01 | `done ✅` | Add deterministic camera target math and connect it to the stage scene. | [P01](../phases/2026-11-12-camera-deadzone/P01-camera-follow/phase.md) |
 
 ## Scope Notes
 - Both game stages use a 640×360 viewport and 11520×360 world. The player's grounded center is y=290; the selected zone is x=128..512 and y=250..330.
