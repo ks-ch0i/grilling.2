@@ -1,19 +1,20 @@
 # Current Context
 
 ## Active Plan
-[Project README — 완료](./plans/2026-11-12-project-readme.md)
+[Player Dead-Zone Camera Follow](./plans/2026-11-12-camera-deadzone.md)
 
 ## Active Phase
-[P01 README Documentation — 완료](./phases/2026-11-12-project-readme/P01-readme-documentation/phase.md)
+[P01 Camera Follow](./phases/2026-11-12-camera-deadzone/P01-camera-follow/phase.md)
 
 ## Active Task
-없음 — 현재 계획의 모든 Task를 완료했다.
+[T02 Stage Camera Integration](./phases/2026-11-12-camera-deadzone/P01-camera-follow/T02-stage-camera-integration.md)
 
 ## Status
-- done: 1/1. T01 created the root `README.md` and completed the source/link review.
-- README documents Korean developer onboarding, gameplay and controls, architecture, local storage, asset generation, npm commands, and manual browser checks.
-- Local documentation links resolve; command metadata matches `package.json`; Markdown fences are balanced. No app tests or build were run for this documentation-only task.
-- Project-wide license selection and addition remain separate scope, as confirmed by the user.
+- done: 1/2 (active: T02)
+- T01 adds pure camera target math and tests; all 7 focused tests passed.
+- T02 integrates the helper into `StageScene`, adds upper vertical camera bounds, and adds vertical background parallax.
+- The decision record is `.memory/decisions/2026-11-12-camera-deadzone.md`.
+- Logic-only verification is required; do not play the game as an agent.
 
 ## Next Step (IMPORTANT)
-This plan is complete. Start a new plan only when the user provides another request.
+Read the T02 blueprint and integrate `src/game/render/cameraDeadZone.js` into `src/game/scenes/StageScene.js`.
