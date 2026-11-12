@@ -1,28 +1,19 @@
 # Current Context
 
 ## Active Plan
-[보스 공격 및 등장 에셋 재구성 — 완료](./plans/2026-11-10-boss-attack-assets.md)
+[Project README — 완료](./plans/2026-11-12-project-readme.md)
 
 ## Active Phase
-[P01 보스 공격·등장 에셋 연결 — 완료](./phases/2026-11-10-boss-attack-assets/P01-asset-presentation/phase.md)
+[P01 README Documentation — 완료](./phases/2026-11-12-project-readme/P01-readme-documentation/phase.md)
 
 ## Active Task
 없음 — 현재 계획의 모든 Task를 완료했다.
 
 ## Status
-- done: 4/4. T01 `6840c83`, T02 `5cf501e`, T03 `ced5df5`, T04 `babddcd`.
-- 실제 원화7종과 본체 기준선3종, 본체/외부 효과 PNG7종을 제작·연결했다. [생성 방식·프롬프트·저장 경로](./reports/2026-11-10-boss-assets-imagegen.md).
-- 숲은 가지팔/내려찍기/별도 뿌리 수명으로 표시한다. 접지24틱 이후 1페이즈60틱, 2페이즈30틱·60틱에 뿌리가 발생하며 사전 바닥 예고는 없다. 이전 저장은 피해·남은 시간을 보존하며 표시 필드만 보충한다.
-- 기계의 주황 반달·회갈색 낙석·청록 광물, 벌레의 갑각 꼬리·연두 산성액/기포를 보스 소유 위험체에만 적용했다. 일반 적·광차·물약·플레이어 피격 표현과 잠복 접촉 피해는 기존 규칙이다.
-- 기계 사망 완료 뒤 벌레 등장240틱: 맵 깜빡임 → 96틱 실루엣 돌출과 포효 → 120틱 전체 암전 → 144틱 본체/보스HUD 공개 → 240틱 전투. 기존 벌레 2페이즈 전환과 별개다.
-- 집중 검사 T01 13/13, T02 39/39, T03 32/32, T04 30/30; 최종 전체135/135 통과. 자산 패킹·프로덕션 빌드 통과. [전체 테스트 로그](./reports/2026-11-10-boss-assets-tests.txt).
-- 최종 번들1,464.20KB로 기존500KB 경고가 남아 있다. 이번 범위에서 번들 최적화·관리자 인증을 추가하지 않았다.
-- 사용자가 직접 플레이 대신 로직 확인을 지시했다. 실제 PNG 파일 관찰·순수 표시 모델·가짜 scene·자동 로직 검증을 수행했으며, 에이전트 직접 플레이와 새 버전 실제 청취는 하지 않았다. 이전 화면·소리 정상 보고는 이전 버전의 사용자 관찰이다.
-- [이전 current 원본](./2026-11-10-previous-current.md)과 이전 가시성 계획의 T04 상태는 보존했다. 기존에 수정돼 있던 이전 T03·phase.md를 무관하게 변경·커밋하지 않았다.
-
-## Decisions
-- [공격 및 등장 에셋 D01~D19](./decisions/2026-11-10-boss-attack-assets.md)
-- [공격 방식 검토](./decisions/2026-11-10-boss-attack-method-review.md)
+- done: 1/1. T01 created the root `README.md` and completed the source/link review.
+- README documents Korean developer onboarding, gameplay and controls, architecture, local storage, asset generation, npm commands, and manual browser checks.
+- Local documentation links resolve; command metadata matches `package.json`; Markdown fences are balanced. No app tests or build were run for this documentation-only task.
+- Project-wide license selection and addition remain separate scope, as confirmed by the user.
 
 ## Next Step (IMPORTANT)
-현재 계획에 잔여 Task는 없다. 새 요청이나 사용자 플레이 피드백을 받아 후속 범위를 정한다. 기존 계획을 반복 실행하거나 과거 가시성 T04를 소급 완료하지 않는다.
+This plan is complete. Start a new plan only when the user provides another request.
