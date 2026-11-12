@@ -8,8 +8,8 @@
 - **Rationale**: The user selected both axes so camera movement reflects movement outside the virtual rectangle in either dimension.
 
 ## D02. Dead-zone rectangle
-- **Chosen**: Use an invisible rectangle centered horizontally with width 30% of the 640-pixel viewport (192 px), giving screen bounds x=224..416. Use a 48-pixel-tall vertical interval centered at the player's grounded center, y=290, giving screen bounds y=266..314.
-- **Rationale**: The user narrowed the horizontal interval from 60% to 30% after the wider area made camera movement start too late. The user accepted a 48-pixel vertical recommendation to make jump following more visible while keeping the camera fixed on the ground. The area remains an internal camera boundary and is not drawn.
+- **Chosen**: Use an invisible rectangle centered horizontally with width 30% of the 640-pixel viewport (192 px), giving screen bounds x=224..416. Use a 150-pixel-tall vertical interval from y=210 to y=360.
+- **Rationale**: The user narrowed the horizontal interval from 60% to 30% after the wider area made camera movement start too late. The vertical area includes the grounded center y=290 and the normal floor-jump apex around y=221, so those jumps do not move the camera. The area remains an internal camera boundary and is not drawn.
 
 ## D03. Camera response outside the rectangle
 - **Chosen**: Move only the camera axis needed to bring the player's center back to the nearest rectangle edge. Stop following on an axis when the player returns inside that axis interval. Retain the existing eased movement factor of 0.12 per render update.
@@ -39,9 +39,13 @@
 - **Chosen**: Reduce the vertical dead-zone height from 80 px to 48 px while keeping its center at y=290.
 - **Rationale**: The user accepted the recommendation based on a roughly 69 px jump height. The new top edge y=266 causes about 45 px of upward camera follow at the jump peak, compared with about 29 px for the prior 80 px zone.
 
+## D10. Reduce vertical camera sensitivity for floor jumps
+- **Chosen**: Set the vertical dead-zone to y=210..360 (150 px high). Keep the existing upward camera travel limit at -80 px.
+- **Rationale**: The user reported excessive y-axis sensitivity and asked for no camera movement during floor jumps. A normal jump moves the grounded player center from about y=290 to about y=221, which remains inside the revised zone with roughly 11 px of upper margin.
+
 ## Existing constraints and follow-up notes
 - The internal viewport is 640x360. Both stages are 11520x360. Player dimensions are 16x28 and the grounded player center is y=290.
-- Jump constants imply an uncropped peak of about 69 px above the grounded position. The selected 48 px zone is shorter than that jump and produces visible camera follow while the grounded center remains inside it.
+- Jump constants imply an uncropped peak of about 69 px above the grounded position. The selected y=210..360 zone contains the full normal floor jump. Jumps that move the player center above y=210 can still trigger upward camera follow.
 - The camera currently eases toward its target with factor 0.12, sets horizontal world bounds, rounds pixels, and has a 60 px facing look-ahead during normal play. Boss intro uses a separate player/boss midpoint target.
 - Screen-fixed HUD and intro overlays use `setScrollFactor(0)`. Boss direction positioning already subtracts `cam.scrollY`.
 - **Scope limitation to report**: Camera vertical overscan is upward only (`scrollY` -80..0). The camera cannot pan below the original view when the player falls past the lower dead-zone edge, such as during a pit fall.

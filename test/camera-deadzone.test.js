@@ -15,7 +15,7 @@ test('player movement inside the dead-zone leaves both camera axes fixed', () =>
 });
 
 test('dead-zone edges are inclusive on both axes', () => {
-  for (const [centerX, centerY] of [[224,266],[416,266],[224,314],[416,314]]) {
+  for (const [centerX, centerY] of [[224,210],[416,210],[224,360],[416,360]]) {
     const player = { x: centerX - 8, y: centerY - 14, w: 16, h: 28 };
     assert.deepEqual(cameraScrollTarget(state(player)), { scrollX: 0, scrollY: 0 });
   }
@@ -31,11 +31,18 @@ test('horizontal follow targets only the nearest edge', () => {
 
 test('vertical upward follow targets the upper edge', () => {
   const player = { x: 312, y: 186, w: 16, h: 28 };
-  assert.deepEqual(cameraScrollTarget(state(player)), { scrollX: 0, scrollY: -66 });
+  assert.deepEqual(cameraScrollTarget(state(player)), { scrollX: 0, scrollY: -10 });
+});
+
+test('standing and a normal floor-jump apex stay inside the vertical dead-zone', () => {
+  for (const y of [276,207]) {
+    const player = { x: 312, y, w: 16, h: 28 };
+    assert.deepEqual(cameraScrollTarget(state(player)), { scrollX: 0, scrollY: 0 });
+  }
 });
 
 test('lower-edge exits cannot pan below the original view', () => {
-  const player = { x: 312, y: 326, w: 16, h: 28 };
+  const player = { x: 312, y: 366, w: 16, h: 28 };
   assert.deepEqual(cameraScrollTarget(state(player, { scrollX: 0, scrollY: -10 })), { scrollX: 0, scrollY: 0 });
 });
 
@@ -46,7 +53,7 @@ test('camera targets clamp at stage edges and at the upper overscan limit', () =
   const rightPlayer = { x: 11496, y: 276, w: 16, h: 28 };
   assert.deepEqual(cameraScrollTarget(state(rightPlayer, { scrollX: 10880, scrollY: 0 })), { scrollX: 10880, scrollY: 0 });
 
-  const highPlayer = { x: 312, y: 136, w: 16, h: 28 };
+  const highPlayer = { x: 312, y: 76, w: 16, h: 28 };
   assert.deepEqual(cameraScrollTarget(state(highPlayer)), { scrollX: 0, scrollY: -80 });
 });
 
