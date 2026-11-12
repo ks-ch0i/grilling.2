@@ -15,3 +15,4 @@
 - T01 commit: `a2ac425`.
 - T02: `StageScene` now uses the dead-zone target, allows upward camera overscan, preserves boss-intro framing, and moves the background vertically; focused tests passed 7/7, full suite passed 142/142, and build passed with the existing large-bundle warning.
 - T02 commit: `5177e36`.
+- Follow-up tuning: narrowed the horizontal zone to 30%; focused camera tests passed 7/7.

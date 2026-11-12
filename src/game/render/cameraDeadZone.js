@@ -1,8 +1,8 @@
 export const CAMERA_VIEWPORT = Object.freeze({ width: 640, height: 360 });
 
 export const CAMERA_DEAD_ZONE = Object.freeze({
-  left: 128,
-  right: 512,
+  left: 224,
+  right: 416,
   top: 250,
   bottom: 330,
   minScrollY: -80,

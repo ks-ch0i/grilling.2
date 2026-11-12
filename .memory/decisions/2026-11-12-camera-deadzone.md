@@ -8,8 +8,8 @@
 - **Rationale**: The user selected both axes so camera movement reflects movement outside the virtual rectangle in either dimension.
 
 ## D02. Dead-zone rectangle
-- **Chosen**: Use an invisible rectangle centered horizontally with width 60% of the 640-pixel viewport (384 px). Use an 80-pixel-tall vertical interval centered at the player's grounded center, y=290, giving screen bounds y=250..330.
-- **Rationale**: The user chose a 60% width and 80 px height, and placed the vertical area low enough to contain the grounded player without moving the camera at stage start. The area remains an internal camera boundary and is not drawn.
+- **Chosen**: Use an invisible rectangle centered horizontally with width 30% of the 640-pixel viewport (192 px), giving screen bounds x=224..416. Keep the 80-pixel-tall vertical interval centered at the player's grounded center, y=290, giving screen bounds y=250..330.
+- **Rationale**: The user narrowed the horizontal interval from 60% to 30% after the wider area made camera movement start too late. The vertical area stays low enough to contain the grounded player without moving the camera at stage start. The area remains an internal camera boundary and is not drawn.
 
 ## D03. Camera response outside the rectangle
 - **Chosen**: Move only the camera axis needed to bring the player's center back to the nearest rectangle edge. Stop following on an axis when the player returns inside that axis interval. Retain the existing eased movement factor of 0.12 per render update.
@@ -30,6 +30,10 @@
 ## D07. Boss intro framing
 - **Chosen**: Preserve existing player-and-boss framing during boss introduction as an override to the dead-zone follow.
 - **Rationale**: The user chose to retain the established cinematic introduction camera behavior.
+
+## D08. Horizontal dead-zone refinement
+- **Chosen**: Reduce the horizontal dead-zone width to 30% of the viewport; keep the vertical height at 80 px until the user selects a change.
+- **Rationale**: The user reported that horizontal follow started too late and requested 30%. They asked for a vertical recommendation but have not selected a new vertical size.
 
 ## Existing constraints and follow-up notes
 - The internal viewport is 640x360. Both stages are 11520x360. Player dimensions are 16x28 and the grounded player center is y=290.

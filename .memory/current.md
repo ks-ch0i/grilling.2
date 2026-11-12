@@ -11,6 +11,7 @@
 
 ## Status
 - done: 2/2. Camera dead-zone feature implementation is complete.
+- Follow-up tuning narrowed the horizontal camera zone to 30%; focused camera tests passed 7/7.
 - T01 `a2ac425`: pure target calculation and 7 focused unit tests passed.
 - T02 `5177e36`: scene integration, all 142 tests passed, and production build passed. Vite reports the existing bundle-size warning.
 - The decision record is `.memory/decisions/2026-11-12-camera-deadzone.md`.

@@ -15,7 +15,7 @@ test('player movement inside the dead-zone leaves both camera axes fixed', () =>
 });
 
 test('dead-zone edges are inclusive on both axes', () => {
-  for (const [centerX, centerY] of [[128,250],[512,250],[128,330],[512,330]]) {
+  for (const [centerX, centerY] of [[224,250],[416,250],[224,330],[416,330]]) {
     const player = { x: centerX - 8, y: centerY - 14, w: 16, h: 28 };
     assert.deepEqual(cameraScrollTarget(state(player)), { scrollX: 0, scrollY: 0 });
   }
@@ -23,10 +23,10 @@ test('dead-zone edges are inclusive on both axes', () => {
 
 test('horizontal follow targets only the nearest edge', () => {
   const leftPlayer = { x: 292, y: 276, w: 16, h: 28 };
-  assert.deepEqual(cameraScrollTarget(state(leftPlayer, { scrollX: 200, scrollY: 0 })), { scrollX: 172, scrollY: 0 });
+  assert.deepEqual(cameraScrollTarget(state(leftPlayer, { scrollX: 200, scrollY: 0 })), { scrollX: 76, scrollY: 0 });
 
   const rightPlayer = { x: 742, y: 276, w: 16, h: 28 };
-  assert.deepEqual(cameraScrollTarget(state(rightPlayer, { scrollX: 200, scrollY: 0 })), { scrollX: 238, scrollY: 0 });
+  assert.deepEqual(cameraScrollTarget(state(rightPlayer, { scrollX: 200, scrollY: 0 })), { scrollX: 334, scrollY: 0 });
 });
 
 test('vertical upward follow targets the upper edge', () => {
