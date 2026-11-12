@@ -1,6 +1,6 @@
 # Task: T02 Stage Camera Integration
 
-## Status: pending
+## Status: done
 
 ## Goal
 Use the tested camera target helper in both stages so the camera stays still inside the player's invisible rectangle, follows its nearest edge outside it, and moves the background vertically at the existing 15% parallax rate. Preserve the current boss-intro composition and stage simulation.
@@ -55,11 +55,11 @@ Use the tested camera target helper in both stages so the camera stays still ins
   - Do not draw the dead-zone rectangle.
 
 ## Acceptance Criteria
-- [ ] Both forest and mine scenes use the same helper and camera bounds.
-- [ ] When the player's center is inside the zone, the target scroll is current scroll; crossing an edge moves only the corresponding camera axis toward that edge.
-- [ ] The 0.12 easing, pixel rounding, horizontal parallax, boss-intro framing, and fixed-screen UI continue to work.
-- [ ] Vertical camera motion is limited to -80..0; no simulation or stage geometry coordinates change.
-- [ ] The dead-zone remains invisible. Do not perform agent gameplay; report that the user should judge the final movement feel.
+- [x] Both forest and mine scenes use the same helper and camera bounds.
+- [x] When the player's center is inside the zone, the target scroll is current scroll; crossing an edge moves only the corresponding camera axis toward that edge.
+- [x] The 0.12 easing, pixel rounding, horizontal parallax, boss-intro framing, and fixed-screen UI continue to work.
+- [x] Vertical camera motion is limited to -80..0; no simulation or stage geometry coordinates change.
+- [x] The dead-zone remains invisible. Do not perform agent gameplay; report that the user should judge the final movement feel.
 
 ## Validation
 - `node --test test/camera-deadzone.test.js` — pure camera target cases pass.
@@ -80,6 +80,6 @@ Task: T02-stage-camera-integration
 ```
 
 ## Progress
-- [ ] Implementation complete
-- [ ] Validation passed
+- [x] Implementation complete
+- [x] Validation passed
 - commit: pending
