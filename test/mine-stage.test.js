@@ -14,7 +14,7 @@ test('mine snapshot preserves random zones and hazard state through actual save 
  const r=createStageRun(MINE_STAGE,{}, {seed:123});r.hazards.push({id:'acid-1',ownerId:'insect-1',kind:'acid-pool',x:300,y:298,w:28,h:6,vx:0,vy:0,life:37,alive:true});r.cartZones[0].state='warning';r.cartZones[0].ticks=12;
  const save={...freshSave(),run:snapshotStageRun(r),unlockedStageIds:['forest-1','mine-1']},parsed=parseSave(JSON.stringify(save));assert.equal(parsed.ok,true);
  const restored=restoreStageRun(MINE_STAGE,parsed.save.run);assert.deepEqual(stepStage(restored,input,MINE_STAGE),stepStage(r,input,MINE_STAGE));
- const broken=structuredClone(save);broken.run.cartZones[0].centerX=120;assert.equal(parseSave(JSON.stringify(broken)).ok,false);
+ const broken=structuredClone(save);broken.run.cartZones[0].centerX=79;assert.equal(parseSave(JSON.stringify(broken)).ok,false);
 });
 test('death regenerates cart zones while continuation preserves them',()=>{
  let r=createStageRun(MINE_STAGE,{}, {seed:5}),original=structuredClone(r.cartZones);const continued=restoreStageRun(MINE_STAGE,JSON.parse(JSON.stringify(snapshotStageRun(r))));assert.deepEqual(continued.cartZones,original);

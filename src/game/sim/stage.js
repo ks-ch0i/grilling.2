@@ -101,6 +101,10 @@ export function snapshotStageRun(run){
 
 export function restoreStageRun(stage,snapshot){
   const s=structuredClone(snapshot),fresh=createStageRun(stage,{}, {seed:1});
+  if(stage.id==='forest-1'&&object(s.boss)&&!Object.hasOwn(s.boss,'rootEffects')){
+    s.boss.rootEffects=[];
+    if(s.boss.attackKind==='root'&&Array.isArray(s.boss.hitboxes))s.boss.rootEffects=s.boss.hitboxes.filter(h=>rect(h,true)&&h.w===48&&h.h===48&&h.ticks>0&&h.ticks<=12).map(({x,y,w,h,ticks})=>({x,y,w,h,age:12-ticks,strike:s.boss.secondRootDelay>0?1:s.boss.phase===2&&s.boss.state==='recovery'?2:1}));
+  }
   if(!keys(s,Object.keys(fresh))||s.stageId!==stage.id||!finiteTree(s)||!count(s.elapsedTicks)||!count(s.deaths)||!count(s.deathTicks)||typeof s.arenaLocked!=='boolean'||![null,'clear'].includes(s.outcome))throw new TypeError('Invalid run snapshot');
   if(!Number.isInteger(s.round)||s.round<1||s.round>ROUND_COUNT||!(s.roundClearTicks===null||Number.isSafeInteger(s.roundClearTicks)&&s.roundClearTicks>0&&s.roundClearTicks<=ROUND_CLEAR_TICKS)||!count(s.rngState)||s.rngState>0xffffffff||typeof s.bossSequence!=='string')throw new TypeError('Invalid round snapshot');
   if(s.outcome==='clear'&&s.round!==ROUND_COUNT)throw new TypeError('Only round 8 can clear a stage');

@@ -18,3 +18,28 @@ canvas { display: block; image-rendering: pixelated; }
 .storage-warning button { margin-bottom: 0; background: #74483d; }
 
 .audio-warning { position:absolute; z-index:45; left:10px; bottom:10px; max-width:360px; padding:8px 10px; background:#5b3926; border:2px solid #d5ba82; color:#fff3dc; }
+.result-overlay { padding:12px; background:rgba(8, 13, 17, .82); }
+.result-panel { width:min(520px, 100%); padding:20px clamp(16px, 4vw, 28px); border-color:#d7bd82; background:linear-gradient(155deg, #17251fF2, #25231fee 72%), url('/assets/world/forest/backdrop.png') center / cover; }
+.result-panel h2 { margin-bottom:4px; text-align:center; color:#ffe5a5; letter-spacing:.04em; }
+.result-subtitle { margin:0 0 12px !important; text-align:center; color:#d9d3c1; font-size:14px; }
+.result-eyebrow { margin:8px 0 10px !important; text-align:center; color:#b7c99a; font-size:13px; letter-spacing:.06em; }
+.result-summary { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin:10px 0 16px; }
+.result-summary-single { grid-template-columns:1fr; }
+.result-record { min-width:0; padding:12px; border:1px solid #77705c; background:#171d1bd9; }
+.result-record-current { border-color:#a7c58d; background:linear-gradient(145deg, #293e31ed, #1b2924ed); }
+.result-record-best { border-color:#c7a86d; background:linear-gradient(145deg, #423729ed, #28241fed); }
+.result-record h3 { margin:0 0 10px; color:#f4e6c4; font-size:14px; }
+.result-metrics { display:grid; gap:8px; margin:0; }
+.result-metric { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.result-metric dt { color:#c5c5b8; font-size:12px; }
+.result-metric dd { margin:0; color:#fff5dc; font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
+.result-empty { margin:0 !important; color:#d7d0bd; font-size:13px; }
+.result-panel button { margin:6px 0; padding:9px 12px; }
+.result-primary { color:#241b10 !important; background:#d7b66f !important; border-color:#ffe3a0 !important; font-weight:700 !important; }
+.result-primary:hover, .result-primary:focus-visible { background:#f0d38e !important; }
+.result-home, .result-secondary { background:#35483d !important; }
+@media (max-width: 420px) {
+  .result-summary { grid-template-columns:1fr; gap:8px; margin-bottom:12px; }
+  .result-record { padding:10px 12px; }
+  .result-panel { padding:16px; }
+}

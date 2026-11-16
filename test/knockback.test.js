@@ -4,6 +4,7 @@ import { createPlayer, stepPlayer } from '../src/game/sim/player.js';
 import { applyPlayerDamage } from '../src/game/sim/combat.js';
 import { intersects } from '../src/game/sim/geometry.js';
 import { createStageRun, stepStage } from '../src/game/sim/stage.js';
+import { createEnemy } from '../src/game/sim/enemies.js';
 import { FOREST_STAGE as stage } from '../src/game/content/forestStage.js';
 
 const floor=[{x:-1000,y:304,w:2000,h:56}];
@@ -33,7 +34,7 @@ test('immune and lethal hits do not create or reset a push; pits remain lethal',
 });
 test('contact, enemy attack and actual projectile collision use their own origins',()=>{
  for(const [kind,origin,expected] of [['contact',206,-1],['contact',188,1],['enemy-attack',230,-1]]){
-  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:276,grounded:true});const e=r.enemies[0];Object.assign(e,{x:origin,y:276,state:kind==='contact'?'hurt':'attack',stateTicks:20,lockedFacing:-1});r.enemies=[e];
+  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:276,grounded:true});const e=kind==='enemy-attack'?createEnemy({id:'test-soldier',kind:'soldier',x:origin,y:276}):r.enemies[0];Object.assign(e,{x:origin,y:276,state:kind==='contact'?'hurt':'attack',stateTicks:20,lockedFacing:-1});r.enemies=[e];
   const result=step(r);assert.equal(result.run.player.hp,2,kind);assert.equal(result.run.player.hurtPushDirection,expected,kind);
  }
  for(const [x,vx,direction] of [[213,-120,-1],[194,120,1]]){
@@ -42,10 +43,10 @@ test('contact, enemy attack and actual projectile collision use their own origin
  }
 });
 test('boss hitbox direction comes from the hitbox and boss body can be separated',()=>{
- let r=createStageRun(stage);r.enemies=[];r.arenaLocked=true;Object.assign(r.player,{x:10980,y:276,grounded:true});Object.assign(r.boss,{state:'attack',stateTicks:5,hitboxes:[{x:10980,y:276,w:20,h:28,ticks:5}]});
+ let r=createStageRun(stage);r.enemies=[];r.arenaLocked=true;Object.assign(r.player,{x:520,y:276,grounded:true});Object.assign(r.boss,{state:'attack',stateTicks:5,hitboxes:[{x:520,y:276,w:20,h:28,ticks:5}]});
  r=step(r).run;assert.equal(r.player.hp,2);assert.equal(r.player.hurtPushDirection,-1);
- r=createStageRun(stage);r.enemies=[];r.arenaLocked=true;Object.assign(r.player,{x:11075,y:276,grounded:true});Object.assign(r.boss,{state:'recovery',stateTicks:100});
- r=step(r).run;assert.equal(r.player.hp,2);for(let i=0;i<12;i++)r=step(r).run;assert.equal(intersects(r.player,r.boss),false);assert.equal(r.player.hp,2);
+ r=createStageRun(stage);r.round=8;r.enemies=[];r.arenaLocked=true;Object.assign(r.player,{x:420,y:276,grounded:true});Object.assign(r.boss,{x:350,state:'recovery',stateTicks:100});
+ r=step(r).run;assert.equal(r.player.hp,2);for(let i=0;i<12;i++)r=step(r).run;assert.equal(intersects(r.player,r.boss),false,JSON.stringify({player:r.player,boss:r.boss}));assert.equal(r.player.hp,2);
 });
 test('deep contact separates after push, while a solid wall prevents escape and damage resumes',()=>{
  function setup(world){let r=createStageRun(world);Object.assign(r.player,{x:200,y:276,grounded:true});const e=r.enemies[0];Object.assign(e,{x:200,y:276,state:'hurt',stateTicks:100});r.enemies=[e];return r;}
@@ -59,7 +60,6 @@ test('two overlapping enemies cause one hit and do not reset the initial knockba
  for(const [i,e] of r.enemies.entries())Object.assign(e,{x:200+i*4,y:276,state:'hurt',stateTicks:100});
  const result=step(r);assert.equal(result.run.player.hp,2);assert.equal(result.events.filter(e=>e.type==='hurt').length,1);assert.equal(result.run.player.hurtPushTicks,12);assert.equal(result.run.player.hurtPushDirection,-1);
 });
-test('knockback can push off a pit edge and pit death is unchanged',()=>{
- let r=createStageRun(stage);r.enemies=[];Object.assign(r.player,{x:1563,y:276,grounded:true});r.player=applyPlayerDamage(r.player,'contact',{originX:1600}).player;
- let death=false;for(let i=0;i<100&&!death;i++){const result=step(r);r=result.run;death=result.events.some(e=>e.type==='stage:death');}assert.equal(death,true);assert.equal(r.player.mode,'dead');
+test('pit death remains lethal in the fixed arena',()=>{
+ let r=createStageRun(stage);r.enemies=[];r.player.y=344;const result=step(r);assert.ok(result.events.some(e=>e.type==='stage:death'));assert.equal(result.run.player.mode,'dead');
 });

@@ -72,7 +72,7 @@ export class StageScene extends Phaser.Scene {
       this.visualEffects=this.visualEffects.filter(effect=>{if(effect.until>this.run.elapsedTicks){if(effect.draw)effect.draw(this.run.elapsedTicks-effect.start);if(effect.fade)effect.sprite.setAlpha((effect.until-this.run.elapsedTicks)/effect.fade*(effect.strength??1));return true;}effect.sprite.destroy();return false;});
       if(this.run.player.mode==='run'&&this.run.player.grounded&&this.run.elapsedTicks%18===0)this.audio.playSfx('step');
       this.coordinator.tick();
-      if(result.events.some(event=>event.type==='stage:clear')){if(!this.practiceTarget)clearRunActive();this.audio.pauseMusic();const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{stageId:this.run.stageId,record,practice:Boolean(this.practiceTarget)});return;}
+      if(result.events.some(event=>event.type==='stage:clear')){if(!this.practiceTarget)clearRunActive();this.audio.pauseMusic();const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{stageId:this.run.stageId,record,practice:Boolean(this.practiceTarget),practiceTarget:this.practiceTarget});return;}
       this.accumulator-=STEP;
     }
     this.renderWorld();

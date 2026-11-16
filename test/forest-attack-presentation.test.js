@@ -4,6 +4,7 @@ import {collectForestAttackItems} from '../src/game/render/forestAttackPresentat
 import {bossAnimation} from '../src/game/assets/animation.js';
 import {FOREST_STAGE as stage} from '../src/game/content/forestStage.js';
 import {createStageRun,snapshotStageRun,restoreStageRun,stepStage} from '../src/game/sim/stage.js';
+import {createRoundEnemies} from '../src/game/sim/rounds.js';
 const player={x:10900,y:276,w:16,h:28},input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:12000,aimY:290};
 function root(phase=2){let b=createBoss(stage.boss);Object.assign(b,{phase,transitioned:phase===2,state:'recovery',stateTicks:1,cycle:0});return stepBoss(b,player,stage.arena).boss;}
 test('root preparation has no floor marker and body holds the planted arm until eruption',()=>{
@@ -30,14 +31,14 @@ test('branch and slam cores meet the correct body edge in both directions',()=>{
 });
 test('all root stages preserve their next simulation tick and presentation through JSON saves',()=>{
  let b=root();for(let tick=0;tick<112;tick++){
-  const run=createStageRun(stage);run.boss=b;run.arenaLocked=true;
+  const run=createStageRun(stage);run.round=8;run.boss=b;run.arenaLocked=true;const encounter=createRoundEnemies(stage,8,run.rngState,{player:run.player,boss:run.boss});run.enemies=encounter.enemies;run.rngState=encounter.rngState;
   const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(run))),restored=restoreStageRun(stage,snapshot);
   assert.deepEqual(stepStage(restored,input,stage),stepStage(run,input,stage),`tick ${tick}`);assert.deepEqual(collectForestAttackItems(restored.boss,tick),collectForestAttackItems(b,tick));
   b=stepBoss(b,player,stage.arena).boss;
  }
 });
 test('legacy snapshots get only missing presentation state; malformed new state is rejected',()=>{
- const run=createStageRun(stage);Object.assign(run.boss,{state:'recovery',stateTicks:20,phase:2,attackKind:'root',hitboxes:[{x:11000,y:256,w:48,h:48,ticks:7}]});
+ const run=createStageRun(stage);run.round=8;const encounter=createRoundEnemies(stage,8,run.rngState,{player:run.player,boss:run.boss});run.enemies=encounter.enemies;run.rngState=encounter.rngState;Object.assign(run.boss,{state:'recovery',stateTicks:20,phase:2,attackKind:'root',hitboxes:[{x:11000,y:256,w:48,h:48,ticks:7}]});
  const old=snapshotStageRun(run);delete old.boss.rootEffects;const restored=restoreStageRun(stage,old);
  assert.deepEqual(restored.boss.rootEffects,[{x:11000,y:256,w:48,h:48,age:5,strike:2}]);assert.deepEqual(restored.boss.hitboxes,run.boss.hitboxes);assert.equal(restored.player.x,run.player.x);
  for(const bad of [null,[{x:0,y:0,w:48,h:48,age:24,strike:1}],[{x:0,y:0,w:48,h:48,age:0,strike:3}]]){const snapshot=snapshotStageRun(run);snapshot.boss.rootEffects=bad;assert.throws(()=>restoreStageRun(stage,snapshot),TypeError);}
