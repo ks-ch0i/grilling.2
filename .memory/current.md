@@ -1,17 +1,17 @@
 # Current Context
 
 ## Active Plan
-[Round-Based Game Progression](./plans/2026-11-16-round-based-progression.md)
+None. [Round-Based Game Progression](./plans/2026-11-16-round-based-progression.md) is complete.
 
 ## Active Phase
-[P01 Round-Based Gameplay](./phases/2026-11-16-round-based-progression/P01-round-based-gameplay/phase.md)
+None. P01 Round-Based Gameplay is complete.
 
 ## Active Task
-[T05 Stage Clear Result UI](./phases/2026-11-16-round-based-progression/P01-round-based-gameplay/T05-stage-clear-result-ui.md)
+None. All five round-progression tasks are complete.
 
 ## Status
-- Plan: in progress; T01 arena data, T02 round simulation, T03 round HUD, and T04 save lifecycle are implemented and validated.
-- Phase: 4/5 tasks complete; T05 is active.
+- Plan: complete; fixed arenas, eight-round progression, HUD, save lifecycle, and result flow are implemented and validated.
+- Phase: 5/5 tasks complete.
 - Decisions: `.memory/decisions/2026-11-16-round-based-gameplay.md`.
 - Death resets the stage to round 1 and increments deaths; elapsed time continues across deaths.
 - Each stage has 8 rounds. Forest advances to Mine only through the result screen; Mine is final.
@@ -22,4 +22,4 @@
 [Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) — pending; compare the two options before changing camera code.
 
 ## Next Step
-Implement the Forest/Mine clear result screen, paired best/death records, and Home/Next/Retry actions from T05. Keep the camera-framing decision queued separately.
+No remaining tasks in the round-progression plan. Continue with the queued camera-framing decision only after choosing between character zoom with expressive movement and a fixed full-room view; keep camera code and dead-zone cleanup unchanged until that choice is made.

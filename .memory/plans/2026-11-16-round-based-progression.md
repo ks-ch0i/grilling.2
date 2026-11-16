@@ -8,7 +8,7 @@
 
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | 고정 아레나, 라운드 시뮬레이션, 장면 UI, 저장 및 결과 흐름을 연결한다. | [P01](../phases/2026-11-16-round-based-progression/P01-round-based-gameplay/phase.md) |
+| P01 | `complete ✅` | 고정 아레나, 라운드 시뮬레이션, 장면 UI, 저장 및 결과 흐름을 연결한다. | [P01](../phases/2026-11-16-round-based-progression/P01-round-based-gameplay/phase.md) |
 
 ## Scope Notes
 

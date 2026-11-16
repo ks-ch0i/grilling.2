@@ -8,8 +8,11 @@
 | T02 | `done ✅` | 8라운드 상태, 적 구성, 보스 진행, 사망 및 라운드 전환을 시뮬레이션한다. | [T02](./T02-round-simulation.md) |
 | T03 | `done ✅` | 카메라 방향은 건드리지 않고 라운드 HUD·클리어 표시를 연결한다. | [T03](./T03-stage-scene-round-presentation.md) |
 | T04 | `done ✅` | 새 저장 형식, 기존 저장 초기화, 기록과 재개 흐름을 구현한다. | [T04](./T04-round-save-and-records.md) |
-| T05 | `in_progress 🔵` | 스테이지 클리어 결과 UI와 홈·다음·재시도 동작을 구현한다. | [T05](./T05-stage-clear-result-ui.md) |
+| T05 | `done ✅` | 스테이지 클리어 결과 UI와 홈·다음·재시도 동작을 구현한다. | [T05](./T05-stage-clear-result-ui.md) |
 
 ## Progress
 
-- done: 4/5 (active: T05)
+- done: 5/5; all tests and production build passed.
+- T05: Forest shows Home/Next/Retry; Mine omits Next. Both show current and paired best time/deaths; retries and stage advance start fresh runs.
+- Full suite: 135/135 passed. Production build passed with Vite's existing large-chunk warning.
+- Camera framing stays queued as a separate decision; no camera behavior or dead-zone helper/test was changed.

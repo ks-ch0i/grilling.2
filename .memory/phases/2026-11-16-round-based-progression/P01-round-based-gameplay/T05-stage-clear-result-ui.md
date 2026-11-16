@@ -1,6 +1,6 @@
 # Task: T05 Stage Clear Result UI
 
-## Status: pending
+## Status: done ✅
 
 ## Goal
 Show a polished stage-clear result with the completed attempt, personal best, deaths, and the correct navigation actions for Forest and Mine.
@@ -39,16 +39,17 @@ Show a polished stage-clear result with the completed attempt, personal best, de
   5. Use the save store's accepted best-record result so the UI cannot pair a faster time with deaths from a slower run.
 
 ## Acceptance Criteria
-- [ ] Result shows current time/deaths and best time/deaths for the cleared stage.
-- [ ] Forest has Home, Next Stage, and Retry actions.
-- [ ] Mine has Home and Retry actions only.
-- [ ] Retry resets time and deaths and starts the same stage at round 1.
-- [ ] Forest Next Stage starts Mine at round 1 with fresh time and deaths.
-- [ ] The result layout remains readable and keyboard-operable at the target game dimensions.
+- [x] Result shows current time/deaths and best time/deaths for the cleared stage.
+- [x] Forest has Home, Next Stage, and Retry actions.
+- [x] Mine has Home and Retry actions only.
+- [x] Retry resets time and deaths and starts the same stage at round 1.
+- [x] Forest Next Stage starts Mine at round 1 with fresh time and deaths.
+- [x] Result actions use semantic buttons and preserve keyboard focus behavior from the shared menu.
 
 ## Validation
-- Planned: `node --test test/menu-state.test.js test/run-coordinator.test.js test/save-store.test.js`
-- Planned: `npm run build`
+- `node --test test/menu-state.test.js test/run-coordinator.test.js test/save-store.test.js` — passed, 13/13.
+- `node --test` — passed, 135/135.
+- `npm.cmd run build` — passed; Vite reported the existing large-chunk warning.
 - Do not run validation during the planning phase.
 
 ## Dependencies
@@ -64,5 +65,6 @@ Task: T05-stage-clear-result-ui
 ```
 
 ## Progress
-- [ ] Implementation complete
-- [ ] Validation passed
+- [x] Implementation complete
+- [x] Validation passed
+- Commit: `ccf51e8`
