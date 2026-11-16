@@ -17,4 +17,4 @@ Resolve the open camera direction for round-based boss arenas and then add an im
 - This plan is separate from [round-based progression](./2026-11-16-round-based-progression.md).
 - Keep the existing dead-zone helper and tests while the camera direction remains open.
 - After the user chooses, add a precise implementation task here. Update or remove the dead-zone helper and its tests only if the selected design makes them obsolete.
-- This plan is queued while the round-based plan remains the active work pointer.
+- The round-based plan is complete. Keep this plan queued until the camera option is decided.
