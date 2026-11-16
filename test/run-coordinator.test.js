@@ -13,3 +13,9 @@ test('save cadence survives time reset, errors surface and clear is exactly once
  s.setData({elapsedTicks:0,deaths:1});s.events.emit('stage:death');for(let i=0;i<60;i++)s.coordinator.tick();assert.equal(s.writes.length,3);
  s.setData({elapsedTicks:120,deaths:2});s.events.emit('stage:clear');s.events.emit('stage:clear');s.coordinator.tick();s.coordinator.flush();assert.equal(s.writes.length,4);assert.deepEqual(s.getSave().records['forest-1'].best,{elapsedTicks:120,deaths:2});assert.equal(s.getSave().run.stageId,'mine-1');s.coordinator.dispose();
 });
+test('round clear and round start force checkpoints with the latest encounter state',()=>{
+ const s=setup();s.setData({round:3,roundClearTicks:120,elapsedTicks:900});s.events.emit('round:clear');
+ s.setData({round:4,roundClearTicks:null,elapsedTicks:1020});s.events.emit('round:start');
+ assert.deepEqual(s.writes.map(write=>[write.run.round,write.run.roundClearTicks,write.run.elapsedTicks]),[[3,120,900],[4,null,1020]]);
+ s.coordinator.dispose();
+});

@@ -1,6 +1,6 @@
 # Task: T04 Round Save and Records
 
-## Status: pending
+## Status: done
 
 ## Goal
 Persist the new round run without carrying forward legacy progression data. Keep continue/reload recovery deterministic and preserve fastest-time stage records with their associated death counts.
@@ -45,17 +45,17 @@ Persist the new round run without carrying forward legacy progression data. Keep
   - Keep reload recovery on the saved round and encounter rather than generating a new random wave.
 
 ## Acceptance Criteria
-- [ ] A valid version-2 save loads as a fully fresh version-3 save and is persisted as reset data.
-- [ ] Old records, unlocks, settings, and active progress do not enter the new save.
-- [ ] Malformed or future-version saves retain the existing safe handling.
-- [ ] Faster times replace best time and paired deaths; slower times preserve both.
-- [ ] Death restart preserves stage elapsed time and adds one death.
-- [ ] Reload restores the same round, enemies, boss sequence, and next random result.
-- [ ] Next Stage and Retry create new attempts with fresh elapsed time and deaths.
+- [x] A valid version-2 save loads as a fully fresh version-3 save and is persisted as reset data.
+- [x] Old records, unlocks, settings, and active progress do not enter the new save.
+- [x] Malformed or future-version saves retain the existing safe handling.
+- [x] Faster times replace best time and paired deaths; slower times preserve both.
+- [x] Death restart preserves stage elapsed time and adds one death.
+- [x] Reload restores the same round, enemies, boss sequence, and next random result.
+- [x] Next Stage and Retry create new attempts with fresh elapsed time and deaths.
 
 ## Validation
-- Planned: `node --test test/save-store.test.js test/run-coordinator.test.js test/reload-recovery.test.js test/menu-state.test.js`
-- Planned: `npm run build`
+- `node --test test/save-store.test.js test/run-coordinator.test.js test/reload-recovery.test.js test/menu-state.test.js` — passed, 16/16.
+- `npm.cmd run build` — passed; Vite reported the existing large-chunk warning.
 - Do not run validation during the planning phase.
 
 ## Dependencies
@@ -72,5 +72,5 @@ Task: T04-round-save-and-records
 ```
 
 ## Progress
-- [ ] Implementation complete
-- [ ] Validation passed
+- [x] Implementation complete
+- [x] Validation passed

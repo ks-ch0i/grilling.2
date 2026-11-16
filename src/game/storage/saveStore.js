@@ -1,30 +1,110 @@
-import {FOREST_STAGE} from '../content/forestStage.js';
 import {getStage} from '../content/stages.js';
 import {createStageRun,restoreStageRun,snapshotStageRun} from '../sim/stage.js';
+
 export const SAVE_KEY='pixel-action.save.v1';
-const pickupIds=new Set(FOREST_STAGE.pickups.map(p=>p.id));
-const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
-const shape=(x,keys)=>object(x)&&Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k));
-const count=x=>Number.isSafeInteger(x)&&x>=0;
-const record=x=>shape(x,['elapsedTicks','deaths'])&&count(x.elapsedTicks)&&count(x.deaths);
-const settings=x=>shape(x,['musicVolume','sfxVolume','screenShake'])&&[x.musicVolume,x.sfxVolume].every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=1)&&typeof x.screenShake==='boolean';
-const oldRun=x=>shape(x,['stageId','checkpoint','consumedPickupIds','elapsedTicks','deaths'])&&x.stageId==='forest-1'&&['start','mid'].includes(x.checkpoint)&&Array.isArray(x.consumedPickupIds)&&new Set(x.consumedPickupIds).size===x.consumedPickupIds.length&&x.consumedPickupIds.every(id=>typeof id==='string'&&pickupIds.has(id))&&count(x.elapsedTicks)&&count(x.deaths);
-const oldSave=x=>shape(x,['version','run','best','recent','settings'])&&x.version===1&&(x.run===null||oldRun(x.run))&&(x.best===null||record(x.best))&&(x.recent===null||record(x.recent))&&settings(x.settings);
-const records=x=>shape(x,['best','recent'])&&(x.best===null||record(x.best))&&(x.recent===null||record(x.recent));
-const snapshot=x=>{try{return x.outcome===null&&Boolean(restoreStageRun(getStage(x.stageId),x));}catch{return false;}};
-export function freshSave(){return {version:2,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};}
+const LEGACY_PICKUP_IDS=new Set(['heal-1','heal-2','heal-3']);
+const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+const shape=(value,keys)=>object(value)&&Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
+const keys=(value,required,optional=[])=>object(value)&&required.every(key=>Object.hasOwn(value,key))&&Object.keys(value).every(key=>required.includes(key)||optional.includes(key));
+const count=value=>Number.isSafeInteger(value)&&value>=0;
+const strings=value=>Array.isArray(value)&&value.every(item=>typeof item==='string'&&item.length>0)&&new Set(value).size===value.length;
+const finiteTree=value=>typeof value==='number'?Number.isFinite(value):Array.isArray(value)?value.every(finiteTree):object(value)?Object.values(value).every(finiteTree):value===null||['string','boolean'].includes(typeof value);
+const record=value=>shape(value,['elapsedTicks','deaths'])&&count(value.elapsedTicks)&&count(value.deaths);
+const settings=value=>shape(value,['musicVolume','sfxVolume','screenShake'])&&[value.musicVolume,value.sfxVolume].every(item=>typeof item==='number'&&Number.isFinite(item)&&item>=0&&item<=1)&&typeof value.screenShake==='boolean';
+const records=value=>shape(value,['best','recent'])&&(value.best===null||record(value.best))&&(value.recent===null||record(value.recent));
+const unlocked=value=>Array.isArray(value)&&value.includes('forest-1')&&new Set(value).size===value.length&&value.every(id=>['forest-1','mine-1'].includes(id));
+const oldV1Run=value=>shape(value,['stageId','checkpoint','consumedPickupIds','elapsedTicks','deaths'])&&value.stageId==='forest-1'&&['start','mid'].includes(value.checkpoint)&&Array.isArray(value.consumedPickupIds)&&new Set(value.consumedPickupIds).size===value.consumedPickupIds.length&&value.consumedPickupIds.every(id=>typeof id==='string'&&LEGACY_PICKUP_IDS.has(id))&&count(value.elapsedTicks)&&count(value.deaths);
+
+function legacyRect(value,ticks=false){
+  const required=['x','y','w','h',...(ticks?['ticks']:[])];
+  return shape(value,required)&&['x','y','w','h'].every(key=>Number.isFinite(value[key]))&&value.w>0&&value.h>0&&(!ticks||count(value.ticks));
+}
+function legacyEnemy(value,stageId){
+  const kinds=stageId==='forest-1'?['soldier','wisp','boar']:['golem','insect','bat'];
+  const required=['id','kind','x','y','w','h','hp','maxHp','state','stateTicks','facing','lockedFacing','hitIds','visible'];
+  const optional=['homeY','shotCount','lockedTarget','vx','vy'];
+  return keys(value,required,optional)&&typeof value.id==='string'&&kinds.includes(value.kind)&&
+    ['x','y','w','h','hp','maxHp','stateTicks','facing','lockedFacing'].every(key=>Number.isFinite(value[key]))&&
+    Number.isInteger(value.hp)&&Number.isInteger(value.maxHp)&&value.hp>=0&&value.hp<=value.maxHp&&count(value.stateTicks)&&
+    ['idle','chase','windup','attack','return','recovery','hurt','dead'].includes(value.state)&&strings(value.hitIds)&&typeof value.visible==='boolean'&&
+    (!Object.hasOwn(value,'homeY')||Number.isFinite(value.homeY))&&(!Object.hasOwn(value,'shotCount')||count(value.shotCount))&&
+    (!Object.hasOwn(value,'lockedTarget')||shape(value.lockedTarget,['x','y'])&&Number.isFinite(value.lockedTarget.x)&&Number.isFinite(value.lockedTarget.y))&&
+    ['vx','vy'].every(key=>!Object.hasOwn(value,key)||Number.isFinite(value[key]));
+}
+function legacyBoss(value,stageId){
+  const forest=stageId==='forest-1';
+  const required=forest
+    ?['id','x','y','w','h','hp','maxHp','phase','state','stateTicks','cycle','attackKind','lockedFacing','telegraphs','hitboxes','secondRootDelay','secondRoot','transitioned']
+    :['id','kind','x','y','w','h','hp','maxHp','phase','state','stateTicks','attackKind','lastAttack','lockedFacing','telegraphs','hitboxes','transitioned','targetX','trailStartX','burrowsLeft','attackSerial','cycle'];
+  const optional=forest?['rootEffects']:[];
+  if(!keys(value,required,optional)||!finiteTree(value)||typeof value.id!=='string'||
+    !['x','y','w','h','hp','maxHp','phase','stateTicks','cycle','lockedFacing'].every(key=>Number.isFinite(value[key]))||
+    !Number.isInteger(value.hp)||!Number.isInteger(value.maxHp)||value.hp<0||value.hp>value.maxHp||![1,2].includes(value.phase)||!count(value.stateTicks)||!count(value.cycle)||
+    !['dormant','intro','transition','windup','attack','recovery','dying','dead'].includes(value.state)||typeof value.transitioned!=='boolean'||
+    !Array.isArray(value.telegraphs)||!value.telegraphs.every(rect=>legacyRect(rect))||!Array.isArray(value.hitboxes)||!value.hitboxes.every(rect=>legacyRect(rect,true)))return false;
+  if(forest)return value.id==='forest-guardian'&&count(value.secondRootDelay)&&[-1,1].includes(value.lockedFacing)&&
+    [null,'branch','root','slam'].includes(value.attackKind)&&(value.secondRoot===null||legacyRect(value.secondRoot))&&
+    (!Object.hasOwn(value,'rootEffects')||Array.isArray(value.rootEffects)&&finiteTree(value.rootEffects));
+  const kinds=['charge','wave','rocks','mineral','spit','burrow','tail'];
+  return ['machine','worm'].includes(value.kind)&&value.id===(value.kind==='machine'?'mine-machine':'mine-worm')&&count(value.burrowsLeft)&&count(value.attackSerial)&&
+    [-1,1].includes(value.lockedFacing)&&[null,...kinds].includes(value.attackKind)&&[null,...kinds].includes(value.lastAttack);
+}
+function legacyV2Run(value){
+  if(value===null)return true;
+  if(!object(value)||!['forest-1','mine-1'].includes(value.stageId))return false;
+  const mine=value.stageId==='mine-1';
+  const base=['stageId','player','enemies','projectiles','boss','arenaLocked','consumedPickupIds','elapsedTicks','deaths','outcome','deathTicks'];
+  const required=mine?[...base,'cartZones','rngState','hazards','bossSequence','bossDrop']:base;
+  if(!shape(value,required)||!finiteTree(value)||!count(value.elapsedTicks)||!count(value.deaths)||!count(value.deathTicks)||
+    typeof value.arenaLocked!=='boolean'||![null,'clear'].includes(value.outcome)||!Array.isArray(value.consumedPickupIds)||
+    new Set(value.consumedPickupIds).size!==value.consumedPickupIds.length||!value.consumedPickupIds.every(id=>LEGACY_PICKUP_IDS.has(id)))return false;
+
+  const player=value.player;
+  const numeric=['x','y','vx','vy','w','h','hp','facing','horizontalFacing','invulnerableTicks','rollCooldown','rollTicks','rollDirection','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks','hurtPushDirection'];
+  const boolean=['grounded','rollInvulnerable','damageInvulnerable','jumpCut','diveUsed','diveGraceActive'];
+  const playerKeys=[...numeric,...boolean,'mode','aim','hitIds'];
+  if(!keys(player,playerKeys)||!finiteTree(player)||!numeric.every(key=>Number.isFinite(player[key]))||!boolean.every(key=>typeof player[key]==='boolean')||
+    player.w!==16||player.h!==28||!Number.isInteger(player.hp)||player.hp<0||player.hp>3||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(player.mode)||
+    !shape(player.aim,['x','y'])||!Number.isFinite(player.aim.x)||!Number.isFinite(player.aim.y)||!strings(player.hitIds))return false;
+  if(!Array.isArray(value.enemies)||value.enemies.length>9||new Set(value.enemies.map(enemy=>enemy?.id)).size!==value.enemies.length||!value.enemies.every(enemy=>legacyEnemy(enemy,value.stageId)))return false;
+  if(!Array.isArray(value.projectiles)||!value.projectiles.every(projectile=>shape(projectile,['id','ownerId','x','y','w','h','vx','vy','life','alive'])&&
+    typeof projectile.id==='string'&&typeof projectile.ownerId==='string'&&['x','y','w','h','vx','vy'].every(key=>Number.isFinite(projectile[key]))&&projectile.w>0&&projectile.h>0&&count(projectile.life)&&typeof projectile.alive==='boolean'))return false;
+  if(!legacyBoss(value.boss,value.stageId))return false;
+
+  if(!mine)return true;
+  if(!count(value.rngState)||value.rngState>0xffffffff||!Array.isArray(value.cartZones)||value.cartZones.length!==5||
+    new Set(value.cartZones.map(zone=>zone?.centerX)).size!==5||!value.cartZones.every((zone,index)=>shape(zone,['id','centerX','direction','state','ticks','cartId'])&&zone.id===`cart-${index+1}`&&
+      Number.isSafeInteger(zone.centerX)&&zone.centerX>=0&&zone.centerX<11520&&[-1,1].includes(zone.direction)&&['countdown','warning','active'].includes(zone.state)&&count(zone.ticks)&&(zone.cartId===null||typeof zone.cartId==='string'))||
+    !Array.isArray(value.hazards)||!value.hazards.every(hazard=>object(hazard)&&finiteTree(hazard)&&typeof hazard.id==='string'&&typeof hazard.ownerId==='string'&&
+      ['wave','acid-shot','acid-pool','cart','rock','mineral'].includes(hazard.kind)&&['x','y','w','h','vx','vy','life','alive'].every(key=>Object.hasOwn(hazard,key))&&
+      ['x','y','w','h','vx','vy'].every(key=>Number.isFinite(hazard[key]))&&hazard.w>0&&hazard.h>0&&count(hazard.life)&&typeof hazard.alive==='boolean')||
+    !['machine','worm-intro','worm','done'].includes(value.bossSequence)||!shape(value.bossDrop,['rolled','spawned','consumed','x','y'])||
+    !['rolled','spawned','consumed'].every(key=>typeof value.bossDrop[key]==='boolean')||!Number.isFinite(value.bossDrop.x)||!Number.isFinite(value.bossDrop.y))return false;
+  return true;
+}
+
+function oldV1Save(value){
+  return shape(value,['version','run','best','recent','settings'])&&value.version===1&&(value.run===null||oldV1Run(value.run))&&
+    (value.best===null||record(value.best))&&(value.recent===null||record(value.recent))&&settings(value.settings);
+}
+function oldV2Save(value){
+  return shape(value,['version','run','unlockedStageIds','records','settings'])&&value.version===2&&legacyV2Run(value.run)&&unlocked(value.unlockedStageIds)&&
+    shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&settings(value.settings);
+}
+const currentSnapshot=value=>{try{return value.outcome===null&&Boolean(restoreStageRun(getStage(value.stageId),value));}catch{return false;}};
+
+export function freshSave(){
+  return {version:3,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
+}
 export function parseSave(raw){
   if(raw===null)return {ok:true,save:freshSave()};
   if(typeof raw!=='string')return {ok:false,reason:'invalid'};
   let value;try{value=JSON.parse(raw);}catch{return {ok:false,reason:'invalid'};}
-  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>2)return {ok:false,reason:'unsupported-version'};
-  if(oldSave(value))return {ok:true,save:freshSave(),migrated:true};
-  if(!shape(value,['version','run','unlockedStageIds','records','settings'])||value.version!==2||
-    !(value.run===null||snapshot(value.run))||!Array.isArray(value.unlockedStageIds)||
-    !value.unlockedStageIds.includes('forest-1')||new Set(value.unlockedStageIds).size!==value.unlockedStageIds.length||
-    !value.unlockedStageIds.every(id=>['forest-1','mine-1'].includes(id))||
-    !shape(value.records,['forest-1','mine-1'])||!records(value.records['forest-1'])||!records(value.records['mine-1'])||
-    !settings(value.settings))return {ok:false,reason:'invalid'};
+  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>3)return {ok:false,reason:'unsupported-version'};
+  if(oldV1Save(value)||oldV2Save(value))return {ok:true,save:freshSave(),migrated:true};
+  if(!shape(value,['version','run','unlockedStageIds','records','settings'])||value.version!==3||
+    !(value.run===null||currentSnapshot(value.run))||!unlocked(value.unlockedStageIds)||
+    !shape(value.records,['forest-1','mine-1'])||!records(value.records['forest-1'])||!records(value.records['mine-1'])||!settings(value.settings))return {ok:false,reason:'invalid'};
   return {ok:true,save:value};
 }
 export function loadSave(storage){try{return parseSave(storage.getItem(SAVE_KEY));}catch{return {ok:false,reason:'unavailable'};}}

@@ -206,6 +206,7 @@ export function stepStage(previous,input,stage){
     if(--run.deathTicks<=0){
       const deaths=run.deaths,elapsedTicks=run.elapsedTicks,seed=run.rngState;
       run=createStageRun(stage,{}, {seed});run.deaths=deaths;run.elapsedTicks=elapsedTicks;
+      events.push({type:'round:start',round:run.round,enemyCount:run.enemies.length,respawn:true});
     }
     return {run,events};
   }

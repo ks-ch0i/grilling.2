@@ -7,11 +7,11 @@
 [P01 Round-Based Gameplay](./phases/2026-11-16-round-based-progression/P01-round-based-gameplay/phase.md)
 
 ## Active Task
-[T04 Round Save and Records](./phases/2026-11-16-round-based-progression/P01-round-based-gameplay/T04-round-save-and-records.md)
+[T05 Stage Clear Result UI](./phases/2026-11-16-round-based-progression/P01-round-based-gameplay/T05-stage-clear-result-ui.md)
 
 ## Status
-- Plan: in progress; T01 arena data, T02 round simulation, and T03 round HUD are implemented and validated.
-- Phase: 3/5 tasks complete; T04 is active.
+- Plan: in progress; T01 arena data, T02 round simulation, T03 round HUD, and T04 save lifecycle are implemented and validated.
+- Phase: 4/5 tasks complete; T05 is active.
 - Decisions: `.memory/decisions/2026-11-16-round-based-gameplay.md`.
 - Death resets the stage to round 1 and increments deaths; elapsed time continues across deaths.
 - Each stage has 8 rounds. Forest advances to Mine only through the result screen; Mine is final.
@@ -22,4 +22,4 @@
 [Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) — pending; compare the two options before changing camera code.
 
 ## Next Step
-Implement version-3 save reset, deterministic round recovery, and paired time/death records from T04. Preserve the separate camera plan and its undecided framing choice.
+Implement the Forest/Mine clear result screen, paired best/death records, and Home/Next/Retry actions from T05. Keep the camera-framing decision queued separately.

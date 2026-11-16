@@ -14,7 +14,7 @@ export function createRunCoordinator({store,onStorageError=()=>{}}){
   }
   function bind(target){
     if(scene)throw new Error('Coordinator already attached');scene=target;ticksSinceAttempt=0;
-    for(const name of ['stage:pickup','stage:death']){const handler=()=>flush();target.events.on(name,handler);listeners.push([name,handler]);}
+    for(const name of ['stage:pickup','stage:death','round:clear','round:start']){const handler=()=>flush();target.events.on(name,handler);listeners.push([name,handler]);}
     target.events.on('stage:clear',onClear);listeners.push(['stage:clear',onClear]);return api;
   }
   function tick(){if(scene&&!finished&&++ticksSinceAttempt>=60)flush();}
