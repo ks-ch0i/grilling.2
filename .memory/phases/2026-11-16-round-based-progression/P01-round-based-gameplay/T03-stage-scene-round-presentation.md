@@ -1,6 +1,6 @@
 # Task: T03 Stage Scene and Round Presentation
 
-## Status: pending
+## Status: done
 
 ## Goal
 Present round progress and clear feedback in the stage scene without deciding the camera's zoom or movement style.
@@ -47,15 +47,15 @@ Present round progress and clear feedback in the stage scene without deciding th
   - Keep the existing development-only practice controls; do not add production round selection.
 
 ## Acceptance Criteria
-- [ ] The HUD shows the current round and uses the simulation's 120-tick clear interval.
-- [ ] Round labels update after automatic transitions and restore correctly after reload.
-- [ ] Existing health, boss, death, and stage-clear presentation continues to work.
-- [ ] Development practice-round support remains available without adding player-facing round selection.
-- [ ] Camera zoom, follow motion, and dead-zone helper behavior are not changed by this task.
+- [x] The HUD shows the current round and uses the simulation's 120-tick clear interval.
+- [x] Round labels update after automatic transitions and restore correctly after reload.
+- [x] Existing health, boss, death, and stage-clear presentation continues to work.
+- [x] Development practice-round support remains available without adding player-facing round selection.
+- [x] Camera zoom, follow motion, and dead-zone helper behavior are not changed by this task.
 
 ## Validation
-- Planned: `node --test test/round-selector.test.js test/stage-lifecycle.test.js`
-- Planned: `npm run build`
+- `node --test test/round-selector.test.js test/stage-lifecycle.test.js test/camera-deadzone.test.js` — passed, 18/18.
+- `npm.cmd run build` — passed; Vite reported the existing large-chunk warning.
 - Do not run validation during the planning phase.
 
 ## Dependencies
@@ -75,5 +75,5 @@ Task: T03-stage-scene-round-presentation
 ```
 
 ## Progress
-- [ ] Implementation complete
-- [ ] Validation passed
+- [x] Implementation complete
+- [x] Validation passed

@@ -32,6 +32,8 @@ export class StageScene extends Phaser.Scene {
     this.pickupViews=this.stage.pickups.map(p=>this.add.sprite(p.x+8,p.y+16,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(1));
     this.worldGraphics=this.add.graphics().setDepth(1);this.light=mine?this.add.graphics().setDepth(-4):null;this.bossBlackout=mine?this.add.rectangle(0,0,640,360,0x050409,1).setOrigin(0,0).setScrollFactor(0).setDepth(2).setVisible(false):null;this.playerView=new PlayerView(this);this.enemyView=new EnemyView(this);this.mineHazardView=mine?new MineHazardView(this):null;this.wormIntroView=mine?new WormIntroView(this):null;this.visualEffects=[];
     this.hud=this.add.text(12,10,'',{fontFamily:'monospace',fontSize:'14px',color:'#ffffff'}).setScrollFactor(0).setDepth(10);
+    this.roundHud=this.add.text(122,10,'',{fontFamily:'monospace',fontSize:'12px',color:'#ffe4a2',backgroundColor:'#2b2926',padding:{x:6,y:3}}).setScrollFactor(0).setDepth(10);
+    this.bossHud=this.add.text(390,10,'',{fontFamily:'monospace',fontSize:'11px',color:'#fff1d1'}).setScrollFactor(0).setDepth(10);
     this.hearts=[0,1,2].map(i=>this.add.sprite(105+i*25,32,'objects',7).setOrigin(.5,1).setScale(.5).setScrollFactor(0).setDepth(10));
     this.hudGraphics=this.add.graphics().setScrollFactor(0).setDepth(10);
     this.bossDirectionGraphics=this.add.graphics().setScrollFactor(0).setDepth(11);
@@ -128,13 +130,17 @@ export class StageScene extends Phaser.Scene {
     this.drawWorld();if(this.light){this.light.clear();this.light.fillStyle(0xffd793,.08).fillCircle(p.x+p.w/2,p.y+p.h/2,95);this.light.fillStyle(0xffeac0,.06).fillCircle(p.x+p.w/2,p.y+p.h/2,45);}this.enemyView.sync(this.run,{bossVisible:intro?.showBody??true,bossElapsedTicks:intro?.phase==='reveal'?intro.phaseTicks:undefined});this.mineHazardView?.sync(this.run);this.playerView.sync(p,this,this.run.elapsedTicks);
     const showBoss=boss.state!=='dormant'&&boss.state!=='dead'&&(intro?.showBossHud??true);
     const label=this.stage.id==='mine-1'?(boss.kind==='worm'?'거대 벌레':'채굴 기계'):'FOREST GUARDIAN';
-    this.hud.setText(`${this.stage.id==='mine-1'?'MINE 2':'FOREST 1'}${showBoss?'                         '+label:''}`);
+    this.hud.setText(this.stage.id==='mine-1'?'MINE 2':'FOREST 1');
+    this.roundHud.setText(`ROUND ${this.run.round} / 8`);
+    this.bossHud.setText(showBoss?label:'').setVisible(showBoss);
     this.hearts.forEach((heart,i)=>heart.setFrame(i<p.hp?7:6));
     this.hudGraphics.clear();if(showBoss){this.hudGraphics.fillStyle(0x312c2d);this.hudGraphics.fillRect(390,29,220,8);this.hudGraphics.fillStyle(0xe99166);this.hudGraphics.fillRect(390,29,Math.round(220*boss.hp/boss.maxHp),8);}
     const direction=this.run.outcome||intro&&!intro.showBossHud?null:bossDirection(boss,{scrollX:cam.scrollX,width:640}),arrow=this.bossDirectionGraphics;
     arrow.clear();if(direction){const x=direction==='right'?626:14,y=Phaser.Math.Clamp(Math.round(boss.y+boss.h/2-cam.scrollY),72,280),tip=direction==='right'?x+5:x-5,base=direction==='right'?x-5:x+5;
       arrow.fillStyle(0xffdf9e).fillTriangle(tip,y,base,y-6,base,y+6);arrow.lineStyle(1,0x392a29).strokeTriangle(tip,y,base,y-6,base,y+6);}
-    this.message.setText(this.run.outcome==='clear'?'STAGE CLEAR':p.mode==='dead'?'RESPAWNING':boss.state==='intro'&&(!intro||intro.showBossHud)?(this.stage.id==='mine-1'?(boss.kind==='worm'?'거대 벌레 등장':'채굴 기계 가동'):'숲의 수호자 등장'):'');
+    const roundCleared=this.run.roundClearTicks!==null;
+    this.message.setColor(roundCleared?'#ffe49b':'#ffffff').setFontSize(roundCleared?'24px':'20px');
+    this.message.setText(this.run.outcome==='clear'?'STAGE CLEAR':p.mode==='dead'?'RESPAWNING':roundCleared?'ROUND CLEAR':boss.state==='intro'&&(!intro||intro.showBossHud)?(this.stage.id==='mine-1'?(boss.kind==='worm'?'거대 벌레 등장':'채굴 기계 가동'):'숲의 수호자 등장'):'');
   }
   drawWorld(){
     const g=this.worldGraphics,stage=this.stage;g.clear();

@@ -5,7 +5,7 @@ import {snapshotStageRun,restoreStageRun,stepStage} from '../src/game/sim/stage.
 import {getStage} from '../src/game/content/stages.js';
 import {freshSave,parseSave} from '../src/game/storage/saveStore.js';
 
-const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:12000,aimY:290};
+const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 test('round selector is available only in development and can be disabled',()=>{
  assert.equal(isRoundSelectorEnabled({development:true,enabled:true}),true);
  assert.equal(isRoundSelectorEnabled({development:true,enabled:false}),false);
@@ -17,11 +17,13 @@ test('stage and boss practice targets start with full health and valid state',()
  for(const target of ROUND_TARGETS){
   const run=createPracticeRun(target.id,{seed:1}),stage=getStage(target.stageId),snapshot=snapshotStageRun(run);
   assert.equal(run.player.hp,3);assert.equal(run.stageId,target.stageId);
+  assert.equal(run.round,target.id==='mine-worm'?8:target.id.endsWith('-boss')||target.id==='mine-machine'?5:1);
   assert.deepEqual(snapshotStageRun(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshot)))),snapshot);
   if(target.id.endsWith('-start'))assert.equal(run.player.x,stage.spawn.x);
   else assert.ok(run.player.x>=stage.arena.left+16);
   if(target.id==='mine-worm'){assert.equal(run.boss.kind,'worm');assert.equal(run.bossSequence,'worm-intro');assert.equal(run.boss.stateTicks,240);}
-  if(target.id==='mine-machine')assert.equal(run.boss.kind,'machine');
+  if(target.id==='mine-machine'){assert.equal(run.boss.kind,'machine');assert.equal(run.bossSequence,'machine');assert.equal(run.enemies.length,0);}
+  if(target.id==='mine-worm')assert.equal(run.enemies.length,3);
   assert.doesNotThrow(()=>stepStage(run,input,stage));
  }
  assert.throws(()=>createPracticeRun('unknown'),TypeError);
