@@ -1,18 +1,20 @@
-const pits = [[1504,1568],[3136,3200],[4960,5024],[6848,6912],[8752,8816]];
-const ground = [];
-let left = 0;
-for (const [start, end] of pits) { ground.push({x:left,y:304,w:start-left,h:56}); left=end; }
-ground.push({x:left,y:304,w:11520-left,h:56});
-export const FOREST_STAGE = {
-  id:'forest-1', world:{width:11520,height:360}, spawn:{x:120,y:276},
-  solids:[...ground,...[1800,3488,5504,7360,9120].map(x=>({x,y:256,w:128,h:16})),...[1216,2800,4384,6624,9504].map(x=>({x,y:288,w:32,h:16}))],
+const floor={x:0,y:304,w:640,h:56};
+const platforms=[{x:128,y:256,w:112,h:16},{x:400,y:256,w:96,h:16},{x:288,y:288,w:32,h:16}];
+
+export const FOREST_STAGE={
+  id:'forest-1',
+  world:{width:640,height:360},
+  spawn:{x:16,y:276},
+  solids:[floor,...platforms],
   pitDeathY:344,
-  pickups:[{id:'heal-1',kind:'heal',x:2400,y:288},{id:'heal-2',kind:'heal',x:6200,y:288},{id:'heal-3',kind:'heal',x:9600,y:288}],
+  pickups:[],
   enemies:[
-    ...[800,2300,6400].map((x,i)=>({id:`soldier-${i+1}`,kind:'soldier',x,y:276})),
-    ...[2200,5320,8070].map((x,i)=>({id:`wisp-${i+1}`,kind:'wisp',x,y:284})),
-    ...[3850,6500,9700].map((x,i)=>({id:`boar-${i+1}`,kind:'boar',x,y:284}))
+    {id:'soldier-template',kind:'soldier',x:128,y:276},
+    {id:'wisp-template',kind:'wisp',x:288,y:284},
+    {id:'boar-template',kind:'boar',x:400,y:284}
   ],
-  arena:{left:10496,right:11472,top:0,bottom:304}, boss:{id:'forest-guardian',x:11040,y:208}
+  arena:{left:16,right:624,top:0,bottom:304},
+  boss:{id:'forest-guardian',x:520,y:208}
 };
+
 export {validateStage} from './stageValidation.js';
