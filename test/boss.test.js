@@ -33,3 +33,8 @@ test('phase change and death cancel pending roots and their independent effects'
  const transition=damageBoss(b).boss;assert.deepEqual(transition.rootEffects,[]);assert.equal(transition.secondRootDelay,0);assert.ok(b.rootEffects.length);
  const dying=damageBoss({...b,hp:1}).boss;assert.deepEqual(dying.rootEffects,[]);assert.equal(dying.secondRoot,null);
 });
+test('phase-1-only rounds keep Guardian attacks active until defeated',()=>{
+ let b=createBoss(spawn);Object.assign(b,{state:'recovery',stateTicks:20,hp:10});
+ for(let i=0;i<9;i++){const result=damageBoss(b,1,{allowPhaseTransition:false});b=result.boss;assert.equal(result.events.some(event=>event.type==='boss:transition'),false);assert.equal(b.phase,1);assert.equal(b.state,'recovery');}
+ const defeated=damageBoss(b,1,{allowPhaseTransition:false});assert.equal(defeated.boss.hp,0);assert.equal(defeated.boss.state,'dying');
+});

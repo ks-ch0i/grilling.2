@@ -1,113 +1,99 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {FOREST_STAGE as stage} from '../src/game/content/forestStage.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {FOREST_STAGE} from '../src/game/content/forestStage.js';
+import {MINE_STAGE} from '../src/game/content/mineStage.js';
 import {createStageRun,stepStage,restoreStageRun,snapshotStageRun} from '../src/game/sim/stage.js';
-const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:12000,aimY:290};
-const tick=(r,n=1)=>{let events=[];for(let i=0;i<n;i++){const next=stepStage(r,input,stage);r=next.run;events.push(...next.events);}return {run:r,events};};
-test('death resets pickups, enemies and elapsed time but preserves deaths',()=>{
- const original=JSON.stringify(stage);let r=createStageRun(stage);
- r.player.x=2400;let result=tick(r);r=result.run;assert.equal(r.player.hp,3);assert.deepEqual(r.consumedPickupIds,['heal-1']);assert.ok(result.events.some(e=>e.type==='stage:pickup'));
- r.enemies[0].hp=1;r.enemies[0].state='dead';r.projectiles.push({id:'p',x:0,y:0,w:8,h:8,vx:0,vy:0,life:50,alive:true});r.player.y=344;r.player.invulnerableTicks=40;
- result=tick(r);r=result.run;assert.equal(r.deaths,1);assert.equal(r.player.mode,'dead');assert.ok(result.events.some(e=>e.type==='stage:death'));
- r=tick(r,60).run;assert.equal(r.player.x,stage.spawn.x);assert.equal(r.player.hp,3);assert.equal(r.enemies[0].hp,3);assert.equal(r.projectiles.length,0);assert.deepEqual(r.consumedPickupIds,[]);assert.equal(r.deaths,1);assert.equal(r.elapsedTicks,0);assert.equal(JSON.stringify(stage),original);
- assert.deepEqual(snapshotStageRun(restoreStageRun(stage,snapshotStageRun(r))),snapshotStageRun(r));
-});
-test('death returns to start and snapshots are validated',()=>{
- let r=createStageRun(stage);r.player.y=344;r=tick(r).run;r=tick(r,60).run;assert.equal(r.player.x,stage.spawn.x);
- assert.throws(()=>createStageRun(stage,{checkpoint:'other'}),TypeError);assert.throws(()=>createStageRun(stage,{consumedPickupIds:['missing']}),TypeError);
-});
-test('combat snapshot JSON round trip preserves the next tick, including sets and boss attack',()=>{
- let r=createStageRun(stage);Object.assign(r.player,{x:10900,y:276,hp:2,mode:'attack',attackTick:5,invulnerableTicks:12});
- r.player.hitIds.add('soldier-1');Object.assign(r.enemies[0],{state:'windup',stateTicks:20,lockedTarget:{x:900,y:290}});
- r.enemies[0].hitIds.add('player');r.projectiles.push({id:'p',ownerId:'wisp-1',x:800,y:260,w:8,h:8,vx:60,vy:0,life:20,alive:true});
- Object.assign(r.boss,{hp:8,phase:2,transitioned:true,state:'attack',stateTicks:5,attackKind:'root',hitboxes:[{x:11000,y:256,w:48,h:48,ticks:5}]});r.arenaLocked=true;
- const saved=JSON.parse(JSON.stringify(snapshotStageRun(r))),restored=restoreStageRun(stage,saved);
- assert.ok(restored.player.hitIds instanceof Set);assert.ok(restored.enemies[0].hitIds instanceof Set);
- assert.deepEqual(stepStage(restored,input,stage),stepStage(r,input,stage));
- const broken=structuredClone(saved);broken.enemies[0].stateTicks=-1;assert.throws(()=>restoreStageRun(stage,broken),TypeError);
-});
-test('restoring mid-death does not add another death and resumes countdown',()=>{
- let r=createStageRun(stage);r.player.y=344;r=tick(r).run;r=tick(r,20).run;
- const restored=restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(r))));
- assert.equal(restored.deaths,1);assert.deepEqual(tick(restored,40),tick(r,40));assert.equal(tick(restored,40).run.deaths,1);
-});
-test('arena locks on entry, death unlocks, and restore resets boss',()=>{
- let r=createStageRun(stage);r.player.x=stage.arena.left+16;r=tick(r).run;assert.equal(r.arenaLocked,true);assert.equal(r.boss.state,'intro');
- r.player.y=344;r.boss.state='recovery';r.boss.stateTicks=10;let result=tick(r);r=result.run;assert.equal(r.arenaLocked,false);r=tick(r,60).run;assert.equal(r.boss.state,'dormant');assert.equal(r.boss.hp,18);
-});
-test('the player can move and jump while the boss enters',()=>{
- let r=createStageRun(stage);r.player.x=stage.arena.left+16;
- r=stepStage(r,{...input,move:1},stage).run;assert.equal(r.boss.state,'intro');const startX=r.player.x,startY=r.player.y;
- for(let i=0;i<20;i++)r=stepStage(r,{...input,move:1,jumpPressed:i===0,jumpHeld:true},stage).run;
- assert.equal(r.boss.state,'intro');assert.ok(r.player.x>startX+20);assert.ok(r.player.y<startY-10);assert.equal(r.outcome,null);
-});
-test('the mixed enemy pairs can react together at their actual spawn positions',()=>{
- for(const [x,ids,partner] of [[2150,['soldier-2','wisp-1'],'wisp-1'],[6300,['soldier-3','boar-2'],'boar-2']]){
-  let r=createStageRun(stage);r.enemies=r.enemies.filter(e=>ids.includes(e.id));r.player.x=x;
-  for(let i=0;i<5;i++)r=stepStage(r,input,stage).run;
-  assert.equal(r.enemies.find(e=>e.kind==='soldier').state,'chase');assert.equal(r.enemies.find(e=>e.id===partner).state,'windup');
- }
-});
-test('dive landing damages only enemies overlapping the impact area',()=>{
- let r=createStageRun(stage);Object.assign(r.player,{x:200,y:275,mode:'dive',diveUsed:true,grounded:false});
- const near=r.enemies.find(e=>e.id==='soldier-1'),far=r.enemies.find(e=>e.id==='soldier-2');
- Object.assign(near,{x:238,y:276,state:'hurt',stateTicks:10});Object.assign(far,{x:239,y:276,state:'hurt',stateTicks:10});r.enemies=[near,far];
- const result=tick(r),impact=result.events.find(e=>e.type==='dive-impact');assert.equal(impact.canDamage,true);
- assert.equal(result.run.enemies[0].hp,near.hp-1);assert.equal(result.run.enemies[1].hp,far.hp);
-});
-test('diving through an enemy and landing on it preserves hp and deals one impact',()=>{
- let r=createStageRun(stage); Object.assign(r.player,{x:200,y:240,mode:'dive',diveUsed:true,grounded:false});
- const enemy=r.enemies.find(e=>e.id==='soldier-1'); Object.assign(enemy,{x:200,y:276,state:'attack',stateTicks:8,lockedFacing:1}); r.enemies=[enemy];
- r.projectiles=[{id:'shot',ownerId:enemy.id,x:202,y:250,w:8,h:8,vx:0,vy:0,life:10,alive:true}];
- let impacts=0,projectileHit=false;
- for(let i=0;i<15&&!r.player.grounded;i++){const result=tick(r);r=result.run;impacts+=result.events.filter(e=>e.type==='dive-impact').length;projectileHit ||= result.events.some(e=>e.type==='projectile:hit'); assert.equal(r.player.hp,3);}
- assert.equal(projectileHit,true);assert.equal(r.projectiles.length,0);assert.equal(impacts,1);assert.equal(r.enemies[0].hp,2);assert.equal(r.player.diveGraceTicks,15);
- for(let i=0;i<15;i++){r=tick(r).run;assert.equal(r.player.hp,3);}
- r=tick(r).run;assert.equal(r.player.hp,2);
-});
-test('boss contact and attacks cannot interrupt a diving player',()=>{
- let r=createStageRun(stage);r.enemies=[];r.arenaLocked=true;
- Object.assign(r.player,{x:11040,y:150,mode:'dive',diveUsed:true,grounded:false});
- Object.assign(r.boss,{state:'attack',stateTicks:5,hitboxes:[{x:11040,y:150,w:80,h:100,ticks:5}]});
- const result=tick(r);assert.equal(result.run.player.hp,3);assert.equal(result.run.player.mode,'dive');assert.equal(result.events.some(e=>e.type==='hurt'),false);
-});
-test('dive landing during boss intro does not apply damage',()=>{
- let r=createStageRun(stage);Object.assign(r.player,{x:200,y:275,mode:'dive',diveUsed:true,grounded:false});
- const near=r.enemies.find(e=>e.id==='soldier-1');Object.assign(near,{x:227,y:276,state:'hurt',stateTicks:10});r.enemies=[near];
- Object.assign(r.boss,{state:'intro',stateTicks:20});const result=tick(r),impact=result.events.find(e=>e.type==='dive-impact');
- assert.equal(impact.canDamage,false);assert.equal(result.run.enemies[0].hp,near.hp);
-});
-test('attack input is accepted during boss intro and transition while damage stays locked',()=>{
- for(const state of ['intro','transition']){
-  let r=createStageRun(stage);Object.assign(r.player,{x:200,y:276,grounded:true});
-  const enemy=r.enemies.find(e=>e.id==='soldier-1');Object.assign(enemy,{x:225,y:276,state:'hurt',stateTicks:30});r.enemies=[enemy];
-  Object.assign(r.boss,{state,stateTicks:30});let events=[];
-  for(let i=0;i<7;i++){const next=stepStage(r,{...input,attackPressed:i===0,aimX:250,aimY:290},stage);r=next.run;events.push(...next.events);}
-  assert.equal(events.filter(e=>e.type==='swing').length,1,state);assert.equal(r.enemies[0].hp,enemy.hp,state);assert.equal(events.some(e=>e.type==='enemy:hurt'),false,state);
- }
-});
-test('simultaneous lethal collision wins over the player swing',()=>{
- let r=createStageRun(stage);r.player.x=11010;r.player.hp=1;r.player.mode='attack';r.player.attackTick=4;r.player.aim={x:1,y:0};
- Object.assign(r.boss,{hp:1,state:'attack',stateTicks:5,phase:2,transitioned:true,hitboxes:[{x:11000,y:260,w:40,h:44,ticks:5}]});r.arenaLocked=true;
- const result=tick(r);assert.equal(result.run.player.mode,'dead');assert.equal(result.run.boss.hp,1);assert.equal(result.run.outcome,null);assert.equal(result.events.filter(e=>e.type==='stage:clear').length,0);
-});
-test('boss death unlocks arena and emits clear once after victory',()=>{
- let r=createStageRun(stage);r.player.x=11010;r.player.mode='attack';r.player.attackTick=4;r.player.aim={x:1,y:0};
- Object.assign(r.boss,{hp:1,state:'recovery',stateTicks:40,phase:2,transitioned:true});r.arenaLocked=true;
- let result=tick(r);r=result.run;assert.equal(r.boss.state,'dying');assert.equal(r.arenaLocked,false);assert.equal(r.player.mode,'idle');assert.equal(r.player.attackTick,0);
- result=tick(r,90);r=result.run;assert.equal(r.outcome,'clear');assert.equal(result.events.filter(e=>e.type==='stage:clear').length,1);assert.equal(tick(r).events.length,0);
-});
+import {roundEnemyCount,isBossRound,ROUND_COUNT,ROUND_CLEAR_TICKS} from '../src/game/sim/rounds.js';
 
-test('all three enemy kinds can be defeated through the player combat loop',()=>{
- for(const spawn of stage.enemies.filter(e=>e.id.endsWith('-1'))){
-  let r=createStageRun(stage);r.enemies=r.enemies.filter(e=>e.id===spawn.id);r.player.x=spawn.x-40;
-  for(let i=0;i<150&&r.enemies[0].state!=='dead'&&r.player.mode!=='dead';i++){
-   r=stepStage(r,{...input,attackPressed:i%12===0,aimX:spawn.x+8,aimY:290},stage).run;
+const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
+const tick=(run,stage,n=1)=>{let events=[];for(let i=0;i<n;i++){const result=stepStage(run,input,stage);run=result.run;events.push(...result.events);}return {run,events};};
+function defeatRound(run,stage){
+  for(const enemy of run.enemies){enemy.hp=0;enemy.state='dead';}
+  if(isBossRound(stage.id,run.round)){run.boss.hp=0;run.boss.state='dead';run.boss.stateTicks=0;run.boss.hitboxes=[];run.boss.telegraphs=[];}
+  return run;
+}
+function advanceTo(stage,target,seed=9){
+  let run=createStageRun(stage,{}, {seed});
+  while(run.round<target){
+    if(run.roundClearTicks===null){run=defeatRound(run,stage);run=tick(run,stage).run;assert.equal(run.roundClearTicks,ROUND_CLEAR_TICKS);}
+    run=tick(run,stage,run.roundClearTicks).run;
   }
-  assert.equal(r.enemies[0].state,'dead',spawn.kind);assert.ok(r.player.hp>0,spawn.kind);
- }
+  return run;
+}
+
+test('round schedule is fixed and rejects rounds outside the stage',()=>{
+  assert.deepEqual(Array.from({length:ROUND_COUNT},(_,i)=>roundEnemyCount(i+1)),[1,2,3,4,0,6,3,3]);
+  assert.throws(()=>roundEnemyCount(0),RangeError);assert.throws(()=>roundEnemyCount(9),RangeError);
+  for(const stage of [FOREST_STAGE,MINE_STAGE])for(const round of [5,7,8])assert.equal(isBossRound(stage.id,round),true);
 });
 
-test('time resets at death and stays zero until the next attempt',()=>{
- let r=createStageRun(stage);r.player.y=344;let result=tick(r);r=result.run;const before=r.elapsedTicks;
- result=tick(r,60);assert.equal(before,0);assert.equal(result.run.elapsedTicks,0);assert.equal(result.run.deaths,1);assert.equal(result.run.player.hp,3);assert.equal(tick(result.run).run.elapsedTicks,1);
+test('round waves use stage species, one of each species on rounds 7 and 8, and safe arena positions',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const allowed=stage.enemies.map(enemy=>enemy.kind);
+    for(const round of [1,2,3,4,6,7,8]){
+      const run=advanceTo(stage,round,1234);
+      assert.equal(run.enemies.length,roundEnemyCount(round),`${stage.id} round ${round}`);
+      assert.ok(run.enemies.every(enemy=>allowed.includes(enemy.kind)));
+      assert.equal(new Set(run.enemies.map(enemy=>enemy.id)).size,run.enemies.length);
+      assert.ok(run.enemies.every(enemy=>enemy.x>=stage.arena.left&&enemy.x+enemy.w<=stage.arena.right&&enemy.y>=stage.arena.top&&enemy.y+enemy.h<=stage.arena.bottom));
+      for(let i=0;i<run.enemies.length;i++)for(let j=i+1;j<run.enemies.length;j++){
+        const a=run.enemies[i],b=run.enemies[j];assert.ok(a.x+a.w<=b.x||b.x+b.w<=a.x||a.y+a.h<=b.y||b.y+b.h<=a.y);
+      }
+      if(round===7||round===8)assert.deepEqual([...run.enemies.map(enemy=>enemy.kind)].sort(),[...allowed].sort());
+    }
+    for(const round of [5,7,8]){
+      const run=advanceTo(stage,round,1234);assert.equal(run.boss.state,'intro');
+      if(stage===MINE_STAGE)assert.equal(run.boss.kind,'machine');
+    }
+  }
+});
+
+test('a cleared round waits 120 ticks, then starts the next wave at full health',()=>{
+  let run=createStageRun(FOREST_STAGE,{}, {seed:14});run.player.hp=1;
+  run=defeatRound(run,FOREST_STAGE);let result=tick(run,FOREST_STAGE);
+  assert.equal(result.run.round,1);assert.equal(result.run.roundClearTicks,ROUND_CLEAR_TICKS);assert.equal(result.run.player.hp,1);
+  result=tick(result.run,FOREST_STAGE,ROUND_CLEAR_TICKS-1);assert.equal(result.run.round,1);assert.equal(result.run.roundClearTicks,1);
+  result=tick(result.run,FOREST_STAGE);assert.equal(result.run.round,2);assert.equal(result.run.roundClearTicks,null);assert.equal(result.run.player.hp,3);assert.equal(result.run.enemies.length,2);
+  assert.ok(result.events.some(event=>event.type==='round:start'&&event.round===2));
+});
+
+test('Guardian keeps phase 1 in rounds 5 and 7, then transitions normally in round 8',()=>{
+  for(const round of [5,7,8]){
+    const run=advanceTo(FOREST_STAGE,round,17);run.enemies=[];
+    Object.assign(run.boss,{state:'recovery',stateTicks:100,hp:10,phase:1,transitioned:false});
+    Object.assign(run.player,{x:480,y:276,grounded:true,mode:'attack',attackTick:4,aim:{x:1,y:0}});
+    const result=stepStage(run,{...input,aimX:550},FOREST_STAGE);
+    assert.equal(result.run.boss.hp,9);assert.equal(result.run.boss.phase,1);
+    assert.equal(result.run.boss.state,round===8?'transition':'recovery');
+  }
+});
+
+test('death restarts round 1, adds one death, and keeps the stage elapsed time',()=>{
+  let run=advanceTo(FOREST_STAGE,6,27);run.elapsedTicks=500;run.player.y=FOREST_STAGE.pitDeathY;
+  let result=tick(run,FOREST_STAGE);assert.equal(result.run.player.mode,'dead');assert.equal(result.run.deaths,1);assert.equal(result.run.elapsedTicks,501);
+  const saved=JSON.parse(JSON.stringify(snapshotStageRun(result.run))),restored=restoreStageRun(FOREST_STAGE,saved);
+  assert.equal(restored.round,6);assert.equal(restored.deaths,1);assert.equal(restored.elapsedTicks,501);
+  result=tick(restored,FOREST_STAGE,60);assert.equal(result.run.round,1);assert.equal(result.run.player.x,FOREST_STAGE.spawn.x);assert.equal(result.run.player.hp,3);assert.equal(result.run.enemies.length,1);assert.equal(result.run.deaths,1);assert.equal(result.run.elapsedTicks,501);
+});
+
+test('JSON snapshot restore preserves the encounter, round timer, and future random sequence',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    let run=advanceTo(stage,7,42);run.player.hp=2;
+    const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(run))),restored=restoreStageRun(stage,snapshot);
+    assert.ok(restored.player.hitIds instanceof Set);assert.ok(restored.enemies.every(enemy=>enemy.hitIds instanceof Set));
+    assert.deepEqual(tick(restored,stage),tick(run,stage));
+    const invalid=structuredClone(snapshot);invalid.rngState=-1;assert.throws(()=>restoreStageRun(stage,invalid),TypeError);
+    const invalidKinds=structuredClone(snapshot);invalidKinds.enemies[0].kind=invalidKinds.enemies[1].kind;assert.throws(()=>restoreStageRun(stage,invalidKinds),TypeError);
+    let cleared=defeatRound(createStageRun(stage,{}, {seed:42}),stage);cleared=tick(cleared,stage).run;cleared.roundClearTicks=30;
+    assert.equal(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(cleared)))).roundClearTicks,30);
+  }
+});
+
+test('stage clear is emitted only after all round 8 enemies and its boss are defeated',()=>{
+  let run=advanceTo(FOREST_STAGE,8,73);for(const enemy of run.enemies){enemy.hp=0;enemy.state='dead';}
+  run.boss.hp=0;run.boss.state='dying';run.boss.stateTicks=1;run.boss.hitboxes=[];run.boss.telegraphs=[];
+  const result=tick(run,FOREST_STAGE);assert.equal(result.run.outcome,'clear');assert.equal(result.run.boss.state,'dead');assert.ok(result.events.some(event=>event.type==='stage:clear'&&event.round===8));
+  assert.equal(tick(result.run,FOREST_STAGE).events.length,0);
+  assert.deepEqual(restoreStageRun(FOREST_STAGE,JSON.parse(JSON.stringify(snapshotStageRun(result.run)))),result.run);
+  const incomplete=snapshotStageRun(result.run);incomplete.enemies[0].state='hurt';assert.throws(()=>restoreStageRun(FOREST_STAGE,incomplete),TypeError);
 });

@@ -23,13 +23,13 @@ function beginWindup(boss,player,arena,events) {
   boss.state='windup'; boss.stateTicks=spec.kind==='root'?ROOT_PLUNGE_TICKS+ROOT_DELAY_TICKS[boss.phase]:boss.phase===2?Math.round(spec.windup*.75):spec.windup;
   events.push({type:'boss:windup',kind:spec.kind});
 }
-export function damageBoss(state, amount=1) {
+export function damageBoss(state, amount=1, {allowPhaseTransition=true}={}) {
   const boss={...state,telegraphs:state.telegraphs.map(r=>({...r})),hitboxes:state.hitboxes.map(r=>({...r})),rootEffects:(state.rootEffects??[]).map(r=>({...r}))};
   const events=[];
   if (['dormant','intro','transition','dying','dead'].includes(boss.state)) return {boss,events};
   boss.hp=Math.max(0,boss.hp-amount);
   if (boss.hp===0) { boss.state='dying'; boss.stateTicks=90; boss.telegraphs=[];boss.hitboxes=[];boss.secondRootDelay=0;boss.secondRoot=null;boss.rootEffects=[];events.push({type:'boss:death'}); }
-  else if (boss.hp<=9 && !boss.transitioned) { boss.transitioned=true;boss.state='transition';boss.stateTicks=90;boss.telegraphs=[];boss.hitboxes=[];boss.secondRootDelay=0;boss.secondRoot=null;boss.rootEffects=[];events.push({type:'boss:transition'}); }
+  else if (allowPhaseTransition && boss.hp<=9 && !boss.transitioned) { boss.transitioned=true;boss.state='transition';boss.stateTicks=90;boss.telegraphs=[];boss.hitboxes=[];boss.secondRootDelay=0;boss.secondRoot=null;boss.rootEffects=[];events.push({type:'boss:transition'}); }
   return {boss,events};
 }
 export function stepBoss(state,player,arena) {

@@ -1,9 +1,10 @@
 export function nextRandom(state){const value=(Math.imul(state,1664525)+1013904223)>>>0;return {state:value,value:value/4294967296};}
 export function createCartZones(stage,random){
- const zones=[],used=new Set(),range=stage.world.width-512;
+ const zones=[],used=new Set(),min=stage.arena.left+64,max=stage.arena.right-64,range=max-min+1;
+ if(range<5)throw new RangeError('Mine arena is too small for cart zones');
  for(let i=0;i<5;i++){
-  let x=512+Math.min(range-1,Math.floor(random()*range));
-  while(used.has(x))x=512+(x-511)%range;
+  let x=min+Math.min(range-1,Math.floor(random()*range));
+  while(used.has(x))x=min+(x-min+1)%range;
   used.add(x);zones.push({id:`cart-${i+1}`,centerX:x,direction:random()<.5?-1:1,state:'countdown',ticks:180,cartId:null});
  }
  return zones;
@@ -11,7 +12,7 @@ export function createCartZones(stage,random){
 export function stepCartZones(previous,previousHazards,stage){
  const zones=previous.map(z=>({...z})),hazards=previousHazards.map(h=>({...h})),events=[];
  for(const zone of zones){
-  const left=Math.max(0,zone.centerX-96),right=Math.min(stage.world.width,zone.centerX+96);
+  const left=Math.max(stage.arena.left+32,zone.centerX-96),right=Math.min(stage.arena.right-32,zone.centerX+96);
   if(zone.state==='active'){
    const cart=hazards.find(h=>h.id===zone.cartId&&h.alive);
    if(cart){cart.x+=cart.vx/60;if(cart.x+cart.w<left||cart.x>right)cart.alive=false;}

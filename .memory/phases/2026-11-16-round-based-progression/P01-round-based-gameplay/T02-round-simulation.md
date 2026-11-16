@@ -1,6 +1,6 @@
 # Task: T02 Round Simulation
 
-## Status: pending
+## Status: done
 
 ## Goal
 Implement the eight-round encounter schedule in the stage simulation. Preserve deterministic save/reload behavior, boss rules, stage deaths, and mine cart hazards.
@@ -26,10 +26,11 @@ Implement the eight-round encounter schedule in the stage simulation. Preserve d
   export const ROUND_COUNT = 8;
   export const ROUND_CLEAR_TICKS = 120;
   export function roundEnemyCount(round) {}
-  export function createRoundEnemies(stage, round, randomState) {}
+  export function createRoundEnemies(stage, round, rngState, { player, boss } = {}) {}
+  // Returns { enemies, rngState }.
   ```
 - Data & Schema Fields:
-  - Add `round` (1–8), `roundClearTicks`, and deterministic `randomState` to the stage run and snapshot.
+  - Add `round` (1–8), `roundClearTicks`, and deterministic `rngState` to the stage run and snapshot.
   - Keep enemy instances distinct from the three stage enemy templates.
   - Keep elapsed stage ticks and death count at the stage-run level so a death restart can reset combat without resetting either cumulative value.
   - Record all random state needed to reproduce future species choices and mine cart placements after reload.
@@ -62,18 +63,18 @@ Implement the eight-round encounter schedule in the stage simulation. Preserve d
   - Prove the Mine round-8 sequence preserves Worm's own phase-2 threshold and does not clear before all round enemies are defeated.
 
 ## Acceptance Criteria
-- [ ] All eight encounter counts and species rules match the decision record.
-- [ ] Round 5 has no regular enemies; rounds 7–8 have exactly one of each stage species.
-- [ ] Guardian rounds 5/7 remain phase 1 through death; round 8 keeps its full phases.
-- [ ] Mine round 8 completes Machine → Worm phase 1 → Worm phase 2 and includes the three regular enemies.
-- [ ] Each round start restores full health; round clear advances after 120 ticks.
-- [ ] Death restarts at round 1, increments deaths, and preserves elapsed time.
-- [ ] Snapshot restore preserves the current round and future random encounter sequence.
-- [ ] Mine carts remain inside the arena and retain their existing timing behavior.
+- [x] All eight encounter counts and species rules match the decision record.
+- [x] Round 5 has no regular enemies; rounds 7–8 have exactly one of each stage species.
+- [x] Guardian rounds 5/7 remain phase 1 through death; round 8 keeps its full phases.
+- [x] Mine round 8 completes Machine → Worm phase 1 → Worm phase 2 and includes the three regular enemies.
+- [x] Each round start restores full health; round clear advances after 120 ticks.
+- [x] Death restarts at round 1, increments deaths, and preserves elapsed time.
+- [x] Snapshot restore preserves the current round and future random encounter sequence.
+- [x] Mine carts remain inside the arena and retain their existing timing behavior.
 
 ## Validation
-- Planned: `node --test test/stage-lifecycle.test.js test/boss.test.js test/mine-boss.test.js test/mine-integration.test.js`
-- Planned: `npm run build`
+- `node --test test/stage-lifecycle.test.js test/boss.test.js test/mine-boss.test.js test/mine-integration.test.js` — passed, 28/28.
+- `npm.cmd run build` — passed; Vite reported the existing large-chunk warning.
 - Do not run validation during the planning phase.
 
 ## Dependencies
@@ -90,5 +91,5 @@ Task: T02-round-simulation
 ```
 
 ## Progress
-- [ ] Implementation complete
-- [ ] Validation passed
+- [x] Implementation complete
+- [x] Validation passed
