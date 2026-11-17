@@ -70,10 +70,12 @@ test('Guardian keeps phase 1 in rounds 5 and 7, then transitions normally in rou
 
 test('death restarts round 1, adds one death, and keeps the stage elapsed time',()=>{
   let run=advanceTo(FOREST_STAGE,6,27);run.elapsedTicks=500;run.player.y=FOREST_STAGE.pitDeathY;
+  const previousTerrain=structuredClone(run.terrainLayout);
   let result=tick(run,FOREST_STAGE);assert.equal(result.run.player.mode,'dead');assert.equal(result.run.deaths,1);assert.equal(result.run.elapsedTicks,501);
   const saved=JSON.parse(JSON.stringify(snapshotStageRun(result.run))),restored=restoreStageRun(FOREST_STAGE,saved);
   assert.equal(restored.round,6);assert.equal(restored.deaths,1);assert.equal(restored.elapsedTicks,501);
   result=tick(restored,FOREST_STAGE,60);assert.equal(result.run.round,1);assert.equal(result.run.player.x,FOREST_STAGE.spawn.x);assert.equal(result.run.player.hp,3);assert.equal(result.run.enemies.length,1);assert.equal(result.run.deaths,1);assert.equal(result.run.elapsedTicks,501);assert.ok(result.events.some(event=>event.type==='round:start'&&event.respawn));
+  assert.notDeepEqual(result.run.terrainLayout,previousTerrain);
 });
 
 test('JSON snapshot restore preserves the encounter, round timer, and future random sequence',()=>{
@@ -86,6 +88,29 @@ test('JSON snapshot restore preserves the encounter, round timer, and future ran
     const invalidKinds=structuredClone(snapshot);invalidKinds.enemies[0].kind=invalidKinds.enemies[1].kind;assert.throws(()=>restoreStageRun(stage,invalidKinds),TypeError);
     let cleared=defeatRound(createStageRun(stage,{}, {seed:42}),stage);cleared=tick(cleared,stage).run;cleared.roundClearTicks=30;
     assert.equal(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(cleared)))).roundClearTicks,30);
+  }
+});
+
+test('fresh runs save their deterministic terrain and legacy snapshots keep fixed terrain',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const first=createStageRun(stage,{}, {seed:81});
+    const repeat=createStageRun(stage,{}, {seed:81});
+    assert.deepEqual(first.terrainLayout,repeat.terrainLayout);
+    const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(first)));
+    const restored=restoreStageRun(stage,snapshot);
+    assert.deepEqual(restored.terrainLayout,first.terrainLayout);
+    assert.equal(restored.rngState,first.rngState);
+    const invalid=structuredClone(snapshot);invalid.terrainLayout={mode:'random',platforms:[]};
+    assert.throws(()=>restoreStageRun(stage,invalid),RangeError);
+
+    delete snapshot.terrainLayout;
+    snapshot.elapsedTicks=321;
+    const legacy=restoreStageRun(stage,snapshot);
+    assert.equal(legacy.terrainLayout.mode,'legacy-fixed');
+    assert.deepEqual(legacy.terrainLayout.platforms,stage.solids.slice(1));
+    assert.equal(legacy.elapsedTicks,321);
+    assert.equal(legacy.round,1);
+    assert.deepEqual(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(legacy)))).terrainLayout,legacy.terrainLayout);
   }
 });
 

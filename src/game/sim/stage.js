@@ -7,6 +7,7 @@ import {createBoss,damageBoss,stepBoss} from './boss.js';
 import {stepHazards} from './hazards.js';
 import {createCartZones,stepCartZones,nextRandom} from './mineCarts.js';
 import {createMineBoss,damageMineBoss,stepMineBoss,shouldDropPotion} from './mineBoss.js';
+import {createRandomPlatformLayout,validatePlatformLayout} from './terrain.js';
 import {WORM_INTRO_TICKS,WORM_INTRO_BURST_TICK} from './wormIntro.js';
 import {createRoundEnemies,isBossRound,roundEnemyCount,ROUND_COUNT,ROUND_CLEAR_TICKS} from './rounds.js';
 
@@ -80,10 +81,12 @@ export function createStageRun(stage,data={},options={}){
   if(!data||typeof data!=='object'||Array.isArray(data))throw new TypeError('Invalid run data');
   if(Object.keys(data).length)return restoreStageRun(stage,data);
   const seed=(options.seed??Math.floor(Math.random()*4294967296))>>>0;
+  const terrain=createRandomPlatformLayout(stage,seed);
   const run={stageId:stage.id,player:freshPlayer(stage.spawn),enemies:[],projectiles:[],boss:null,arenaLocked:false,
-    consumedPickupIds:[],elapsedTicks:0,deaths:0,outcome:null,deathTicks:0,round:1,roundClearTicks:null,rngState:seed,bossSequence:'none'};
+    consumedPickupIds:[],elapsedTicks:0,deaths:0,outcome:null,deathTicks:0,round:1,roundClearTicks:null,rngState:terrain.rngState,bossSequence:'none',
+    terrainLayout:{mode:'random',platforms:terrain.platforms}};
   if(stage.id==='mine-1'){
-    let state=seed;
+    let state=run.rngState;
     const random=()=>{const next=nextRandom(state);state=next.state;return next.value;};
     run.cartZones=createCartZones(stage,random);run.rngState=state;run.hazards=[];
     run.bossDrop={rolled:false,spawned:false,consumed:false,x:0,y:0};
@@ -101,6 +104,8 @@ export function snapshotStageRun(run){
 
 export function restoreStageRun(stage,snapshot){
   const s=structuredClone(snapshot),fresh=createStageRun(stage,{}, {seed:1});
+  if(!Object.hasOwn(s,'terrainLayout'))s.terrainLayout={mode:'legacy-fixed',platforms:structuredClone(stage.solids.slice(1))};
+  else validatePlatformLayout(stage,s.terrainLayout);
   if(stage.id==='forest-1'&&object(s.boss)&&!Object.hasOwn(s.boss,'rootEffects')){
     s.boss.rootEffects=[];
     if(s.boss.attackKind==='root'&&Array.isArray(s.boss.hitboxes))s.boss.rootEffects=s.boss.hitboxes.filter(h=>rect(h,true)&&h.w===48&&h.h===48&&h.ticks>0&&h.ticks<=12).map(({x,y,w,h,ticks})=>({x,y,w,h,age:12-ticks,strike:s.boss.secondRootDelay>0?1:s.boss.phase===2&&s.boss.state==='recovery'?2:1}));

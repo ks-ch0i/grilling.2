@@ -29,6 +29,13 @@ test('v3 validates complete snapshots, records and settings',()=>{
  const bad=[undefined,'{',JSON.stringify({...save,extra:true}),JSON.stringify({...save,version:0}),JSON.stringify({...save,run:{...save.run,consumedPickupIds:['heal-1','heal-1']}}),JSON.stringify({...save,run:{...save.run,consumedPickupIds:['bad']}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,hp:4}}}),JSON.stringify({...save,unlockedStageIds:['forest-1','forest-1']}),JSON.stringify({...save,settings:{...save.settings,musicVolume:2}})];
  for(const raw of bad)assert.equal(parseSave(raw).ok,false,String(raw));assert.equal(parseSave('{"version":4}').reason,'unsupported-version');
 });
+
+test('v3 accepts a legacy run without terrain but rejects an invalid present layout',()=>{
+ const save={...freshSave(),run:validRun()};delete save.run.terrainLayout;
+ assert.equal(parseSave(JSON.stringify(save)).ok,true);
+ const invalid={...freshSave(),run:validRun()};invalid.run.terrainLayout={mode:'random',platforms:[]};
+ assert.equal(parseSave(JSON.stringify(invalid)).ok,false);
+});
 test('recognized v1 is reset and written once without touching unrelated keys',()=>{
  const storage=memory(JSON.stringify(v1));storage.values.set('other','preserve');const app=createAppStore(()=>storage);
  assert.deepEqual(app.getSave(),freshSave());assert.equal(storage.writes,1);assert.equal(storage.values.get('other'),'preserve');assert.deepEqual(loadSave(storage).save,freshSave());
