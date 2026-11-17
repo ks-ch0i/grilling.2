@@ -38,3 +38,15 @@ test('boar charge stops at a ledge, and death hides enemy after 30 ticks',()=>{
  assert.equal(e.state,'recovery');assert.ok(e.x+e.w<=200);
  e=damageEnemy(damageEnemy(damageEnemy(e)));assert.equal(e.state,'dead');for(let i=0;i<30;i++)e=stepEnemy(e,p,ground).enemy;assert.equal(e.visible,false);
 });
+test('ground chasers follow profile steps without treating profile art as a solid wall',()=>{
+ const profile={x:80,w:80,topProfile:[260,260,264,264,260],variant:0};
+ const farPlayer={x:250,y:276,w:16,h:28,mode:'idle'};
+ for(const [kind,height] of [['soldier',28],['golem',40]]){
+  const startY=260-height;let enemy=createEnemy({id:`${kind}-profile`,kind,x:88,y:startY});
+  const startX=enemy.x;
+  for(let i=0;i<35;i++)enemy=stepEnemy(enemy,farPlayer,ground,[profile]).enemy;
+  assert.ok(enemy.x>startX,kind);
+  const center=enemy.x+enemy.w/2,index=Math.floor((center-profile.x)/16);
+  assert.equal(enemy.y+enemy.h,profile.topProfile[index],kind);
+ }
+});

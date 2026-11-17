@@ -6,6 +6,7 @@ import * as C from '../src/game/sim/constants.js';
 const floor = [{x:-1000,y:304,w:2000,h:56}];
 const frame = overrides => ({move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:500,aimY:290,...overrides});
 const tick = (p, input = {}, terrain = floor) => stepPlayer(p, frame(input), terrain).player;
+const profileTick = (p,input,profiles) => stepPlayer(p,frame(input),floor,344,profiles).player;
 const grounded = () => tick(createPlayer());
 test('jump height depends on hold; air jump is rejected and landing restores jump', () => {
   function height(held) { let p=grounded(), min=p.y; p=tick(p,{jumpPressed:true,jumpHeld:true}); for(let i=0;i<80;i++){p=tick(p,{jumpHeld:held,jumpPressed:i===3});min=Math.min(min,p.y);} assert.equal(p.grounded,true); return min; }
@@ -18,6 +19,28 @@ test('axis collisions stop at walls, ceilings, thin platforms and falling into p
   p=createPlayer(120,200); p.vy=-300; p=tick(p,{jumpHeld:true},[{x:100,y:198,w:100,h:1}]); assert.equal(p.y,199); assert.equal(p.vy,0);
   p=createPlayer(120,100); p.vy=400; for(let i=0;i<20;i++) p=tick(p,{},[{x:100,y:160,w:100,h:1}]); assert.equal(p.y,132); assert.equal(p.grounded,true);
   p=createPlayer(0,359); p.vy=400; const r=stepPlayer(p,frame(),[]); assert.equal(r.player.mode,'dead'); assert.equal(r.events[0].type,'death');
+});
+test('profile tops catch falling actors but let actors pass upward and through sides',()=>{
+ const flat={x:96,w:64,topProfile:[260,260,260,260],variant:0};
+ let p=createPlayer(100,210);p.vy=200;
+ for(let i=0;i<30&&!p.grounded;i++)p=profileTick(p,{},[flat]);
+ assert.equal(p.grounded,true);assert.equal(p.y,232);
+
+ p=createPlayer(100,262);p.vy=-300;
+ for(let i=0;i<12;i++)p=profileTick(p,{jumpHeld:true},[flat]);
+ assert.ok(p.y+p.h<260);assert.equal(p.grounded,false);
+
+ p=createPlayer(88,240);
+ for(let i=0;i<8;i++)p=profileTick(p,{move:1},[flat]);
+ assert.ok(p.x>96);assert.ok(p.y>232);assert.equal(p.grounded,false);
+});
+test('grounded player follows four-pixel profile steps and falls from its edge',()=>{
+ const profile={x:96,w:64,topProfile:[260,264,260,256],variant:0};
+ let p=createPlayer(96,232);p.grounded=true;
+ for(let i=0;i<9;i++)p=profileTick(p,{move:1},[profile]);
+ assert.equal(p.grounded,true);assert.equal(p.y,236);
+ for(let i=0;i<40;i++)p=profileTick(p,{move:1},[profile]);
+ assert.ok(p.x>profile.x+profile.w);assert.equal(p.grounded,false);
 });
 test('roll protects every movement tick, then cooldown prevents restart', () => {
   let p=grounded(); for(let i=0;i<C.ROLL_TICKS;i++){p=tick(p,{rollPressed:i===0}); assert.equal(applyPlayerDamage(p).player.hp,3);}

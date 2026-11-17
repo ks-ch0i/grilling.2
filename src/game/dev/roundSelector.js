@@ -3,6 +3,7 @@ import {createStageRun} from '../sim/stage.js';
 import {createBoss} from '../sim/boss.js';
 import {createMineBoss} from '../sim/mineBoss.js';
 import {createRoundEnemies} from '../sim/rounds.js';
+import {isProfiledPlatform} from '../sim/platforms.js';
 import {WORM_INTRO_TICKS} from '../sim/wormIntro.js';
 
 // Client-side development convenience only. Production access requires a
@@ -29,8 +30,10 @@ export function createPracticeRun(targetId,options={}){
       :target.stageId==='mine-1'?createMineBoss('machine',stage.boss):createBoss(stage.boss);
     run.boss.state='intro';run.boss.stateTicks=targetId==='mine-worm'?WORM_INTRO_TICKS:90;
     run.bossSequence=targetId==='mine-worm'?'worm-intro':target.stageId==='mine-1'?'machine':'none';
-    const runStage={...stage,solids:[stage.solids[0],...run.terrainLayout.platforms]};
-    const encounter=createRoundEnemies(runStage,round,run.rngState,{player:run.player,boss:run.boss});
+    const platformProfiles=run.terrainLayout.platforms.filter(isProfiledPlatform);
+    const rectangles=run.terrainLayout.platforms.filter(platform=>!isProfiledPlatform(platform));
+    const runStage={...stage,solids:[stage.solids[0],...rectangles],platformProfiles};
+    const encounter=createRoundEnemies(runStage,round,run.rngState,{player:run.player,boss:run.boss,platformProfiles});
     run.enemies=encounter.enemies;run.rngState=encounter.rngState;
   }
   return run;

@@ -8,6 +8,7 @@ import {stepHazards} from './hazards.js';
 import {createCartZones,stepCartZones,nextRandom} from './mineCarts.js';
 import {createMineBoss,damageMineBoss,stepMineBoss,shouldDropPotion} from './mineBoss.js';
 import {createRandomPlatformLayout,validatePlatformLayout} from './terrain.js';
+import {isProfiledPlatform,platformOcclusionRects} from './platforms.js';
 import {WORM_INTRO_TICKS,WORM_INTRO_BURST_TICK} from './wormIntro.js';
 import {createRoundEnemies,isBossRound,roundEnemyCount,ROUND_COUNT,ROUND_CLEAR_TICKS} from './rounds.js';
 
@@ -32,7 +33,8 @@ function stageWalls(stage,locked){
 
 export function stageTerrain(stage,locked,terrainLayout){
   if(!terrainLayout||!Array.isArray(terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
-  return [stage.solids[0],...terrainLayout.platforms,...stageWalls(stage,locked)];
+  const platforms=terrainLayout.platforms.filter(platform=>!isProfiledPlatform(platform));
+  return [stage.solids[0],...platforms,...stageWalls(stage,locked)];
 }
 
 export function stageRangedTerrain(stage,locked){
@@ -41,7 +43,9 @@ export function stageRangedTerrain(stage,locked){
 
 function stageForRun(stage,run){
   if(!run?.terrainLayout||!Array.isArray(run.terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
-  return {...stage,solids:[stage.solids[0],...run.terrainLayout.platforms]};
+  const platformProfiles=run.terrainLayout.platforms.filter(isProfiledPlatform);
+  const rectangles=run.terrainLayout.platforms.filter(platform=>!isProfiledPlatform(platform));
+  return {...stage,solids:[stage.solids[0],...rectangles],platformProfiles};
 }
 
 function safeBossX(stage,player,width,preferred){
@@ -69,7 +73,8 @@ function bossForRound(stage,round,player){
 function startRound(run,stage,round,events=null){
   const bossState=bossForRound(stage,round,run.player);
   const bossRect=isBossRound(stage.id,round)?bossState.boss:null;
-  const encounter=createRoundEnemies(stageForRun(stage,run),round,run.rngState,{player:run.player,boss:bossRect});
+  const encounterStage=stageForRun(stage,run);
+  const encounter=createRoundEnemies(encounterStage,round,run.rngState,{player:run.player,boss:bossRect,platformProfiles:encounterStage.platformProfiles});
   run.round=round;
   run.roundClearTicks=null;
   run.player.hp=3;
@@ -249,8 +254,11 @@ export function stepStage(previous,input,stage){
     return {run,events};
   }
 
-  const terrain=stageTerrain(stage,run.arenaLocked,run.terrainLayout),rangedTerrain=stageRangedTerrain(stage,run.arenaLocked);let pushCompleted;
-  const playerStep=stepPlayer(run.player,input,terrain,stage.pitDeathY);
+  const terrain=stageTerrain(stage,run.arenaLocked,run.terrainLayout),
+    platformProfiles=run.terrainLayout.platforms.filter(isProfiledPlatform),
+    meleeTerrain=[...terrain,...platformOcclusionRects(platformProfiles)],
+    rangedTerrain=stageRangedTerrain(stage,run.arenaLocked);let pushCompleted;
+  const playerStep=stepPlayer(run.player,input,terrain,stage.pitDeathY,platformProfiles);
   run.player=playerStep.player;pushCompleted=playerStep.pushCompleted;events.push(...playerStep.events);
   if(run.player.mode==='dead')return death(run,events);
 
@@ -264,7 +272,7 @@ export function stepStage(previous,input,stage){
     }
     const solids=terrain;
     for(let i=0;i<run.enemies.length;i++){
-      const result=stepEnemy(run.enemies[i],run.player,solids);
+      const result=stepEnemy(run.enemies[i],run.player,solids,platformProfiles);
       run.enemies[i]=result.enemy;events.push(...result.events);run.projectiles.push(...result.projectiles);
       if(run.hazards)run.hazards.push(...result.hazards);
       const enemy=result.enemy;if(enemy.state==='dead')continue;
@@ -311,8 +319,8 @@ export function stepStage(previous,input,stage){
 
   for(const event of events)if(event.type==='dive-impact')event.canDamage=!interactionLocked;
   if(!interactionLocked){
-    if(isAttackActive(run.player))damageTargets(run,null,terrain,events);
-    for(const event of events.filter(item=>item.type==='dive-impact'))damageTargets(run,diveImpactRect(event.x,event.y),terrain,events);
+    if(isAttackActive(run.player))damageTargets(run,null,meleeTerrain,events);
+    for(const event of events.filter(item=>item.type==='dive-impact'))damageTargets(run,diveImpactRect(event.x,event.y),meleeTerrain,events);
   }
   if(roundIsDefeated(run))clearRound(run,events);
   return {run,events};

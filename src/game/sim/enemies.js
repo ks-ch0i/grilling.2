@@ -1,4 +1,5 @@
 import { intersects, moveAxis } from './geometry.js';
+import { followPlatformTop, platformSupportAhead } from './platforms.js';
 const specs={
   soldier:{w:20,h:28,hp:3,range:180,trigger:36,windup:30,active:8,recovery:40,speed:45},
   wisp:{w:20,h:20,hp:2,range:260,trigger:260,windup:36,active:1,recovery:60,speed:0},
@@ -12,13 +13,16 @@ export function createEnemy(spawn) {
   return {...spawn,w:spec.w,h:spec.h,hp:spec.hp,maxHp:spec.hp,state:'idle',stateTicks:0,facing:-1,lockedFacing:-1,hitIds:new Set(),visible:true,
     ...(['golem','insect','bat'].includes(spawn.kind)?{shotCount:0}:{}),...(spawn.kind==='bat'?{homeY:spawn.y}:{})};
 }
-function groundAhead(enemy,terrain,dx) {
+function groundAhead(enemy,terrain,dx,platformProfiles=[]) {
   const probe={x:dx>0?enemy.x+enemy.w+dx:enemy.x+dx-1,y:enemy.y+enemy.h,w:1,h:2};
-  return terrain.some(rect=>intersects(probe,rect));
+  return terrain.some(rect=>intersects(probe,rect))||platformSupportAhead(enemy,platformProfiles,dx);
 }
-function walk(enemy,terrain,dx) {
-  if (!groundAhead(enemy,terrain,dx)) return false;
-  return !moveAxis(enemy,terrain,'x',dx);
+function walk(enemy,terrain,dx,platformProfiles=[]) {
+  if (!groundAhead(enemy,terrain,dx,platformProfiles)) return false;
+  const previousFeet=enemy.y+enemy.h,previousCenter=enemy.x+enemy.w/2;
+  if(moveAxis(enemy,terrain,'x',dx))return false;
+  followPlatformTop(enemy,platformProfiles,previousFeet,previousCenter);
+  return true;
 }
 export function enemyAttackRect(e) {
   if (e.state!=='attack') return null;
@@ -33,7 +37,7 @@ export function damageEnemy(state, amount=1) {
   enemy.stateTicks=enemy.hp===0?30:15; enemy.hitIds.clear();
   return enemy;
 }
-export function stepEnemy(state,player,terrain) {
+export function stepEnemy(state,player,terrain,platformProfiles=[]) {
   const enemy={...state,hitIds:new Set(state.hitIds)}, events=[], projectiles=[],hazards=[];
   const spec=specs[enemy.kind];
   if (enemy.state==='dead') { if (enemy.stateTicks>0 && --enemy.stateTicks===0) enemy.visible=false; return {enemy,events,projectiles,hazards}; }
@@ -42,7 +46,7 @@ export function stepEnemy(state,player,terrain) {
   if (enemy.state==='idle' || enemy.state==='chase') {
     enemy.facing=dx<0?-1:1;
     if (distance<=spec.trigger) { enemy.state='windup'; enemy.stateTicks=spec.windup; enemy.lockedFacing=enemy.facing; enemy.lockedTarget={x:player.x+player.w/2,y:player.y+player.h/2}; enemy.hitIds.clear(); events.push({type:'enemy:windup',id:enemy.id}); }
-    else if (['soldier','golem'].includes(enemy.kind) && distance<=spec.range) { enemy.state='chase'; walk(enemy,terrain,enemy.facing*spec.speed/60); }
+    else if (['soldier','golem'].includes(enemy.kind) && distance<=spec.range) { enemy.state='chase'; walk(enemy,terrain,enemy.facing*spec.speed/60,platformProfiles); }
     else enemy.state='idle';
   } else if (enemy.state==='windup') {
     if (--enemy.stateTicks<=0) {
@@ -61,7 +65,7 @@ export function stepEnemy(state,player,terrain) {
       events.push({type:'enemy:attack',id:enemy.id});
     }
   } else if (enemy.state==='attack') {
-    if (enemy.kind==='boar' && !walk(enemy,terrain,enemy.lockedFacing*spec.speed/60)) enemy.stateTicks=1;
+    if (enemy.kind==='boar' && !walk(enemy,terrain,enemy.lockedFacing*spec.speed/60,platformProfiles)) enemy.stateTicks=1;
     if(enemy.kind==='bat'){
       const dx=enemy.lockedTarget.x-(enemy.x+enemy.w/2),dy=enemy.lockedTarget.y-(enemy.y+enemy.h/2),distance=Math.hypot(dx,dy),step=spec.speed/60;
       if(distance<=step)enemy.stateTicks=1;

@@ -19,3 +19,15 @@ test('attack range is clipped by the active run terrain layout',()=>{
  assert.ok(centerRay.some(point=>Math.abs(point.x-192)<1e-8));
  assert.ok(centerRay.every(point=>point.x<=192+1e-8));
 });
+test('attack range is clipped at the saved profile top surface',()=>{
+ const run=createStageRun(FOREST_STAGE,{}, {seed:12});
+ run.terrainLayout={mode:'random',platforms:[
+  {x:192,w:32,topProfile:[280,280],variant:0},
+  {x:320,w:32,topProfile:[280,280],variant:1}
+ ]};
+ assert.equal(validatePlatformLayout(FOREST_STAGE,run.terrainLayout),true);
+ const points=playerAttackRangePoints(createPlayer(164,266),FOREST_STAGE,run);
+ const centerRay=points.filter(point=>Math.abs(point.y-280)<1e-8);
+ assert.ok(centerRay.some(point=>Math.abs(point.x-192)<1e-8));
+ assert.ok(centerRay.every(point=>point.x<=192+1e-8));
+});

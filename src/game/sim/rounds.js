@@ -1,5 +1,6 @@
 import {createEnemy} from './enemies.js';
 import {nextRandom} from './mineCarts.js';
+import {nearestPlatformSurface} from './platforms.js';
 
 export const ROUND_COUNT=8;
 export const ROUND_CLEAR_TICKS=120;
@@ -23,17 +24,19 @@ function candidateXs(stage,preferred){
   return points.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred)||a-b);
 }
 
-function spawnEnemy(stage,template,preferredX,player,boss,placed,id){
+function spawnEnemy(stage,template,preferredX,player,boss,placed,id,platformProfiles=[]){
   const probe=createEnemy({...template,id,x:preferredX});
   for(const x of candidateXs(stage,preferredX)){
     const supports=stage.solids.filter(s=>s.x<x+probe.w&&s.x+s.w>x);
-    const ys=template.kind==='bat'
-      ?[template.y,...supports.map(s=>s.y-probe.h)]
-      :[template.y,...supports.map(s=>s.y-probe.h)];
+    const canUseProfiles=['soldier','boar','golem','insect'].includes(template.kind);
+    const profileSurface=canUseProfiles?nearestPlatformSurface(platformProfiles,x+probe.w/2):null;
+    const ys=[template.y,...supports.map(s=>s.y-probe.h),...(profileSurface?[profileSurface.y-probe.h]:[])];
     for(const y of [...new Set(ys)]){
       const enemy={...probe,x,y};
       if(x<stage.arena.left||x+enemy.w>stage.arena.right||y<stage.arena.top||y+enemy.h>stage.arena.bottom)continue;
-      if(template.kind!=='bat'&&!supports.some(s=>s.y===y+enemy.h))continue;
+      const onRectangle=supports.some(s=>s.y===y+enemy.h);
+      const onProfile=canUseProfiles&&nearestPlatformSurface(platformProfiles,x+enemy.w/2,y+enemy.h)?.y===y+enemy.h;
+      if(template.kind!=='bat'&&!onRectangle&&!onProfile)continue;
       if(supports.some(s=>overlaps(enemy,s)))continue;
       if(player&&overlaps(enemy,player))continue;
       if(boss&&overlaps(enemy,boss))continue;
@@ -48,7 +51,7 @@ function spawnEnemy(stage,template,preferredX,player,boss,placed,id){
  * Create one deterministic encounter. Normal rounds choose each type independently;
  * rounds 7 and 8 use each stage template once.
  */
-export function createRoundEnemies(stage,round,randomState,{player=null,boss=null}={}){
+export function createRoundEnemies(stage,round,randomState,{player=null,boss=null,platformProfiles=stage.platformProfiles??[]}={}){
   const count=roundEnemyCount(round),templates=stage.enemies;
   if(!Array.isArray(templates)||templates.length!==3)throw new TypeError('Stage must provide three enemy templates');
   let rngState=randomState>>>0;
@@ -65,7 +68,7 @@ export function createRoundEnemies(stage,round,randomState,{player=null,boss=nul
       ?template.x
       :stage.arena.left+32+(i+0.5)*(stage.arena.right-stage.arena.left-64)/Math.max(1,count);
     const id=`round-${round}-enemy-${i+1}-${template.kind}`;
-    const enemy=spawnEnemy(stage,template,preferred,player,boss,placed,id);
+    const enemy=spawnEnemy(stage,template,preferred,player,boss,placed,id,platformProfiles);
     placed.push(enemy);enemies.push(enemy);
   }
   return {enemies,rngState};

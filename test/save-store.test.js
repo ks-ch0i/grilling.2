@@ -36,6 +36,16 @@ test('v3 accepts a legacy run without terrain but rejects an invalid present lay
  const invalid={...freshSave(),run:validRun()};invalid.run.terrainLayout={mode:'random',platforms:[]};
  assert.equal(parseSave(JSON.stringify(invalid)).ok,false);
 });
+test('v3 accepts new profiles and preserves old random rectangular layouts',()=>{
+ const profileSave={...freshSave(),run:validRun()};
+ assert.ok(profileSave.run.terrainLayout.platforms.every(platform=>Array.isArray(platform.topProfile)));
+ assert.equal(parseSave(JSON.stringify(profileSave)).ok,true);
+ const oldRun=validRun();oldRun.terrainLayout={mode:'random',platforms:[
+  {x:96,y:288,w:64,h:16},{x:224,y:288,w:64,h:16},
+  {x:352,y:288,w:64,h:16},{x:480,y:288,w:64,h:16}
+ ]};
+ assert.equal(parseSave(JSON.stringify({...freshSave(),run:oldRun})).ok,true);
+});
 test('recognized v1 is reset and written once without touching unrelated keys',()=>{
  const storage=memory(JSON.stringify(v1));storage.values.set('other','preserve');const app=createAppStore(()=>storage);
  assert.deepEqual(app.getSave(),freshSave());assert.equal(storage.writes,1);assert.equal(storage.values.get('other'),'preserve');assert.deepEqual(loadSave(storage).save,freshSave());

@@ -1,22 +1,25 @@
 # Current Context
 
-## Completed Plan
-[Randomized Terrain, Piercing Attacks, and Worm Acid](./plans/2026-11-17-randomized-terrain-and-worm-acid.md)
+## Previous Completed Plan
+[Randomized Terrain, Piercing Attacks, and Worm Acid](./plans/2026-11-17-randomized-terrain-and-worm-acid.md) is complete.
+- Its focused validations and production builds passed. Manual browser QA was unavailable for T02/T04; the prior pointer records the HTTP smoke and automated presentation checks used instead.
 
-## Completed Phase
-[P01 Randomized Arena Combat](./phases/2026-11-17-randomized-terrain-and-worm-acid/P01-randomized-arena-combat/phase.md)
+## Active Plan
+[Irregular Platforms, Charge Attacks, and Root Targeting](./plans/2026-11-17-irregular-platforms-and-charge-attacks.md)
+
+## Active Phase
+[P01 Irregular Platforms and Combat](./phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/phase.md)
 
 ## Active Task
-None. T01–T04 are complete.
+[T02 Themed Platform Art and Rendering](./phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/T02-themed-platform-art-and-rendering.md)
 
 ## Status
-- Plan: all four confirmed implementation tasks are complete.
-- Phase: 4/4 tasks complete; per-run terrain is active, ranged attacks pass platforms while retaining floor and wall collision, and Worm acid hazards use the enlarged dimensions.
-- T01–T04 focused validations and production builds passed. A post-plan review also found and fixed the attack-range renderer's stale terrain call; its regression test and production build pass. T02 and T04 manual browser QA were blocked because the browser host is unavailable; T02's Vite HTTP smoke requests and T04's automated presentation-size checks passed.
-- The prior active pointer for round-based progression remains complete.
+- Plan: execution is in progress.
+- Phase: T01 complete and validated; 1/4 tasks done; T02 is active.
+- T01 focused validation passed: 60 tests, 0 failures. Implementation tests ran after a RED check that failed on the missing profile behavior.
 
 ## Queued Plan
-[Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) remains queued and is deferred until this active plan is complete.
+[Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) remains queued and deferred until this active plan is complete.
 
 ## Next Step
-The active plan has no remaining tasks. The camera-framing decision plan remains queued until the user chooses a framing direction.
+Read the T02 blueprint, create and pack the Forest/Mine module sheets, render saved profiles, and run the asset checks and production build.

@@ -104,6 +104,8 @@ test('fresh runs save their deterministic terrain and legacy snapshots keep fixe
     const first=createStageRun(stage,{}, {seed:81});
     const repeat=createStageRun(stage,{}, {seed:81});
     assert.deepEqual(first.terrainLayout,repeat.terrainLayout);
+    assert.ok(first.terrainLayout.platforms.length>=2&&first.terrainLayout.platforms.length<=4);
+    assert.ok(first.terrainLayout.platforms.every(platform=>Array.isArray(platform.topProfile)&&Number.isInteger(platform.variant)));
     const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(first)));
     const restored=restoreStageRun(stage,snapshot);
     assert.deepEqual(restored.terrainLayout,first.terrainLayout);
@@ -120,6 +122,21 @@ test('fresh runs save their deterministic terrain and legacy snapshots keep fixe
     assert.equal(legacy.round,1);
     assert.deepEqual(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(legacy)))).terrainLayout,legacy.terrainLayout);
   }
+});
+
+test('profile surfaces stay outside rectangle collision and old random rectangles stay solid',()=>{
+ const profiles=[
+  {x:80,w:48,topProfile:[280,284,280],variant:1},
+  {x:192,w:48,topProfile:[276,272,276],variant:2}
+ ];
+ for(const stage of [FOREST_STAGE,MINE_STAGE]){
+  const profileTerrain=stageTerrain(stage,false,{mode:'random',platforms:profiles});
+  assert.ok(profileTerrain.some(rect=>rect.x===stage.solids[0].x&&rect.y===stage.solids[0].y));
+  assert.ok(!profileTerrain.some(rect=>Object.hasOwn(rect,'topProfile')));
+  const old=[{x:96,y:288,w:64,h:16},{x:224,y:288,w:64,h:16},{x:352,y:288,w:64,h:16},{x:480,y:288,w:64,h:16}];
+  const oldTerrain=stageTerrain(stage,false,{mode:'random',platforms:old});
+  assert.ok(old.every(platform=>oldTerrain.includes(platform)));
+ }
 });
 
 test('player collision uses the saved run platforms and keeps the floor and lock walls',()=>{

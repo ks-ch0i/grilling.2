@@ -1,6 +1,7 @@
 import * as C from './constants.js';
 import { moveAxis, normalizeAim } from './geometry.js';
 import { applyPlayerDamage, angleToFacing8 } from './combat.js';
+import { crossedPlatformSurface, followPlatformTop } from './platforms.js';
 export function createPlayer(x = 120, y = 276) {
   return { x, y, vx: 0, vy: 0, w: 16, h: 28, grounded: false, hp: 3, mode: 'idle', facing: 0,
     horizontalFacing: 1, aim: { x: 1, y: 0 }, invulnerableTicks: 0,
@@ -14,8 +15,11 @@ function startAttack(p, events) {
 export function canStartAttack(player) {
   return ['idle', 'run', 'jump', 'fall'].includes(player.mode);
 }
-export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
+export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformProfiles = []) {
   let p = { ...state, hitIds: new Set(state.hitIds), aim: { ...state.aim } };
+  const startedGrounded = p.grounded;
+  const startingFeet = p.y + p.h;
+  const startingCenter = p.x + p.w / 2;
   const events = [];
   if (p.mode === 'dead') return { player: p, events };
   if (p.y >= pitDeathY) return applyPlayerDamage(p, 'pit');
@@ -63,7 +67,22 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y) {
   }
   moveAxis(p, terrain, 'x', p.vx * C.DT);
   const downward = p.vy > 0;
-  const landed = moveAxis(p, terrain, 'y', verticalDistance) && downward;
+  const carriedProfile = startedGrounded && p.grounded && followPlatformTop(p, platformProfiles, startingFeet, startingCenter);
+  let landed = false;
+  if (carriedProfile) {
+    p.grounded = true;
+    p.vy = 0;
+    landed = true;
+  } else {
+    const previousFeet = p.y + p.h;
+    const rectLanded = moveAxis(p, terrain, 'y', verticalDistance) && downward;
+    const crossed = downward ? crossedPlatformSurface(p, platformProfiles, previousFeet, p.y + p.h) : null;
+    if (crossed && (!rectLanded || crossed.y < p.y + p.h)) {
+      p.y = crossed.y - p.h;
+      p.vy = 0;
+      landed = true;
+    } else landed = rectLanded;
+  }
   p.grounded = landed;
   if (landed && p.diveUsed) {
     if (p.mode === 'dive') {
