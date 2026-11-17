@@ -83,6 +83,11 @@ test('profile validation rejects malformed records and preserves old rectangle l
     {x:304,y:256,w:64,h:16},{x:416,y:288,w:48,h:16}
   ]};
   assert.equal(terrain.validatePlatformLayout(FOREST_STAGE,oldRandom),true);
+  const oldForestSeed13={mode:'random',platforms:[
+    {x:202,y:254,w:64,h:16},{x:372,y:252,w:96,h:16},{x:578,y:258,w:32,h:16},
+    {x:110,y:268,w:64,h:16},{x:113,y:252,w:64,h:16}
+  ]};
+  assert.equal(terrain.validatePlatformLayout(FOREST_STAGE,oldForestSeed13),true);
   assert.throws(()=>terrain.validatePlatformLayout(FOREST_STAGE,{...layout,platforms:[profiles[0],oldRandom.platforms[1]]}),TypeError);
   const fixed={mode:'legacy-fixed',platforms:structuredClone(FOREST_STAGE.solids.slice(1))};
   assert.equal(terrain.validatePlatformLayout(FOREST_STAGE,fixed),true);

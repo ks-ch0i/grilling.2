@@ -56,6 +56,8 @@ function takeoffXs(source,target,isFloor,worldWidth,playerWidth){
   }else{
     const span=source.w-playerWidth;
     for(let i=0;i<=8;i++)candidates.add(Math.round(source.x+i*span/8));
+    candidates.add(target.x-playerWidth);
+    candidates.add(target.x+target.w);
   }
   return [...candidates].filter(x=>Number.isInteger(x)&&x>=min&&x<=max&&
     (x+playerWidth<=target.x||x>=target.x+target.w))
@@ -66,7 +68,7 @@ function canJumpTo(stage,platforms,source,target,isFloor){
   const {world,floor}=getStageGeometry(stage),terrain=collisionSolids(stage,platforms),profileSurfaces=platforms.filter(isProfiledPlatform);
   const starts=takeoffXs(source,target,isFloor,world.width,16);
   for(const x of starts){
-    const sourceCenter=x+8,sourceY=isFloor?floor.y:topAt(source,sourceCenter);
+    const sourceCenter=x+8,sourceY=isFloor?floor.y:isRectPlatform(source)?source.y:topAt(source,sourceCenter);
     if(sourceY===null)continue;
     for(const direction of [-1,1]){
       const player={...createPlayer(x,sourceY-28),grounded:true};
@@ -107,6 +109,40 @@ function reachableFromFloor(stage,platforms){
   return reachable.size===nodes.length;
 }
 
+// Keep the pre-profile reachability simulation for saved rectangular layouts.
+// Its launch samples intentionally match the original validator so valid saves
+// created by older releases remain restorable.
+function reachableRectanglesFromFloor(stage,platforms){
+  const {floor}=getStageGeometry(stage),nodes=[floor,...platforms],reachable=new Set([0]),queue=[0];
+  while(queue.length){
+    const sourceIndex=queue.shift(),source=nodes[sourceIndex],isFloor=sourceIndex===0;
+    for(let targetIndex=1;targetIndex<nodes.length;targetIndex++){
+      if(reachable.has(targetIndex))continue;
+      const target=nodes[targetIndex],{world}=getStageGeometry(stage),terrain=collisionSolids(stage,platforms);
+      for(const x of takeoffXs(source,target,isFloor,world.width,16)){
+        let reached=false;
+        for(const direction of [-1,1]){
+          let state={...createPlayer(x,source.y-28),grounded:true};
+          for(let tick=0;tick<100;tick++){
+            const clearAbove=state.y+state.h<=target.y,center=state.x+state.w/2;
+            const targetCenter=direction>0?target.x+Math.min(target.w/2,12):target.x+target.w-Math.min(target.w/2,12);
+            const move=clearAbove?(Math.abs(center-targetCenter)<1?0:Math.sign(targetCenter-center)):0;
+            state=stepPlayer(state,INPUT(move,tick===0),terrain,stage.pitDeathY??world.height+16).player;
+            if(state.grounded){
+              if(Math.abs(state.y+state.h-target.y)<1e-6&&state.x<target.x+target.w&&state.x+state.w>target.x){reached=true;break;}
+              break;
+            }
+            if(state.y>world.height||state.x+state.w<0||state.x>world.width)break;
+          }
+          if(reached)break;
+        }
+        if(reached){reachable.add(targetIndex);queue.push(targetIndex);break;}
+      }
+    }
+  }
+  return reachable.size===nodes.length;
+}
+
 function validateRectangleLayout(stage,mode,platforms){
   const {arena,floor}=getStageGeometry(stage);
   if(mode==='random'&&(platforms.length<4||platforms.length>6)||mode==='legacy-fixed'&&platforms.length!==stage.solids.length-1)throw new RangeError('Invalid platform count');
@@ -120,7 +156,7 @@ function validateRectangleLayout(stage,mode,platforms){
   }
   if(mode==='legacy-fixed'&&platforms.some((platform,index)=>!sameRect(platform,fixed[index])))throw new RangeError('Legacy terrain must match the fixed stage layout');
   for(let i=0;i<platforms.length;i++)for(let j=i+1;j<platforms.length;j++)if(overlaps(platforms[i],platforms[j]))throw new RangeError('Platforms overlap');
-  if(!reachableFromFloor(stage,platforms))throw new RangeError('A platform cannot be reached from the floor');
+  if(!reachableRectanglesFromFloor(stage,platforms))throw new RangeError('A platform cannot be reached from the floor');
   return true;
 }
 
