@@ -38,6 +38,23 @@ test('boar charge stops at a ledge, and death hides enemy after 30 ticks',()=>{
  assert.equal(e.state,'recovery');assert.ok(e.x+e.w<=200);
  e=damageEnemy(damageEnemy(damageEnemy(e)));assert.equal(e.state,'dead');for(let i=0;i<30;i++)e=stepEnemy(e,p,ground).enemy;assert.equal(e.visible,false);
 });
+test('boar charge crosses a profile edge but still stops at a solid arena wall',()=>{
+ const profile={x:96,w:64,topProfile:[260,260,260,260],variant:0};
+ let charging=createEnemy({id:'boar-platform-charge',kind:'boar',x:120,y:240});
+ Object.assign(charging,{state:'attack',stateTicks:30,lockedFacing:1,facing:1});
+ for(let i=0;i<10;i++)charging=stepEnemy(charging,p,[{x:0,y:304,w:640,h:56}],[profile]).enemy;
+ assert.ok(charging.x>=profile.x+profile.w);
+ assert.equal(charging.y,240);
+ assert.equal(charging.state,'attack');
+
+ let blocked=createEnemy({id:'boar-wall-charge',kind:'boar',x:160,y:284});
+ Object.assign(blocked,{state:'attack',stateTicks:30,lockedFacing:1,facing:1});
+ const terrain=[{x:0,y:304,w:640,h:56},{x:200,y:0,w:16,h:304}];
+ for(let i=0;i<10;i++)blocked=stepEnemy(blocked,p,terrain,[profile]).enemy;
+ assert.equal(blocked.x,172);
+ assert.equal(blocked.y,284);
+ assert.equal(blocked.state,'recovery');
+});
 test('ground chasers follow profile steps without treating profile art as a solid wall',()=>{
  const profile={x:80,w:80,topProfile:[260,260,264,264,260],variant:0};
  const farPlayer={x:250,y:276,w:16,h:28,mode:'idle'};

@@ -26,9 +26,11 @@ function candidateXs(stage,preferred){
 
 function spawnEnemy(stage,template,preferredX,player,boss,placed,id,platformProfiles=[]){
   const probe=createEnemy({...template,id,x:preferredX});
+  const forestBoarFloorOnly=stage.id==='forest-1'&&template.kind==='boar';
   for(const x of candidateXs(stage,preferredX)){
-    const supports=stage.solids.filter(s=>s.x<x+probe.w&&s.x+s.w>x);
-    const canUseProfiles=['soldier','boar','golem','insect'].includes(template.kind);
+    const supportSolids=forestBoarFloorOnly?[stage.solids[0]]:stage.solids;
+    const supports=supportSolids.filter(s=>s.x<x+probe.w&&s.x+s.w>x);
+    const canUseProfiles=!forestBoarFloorOnly&&['soldier','boar','golem','insect'].includes(template.kind);
     const profileSurface=canUseProfiles?nearestPlatformSurface(platformProfiles,x+probe.w/2):null;
     const ys=[template.y,...supports.map(s=>s.y-probe.h),...(profileSurface?[profileSurface.y-probe.h]:[])];
     for(const y of [...new Set(ys)]){

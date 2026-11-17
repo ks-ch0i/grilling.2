@@ -1,6 +1,6 @@
 # Task: T03 Charge Platform Piercing
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -106,6 +106,6 @@ Task: T03-charge-platform-piercing
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation passed
-- commit: pending
+- [x] Implementation complete
+- [x] Validation passed
+- commit: `83f4347`

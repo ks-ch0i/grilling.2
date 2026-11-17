@@ -21,6 +21,22 @@ test('machine selects charge at close range and varied far attacks without conse
  for(const last of ['rocks','wave','mineral'])assert.notEqual(selectMachineAttack({...boss,lastAttack:last},far,10).kind,last);
  assert.equal(selectMachineAttack(boss,near,42).rng,nextRandom(42).state);
 });
+test('Machine and phase-two Worm charges cross floating platforms and stop at arena walls',()=>{
+ const platform={x:180,w:64,topProfile:[260,260,260,260],variant:0};
+ for(const kind of ['machine','worm']){
+  let boss=createMineBoss(kind,{x:128,y:arena.bottom-64});
+  Object.assign(boss,{phase:kind==='worm'?2:1,state:'attack',stateTicks:30,attackKind:'charge',lockedFacing:1});
+  for(let i=0;i<20;i++)boss=stepMineBoss(boss,player,arena,1).boss;
+  assert.ok(boss.x>platform.x,kind);
+  assert.equal(boss.y+boss.h,arena.bottom,kind);
+
+  const edgeX=arena.right-16-boss.w;
+  boss=createMineBoss(kind,{x:edgeX,y:arena.bottom-64});
+  Object.assign(boss,{phase:kind==='worm'?2:1,state:'attack',stateTicks:20,attackKind:'charge',lockedFacing:1});
+  boss=stepMineBoss(boss,player,arena,1).boss;
+  assert.equal(boss.x,edgeX,`${kind} right arena wall`);
+ }
+});
 test('a short jump cannot clear the 30px wave while a long jump can',()=>{
  const floor=[{x:0,y:304,w:1000,h:56}],wave={x:120,y:274,w:16,h:30};
  function jump(hold){let p=createPlayer(120,276);p.grounded=true;let best=Infinity;for(let i=0;i<40;i++){p=stepPlayer(p,{...input,jumpPressed:i===0,jumpHeld:i<hold},floor,344).player;best=Math.min(best,p.y+p.h);}return best;}

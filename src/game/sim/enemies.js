@@ -65,7 +65,12 @@ export function stepEnemy(state,player,terrain,platformProfiles=[]) {
       events.push({type:'enemy:attack',id:enemy.id});
     }
   } else if (enemy.state==='attack') {
-    if (enemy.kind==='boar' && !walk(enemy,terrain,enemy.lockedFacing*spec.speed/60,platformProfiles)) enemy.stateTicks=1;
+    if(enemy.kind==='boar'){
+      const dx=enemy.lockedFacing*spec.speed/60;
+      const onFloor=terrain.some(solid=>solid.h>=32&&solid.y===enemy.y+enemy.h&&enemy.x<solid.x+solid.w&&enemy.x+enemy.w>solid.x);
+      if(onFloor&&!groundAhead(enemy,terrain,dx))enemy.stateTicks=1;
+      else if(moveAxis(enemy,terrain,'x',dx))enemy.stateTicks=1;
+    }
     if(enemy.kind==='bat'){
       const dx=enemy.lockedTarget.x-(enemy.x+enemy.w/2),dy=enemy.lockedTarget.y-(enemy.y+enemy.h/2),distance=Math.hypot(dx,dy),step=spec.speed/60;
       if(distance<=step)enemy.stateTicks=1;

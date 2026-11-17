@@ -90,6 +90,26 @@ test('run waves pass over randomized platforms while locked arena walls still st
  run=stepStage(run,input,MINE_STAGE).run;assert.equal(run.hazards.some(h=>h.id==='locked-wave'),false);
 });
 
+test('Mine charge bosses cross saved profiles and remain clamped to the locked arena',()=>{
+ const profile={x:176,w:64,topProfile:[260,260,260,260],variant:0};
+ for(const kind of ['machine','worm']){
+  let run=createStageRun(MINE_STAGE,{}, {seed:51});
+  run.terrainLayout={mode:'random',platforms:[profile]};run.arenaLocked=true;
+  run.enemies=run.enemies.map(enemy=>({...enemy,state:'hurt',stateTicks:1000}));
+  run.boss=createMineBoss(kind,{x:128,y:MINE_STAGE.arena.bottom-64});
+  Object.assign(run.boss,{phase:kind==='worm'?2:1,state:'attack',stateTicks:30,attackKind:'charge',lockedFacing:1});
+  run.bossSequence=kind==='worm'?'worm':'machine';
+  for(let i=0;i<20;i++)run=stepStage(run,input,MINE_STAGE).run;
+  assert.ok(run.boss.x>profile.x,kind);
+  assert.equal(run.boss.y+run.boss.h,MINE_STAGE.arena.bottom,kind);
+
+  run.boss.x=MINE_STAGE.arena.right-16-run.boss.w;run.boss.state='attack';run.boss.stateTicks=20;run.boss.lockedFacing=1;
+  const edgeX=run.boss.x;
+  run=stepStage(run,input,MINE_STAGE).run;
+  assert.equal(run.boss.x,edgeX,`${kind} right arena wall`);
+ }
+});
+
 test('mine encounters round-trip and produce identical next ticks at each dangerous save boundary',()=>{
  const states=[];
  let run=createStageRun(MINE_STAGE,{}, {seed:21});run.cartZones[0].state='warning';run.cartZones[0].ticks=1;

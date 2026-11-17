@@ -49,6 +49,23 @@ test('round spawns can use profile supports when no floor is beneath the candida
   assert.equal(platformApi.platformTopY(profile,enemy.x+enemy.w/2),enemy.y+enemy.h,enemy.kind);
  }
 });
+test('new Forest boars use the fixed floor even when their preferred x overlaps a platform',()=>{
+ const forest=getStage('forest-1'),floor=forest.solids[0],profile={x:352,w:96,topProfile:Array(6).fill(260),variant:0};
+ const enemies=forest.enemies.map(enemy=>enemy.kind==='boar'?{...enemy,x:400,y:240}:enemy);
+ const profileStage={...forest,solids:[floor],enemies};
+ const profiled=createRoundEnemies(profileStage,7,123,{platformProfiles:[profile]}).enemies.find(enemy=>enemy.kind==='boar');
+ assert.ok(profiled.x<profile.x+profile.w&&profiled.x+profiled.w>profile.x);
+ assert.equal(profiled.y,floor.y-profiled.h);
+
+ const legacyStage={...forest,solids:[floor,{x:352,y:256,w:96,h:16}],enemies:enemies.map(enemy=>enemy.kind==='boar'?{...enemy,y:236}:enemy)};
+ const legacy=createRoundEnemies(legacyStage,7,123).enemies.find(enemy=>enemy.kind==='boar');
+ assert.equal(legacy.y,floor.y-legacy.h);
+});
+test('Forest boar floor-only spawning retains the no-safe-spawn error',()=>{
+ const forest=getStage('forest-1'),boar=forest.enemies.find(enemy=>enemy.kind==='boar');
+ const stage={...forest,solids:[forest.solids[0]],enemies:[boar,boar,boar]};
+ assert.throws(()=>createRoundEnemies(stage,1,123,{player:{x:0,y:0,w:640,h:360},platformProfiles:[{x:352,w:96,topProfile:Array(6).fill(260),variant:0}]}),/No safe arena spawn is available for boar/);
+});
 test('creating practice rounds does not change the saved run or records',()=>{
  const save=freshSave(),before=JSON.stringify(save);
  for(const target of ROUND_TARGETS)createPracticeRun(target.id,{seed:123});
