@@ -29,7 +29,8 @@ export function createPracticeRun(targetId,options={}){
       :target.stageId==='mine-1'?createMineBoss('machine',stage.boss):createBoss(stage.boss);
     run.boss.state='intro';run.boss.stateTicks=targetId==='mine-worm'?WORM_INTRO_TICKS:90;
     run.bossSequence=targetId==='mine-worm'?'worm-intro':target.stageId==='mine-1'?'machine':'none';
-    const encounter=createRoundEnemies(stage,round,run.rngState,{player:run.player,boss:run.boss});
+    const runStage={...stage,solids:[stage.solids[0],...run.terrainLayout.platforms]};
+    const encounter=createRoundEnemies(runStage,round,run.rngState,{player:run.player,boss:run.boss});
     run.enemies=encounter.enemies;run.rngState=encounter.rngState;
   }
   return run;

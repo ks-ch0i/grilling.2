@@ -1,6 +1,6 @@
 # Task: T02 Use the Run Layout in Stage Simulation and Rendering
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -74,12 +74,12 @@ Make player movement, ground-enemy movement and spawning, boss encounter start, 
 
 ## Acceptance Criteria
 
-- [ ] Player and ground enemies collide with the active run's platform rectangles in both stages.
-- [ ] Round enemies are supported by the active layout or the fixed floor; they do not spawn inside the player or boss.
-- [ ] The same platform layout remains through rounds 1–8, practice runs, Worm intro, and save restoration.
-- [ ] When the death countdown starts a fresh run, the simulation and rendered platform layout both change to that run's layout.
-- [ ] A legacy-fixed snapshot continues to display and use the original fixed platforms.
-- [ ] Scene updates reuse terrain display objects when geometry is unchanged and destroy them when it changes.
+- [x] Player and ground enemies collide with the active run's platform rectangles in both stages.
+- [x] Round enemies are supported by the active layout or the fixed floor; they do not spawn inside the player or boss.
+- [x] The same platform layout remains through rounds 1–8, practice runs, Worm intro, and save restoration.
+- [x] When the death countdown starts a fresh run, the simulation and rendered platform layout both change to that run's layout.
+- [x] A legacy-fixed snapshot continues to display and use the original fixed platforms.
+- [x] Scene updates reuse terrain display objects when geometry is unchanged and destroy them when it changes.
 
 ## Validation
 
@@ -107,6 +107,7 @@ Task: T02-use-run-terrain-in-stage
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation passed
-- commit: pending
+- [x] Implementation complete
+- [x] Validation passed
+- Manual browser QA was unavailable: the CUA browser host returned unavailable and no local browser executable was found. Focused tests, Vite build, and local HTTP responses passed.
+- commit: see repository history

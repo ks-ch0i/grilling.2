@@ -23,11 +23,17 @@ const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 
 function freshPlayer(point){const player=createPlayer(point.x,point.y);player.grounded=true;return player;}
 
-export function stageTerrain(stage,locked){
+export function stageTerrain(stage,locked,terrainLayout){
+  if(!terrainLayout||!Array.isArray(terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
   const {width,height}=stage.world;
   const walls=[{x:-16,y:0,w:16,h:height},{x:width,y:0,w:16,h:height},{x:0,y:-16,w:width,h:16}];
   if(locked)walls.push({x:stage.arena.left,y:stage.arena.top,w:16,h:stage.arena.bottom-stage.arena.top},{x:stage.arena.right,y:stage.arena.top,w:16,h:stage.arena.bottom-stage.arena.top});
-  return [...stage.solids,...walls];
+  return [stage.solids[0],...terrainLayout.platforms,...walls];
+}
+
+function stageForRun(stage,run){
+  if(!run?.terrainLayout||!Array.isArray(run.terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
+  return {...stage,solids:[stage.solids[0],...run.terrainLayout.platforms]};
 }
 
 function safeBossX(stage,player,width,preferred){
@@ -55,7 +61,7 @@ function bossForRound(stage,round,player){
 function startRound(run,stage,round,events=null){
   const bossState=bossForRound(stage,round,run.player);
   const bossRect=isBossRound(stage.id,round)?bossState.boss:null;
-  const encounter=createRoundEnemies(stage,round,run.rngState,{player:run.player,boss:bossRect});
+  const encounter=createRoundEnemies(stageForRun(stage,run),round,run.rngState,{player:run.player,boss:bossRect});
   run.round=round;
   run.roundClearTicks=null;
   run.player.hp=3;
@@ -235,7 +241,7 @@ export function stepStage(previous,input,stage){
     return {run,events};
   }
 
-  const terrain=stageTerrain(stage,run.arenaLocked);let pushCompleted;
+  const terrain=stageTerrain(stage,run.arenaLocked,run.terrainLayout);let pushCompleted;
   const playerStep=stepPlayer(run.player,input,terrain,stage.pitDeathY);
   run.player=playerStep.player;pushCompleted=playerStep.pushCompleted;events.push(...playerStep.events);
   if(run.player.mode==='dead')return death(run,events);
@@ -248,7 +254,7 @@ export function stepStage(previous,input,stage){
     if(run.bossDrop?.spawned&&!run.bossDrop.consumed&&intersects(run.player,{x:run.bossDrop.x,y:run.bossDrop.y,w:16,h:16})){
       run.bossDrop.consumed=true;run.player.hp=Math.min(3,run.player.hp+1);events.push({type:'stage:pickup',id:'boss-heal'});
     }
-    const solids=stageTerrain(stage,run.arenaLocked);
+    const solids=terrain;
     for(let i=0;i<run.enemies.length;i++){
       const result=stepEnemy(run.enemies[i],run.player,solids);
       run.enemies[i]=result.enemy;events.push(...result.events);run.projectiles.push(...result.projectiles);
@@ -281,7 +287,7 @@ export function stepStage(previous,input,stage){
   if(pushCompleted!==undefined&&!interactionLocked){
     const targets=run.enemies.filter(enemy=>enemy.state!=='dead');
     if(!['dormant','intro','transition','dying','dead'].includes(run.boss.state))targets.push(run.boss);
-    separateOverlappingTargets(run.player,pushCompleted,targets,stageTerrain(stage,run.arenaLocked));
+    separateOverlappingTargets(run.player,pushCompleted,targets,terrain);
   }
 
   if(bossResult.events.some(event=>event.type==='boss:defeated')&&run.stageId==='mine-1'&&run.round===8&&run.bossSequence==='machine'){

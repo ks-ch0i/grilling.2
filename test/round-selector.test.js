@@ -4,6 +4,7 @@ import {isRoundSelectorEnabled,ROUND_TARGETS,createPracticeRun} from '../src/gam
 import {snapshotStageRun,restoreStageRun,stepStage} from '../src/game/sim/stage.js';
 import {getStage} from '../src/game/content/stages.js';
 import {freshSave,parseSave} from '../src/game/storage/saveStore.js';
+import {stageTerrain} from '../src/game/sim/stage.js';
 
 const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 test('round selector is available only in development and can be disabled',()=>{
@@ -24,6 +25,12 @@ test('stage and boss practice targets start with full health and valid state',()
   if(target.id==='mine-worm'){assert.equal(run.boss.kind,'worm');assert.equal(run.bossSequence,'worm-intro');assert.equal(run.boss.stateTicks,240);}
   if(target.id==='mine-machine'){assert.equal(run.boss.kind,'machine');assert.equal(run.bossSequence,'machine');assert.equal(run.enemies.length,0);}
   if(target.id==='mine-worm')assert.equal(run.enemies.length,3);
+    const solids=stageTerrain(stage,false,run.terrainLayout);
+    assert.deepEqual(solids.slice(0,run.terrainLayout.platforms.length+1),[stage.solids[0],...run.terrainLayout.platforms]);
+    for(const enemy of run.enemies){
+      if(enemy.kind==='bat')continue;
+      assert.ok(solids.some(solid=>enemy.x<solid.x+solid.w&&enemy.x+enemy.w>solid.x&&solid.y===enemy.y+enemy.h),`${target.id}:${enemy.id}`);
+    }
   assert.doesNotThrow(()=>stepStage(run,input,stage));
  }
  assert.throws(()=>createPracticeRun('unknown'),TypeError);

@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {FOREST_STAGE} from '../src/game/content/forestStage.js';
 import {MINE_STAGE} from '../src/game/content/mineStage.js';
-import {createStageRun,stepStage,restoreStageRun,snapshotStageRun} from '../src/game/sim/stage.js';
+import {createStageRun,stepStage,restoreStageRun,snapshotStageRun,stageTerrain} from '../src/game/sim/stage.js';
+import {createEnemy} from '../src/game/sim/enemies.js';
 import {roundEnemyCount,isBossRound,ROUND_COUNT,ROUND_CLEAR_TICKS} from '../src/game/sim/rounds.js';
 
 const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
@@ -25,6 +26,13 @@ test('round schedule is fixed and rejects rounds outside the stage',()=>{
   assert.deepEqual(Array.from({length:ROUND_COUNT},(_,i)=>roundEnemyCount(i+1)),[1,2,3,4,0,6,3,3]);
   assert.throws(()=>roundEnemyCount(0),RangeError);assert.throws(()=>roundEnemyCount(9),RangeError);
   for(const stage of [FOREST_STAGE,MINE_STAGE])for(const round of [5,7,8])assert.equal(isBossRound(stage.id,round),true);
+});
+
+test('a fresh run retains its exact platform layout through all eight rounds',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const expected=createStageRun(stage,{}, {seed:91}).terrainLayout;
+    for(let round=1;round<=ROUND_COUNT;round++)assert.deepEqual(advanceTo(stage,round,91).terrainLayout,expected);
+  }
 });
 
 test('round waves use stage species, one of each species on rounds 7 and 8, and safe arena positions',()=>{
@@ -111,6 +119,28 @@ test('fresh runs save their deterministic terrain and legacy snapshots keep fixe
     assert.equal(legacy.elapsedTicks,321);
     assert.equal(legacy.round,1);
     assert.deepEqual(restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(legacy)))).terrainLayout,legacy.terrainLayout);
+  }
+});
+
+test('player collision uses the saved run platforms and keeps the floor and lock walls',()=>{
+  const platforms=[
+    {x:96,y:288,w:64,h:16},{x:224,y:288,w:64,h:16},
+    {x:352,y:288,w:64,h:16},{x:480,y:288,w:64,h:16}
+  ];
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const run=createStageRun(stage,{}, {seed:19});
+    run.terrainLayout={mode:'random',platforms:structuredClone(platforms)};
+    run.enemies=[createEnemy({id:'terrain-walker',kind:'soldier',x:96,y:260})];
+    const solids=stageTerrain(stage,false,run.terrainLayout);
+    assert.deepEqual(solids.slice(0,platforms.length+1),[stage.solids[0],...platforms]);
+    assert.equal(solids.some(solid=>solid.x===128&&solid.y===256),false);
+    const locked=stageTerrain(stage,true,run.terrainLayout);
+    assert.ok(locked.some(solid=>solid.x===stage.arena.left&&solid.w===16));
+    assert.ok(locked.some(solid=>solid.x===stage.arena.right&&solid.w===16));
+    run.player.x=260;run.player.y=276;run.player.grounded=true;run.player.mode='idle';
+    const next=stepStage(run,input,stage).run;
+    assert.equal(next.player.y,276);
+    assert.equal(next.enemies[0].x,96.75);
   }
 });
 

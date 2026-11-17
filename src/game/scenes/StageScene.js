@@ -27,8 +27,7 @@ export class StageScene extends Phaser.Scene {
     this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.store=getAppStore();this.audio=getAudioManager();if(!this.practiceTarget)markRunActive();
     const mine=this.stage.id==='mine-1';
     this.backdrop=this.add.tileSprite(0,0,640,304,mine?'mine-backdrop':'forest').setOrigin(0,0).setScrollFactor(0).setDepth(-20).setTint(mine?0xffffff:0xb8b8b8);
-    this.terrainBase=this.add.graphics().setDepth(-6);for(const r of this.stage.solids){this.terrainBase.fillStyle(0x392a29);this.terrainBase.fillRect(r.x,r.y,r.w,r.h);this.terrainBase.fillStyle(0x9aa36d);this.terrainBase.fillRect(r.x,r.y,r.w,2);}
-    this.terrainViews=this.stage.solids.map(r=>this.add.tileSprite(r.x,r.y,r.w,r.h,mine?(r.y===304?'mine-ground':'mine-platform'):(r.y===304?'ground':'platform')).setOrigin(0,0).setDepth(-5));
+    this.terrainBase=this.add.graphics().setDepth(-6);this.terrainViews=[];this.terrainSignature=null;this.syncTerrainViews();
     this.pickupViews=this.stage.pickups.map(p=>this.add.sprite(p.x+8,p.y+16,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(1));
     this.worldGraphics=this.add.graphics().setDepth(1);this.light=mine?this.add.graphics().setDepth(-4):null;this.bossBlackout=mine?this.add.rectangle(0,0,640,360,0x050409,1).setOrigin(0,0).setScrollFactor(0).setDepth(2).setVisible(false):null;this.playerView=new PlayerView(this);this.enemyView=new EnemyView(this);this.mineHazardView=mine?new MineHazardView(this):null;this.wormIntroView=mine?new WormIntroView(this):null;this.visualEffects=[];
     this.hud=this.add.text(12,10,'',{fontFamily:'monospace',fontSize:'14px',color:'#ffffff'}).setScrollFactor(0).setDepth(10);
@@ -117,7 +116,23 @@ export class StageScene extends Phaser.Scene {
   resumeGame(){if(!this.paused||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();}this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());}
   exportStageSnapshot(){return snapshotStageRun(this.run);}
   restoreStageSnapshot(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
+  syncTerrainViews(){
+    if(!this.run?.terrainLayout||!Array.isArray(this.run.terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
+    const mine=this.stage.id==='mine-1',rectangles=[this.stage.solids[0],...this.run.terrainLayout.platforms];
+    const signature=rectangles.map(({x,y,w,h})=>`${x},${y},${w},${h}`).join(';');
+    if(signature===this.terrainSignature)return;
+    for(const view of this.terrainViews)view.destroy();
+    this.terrainBase.clear();
+    this.terrainViews=rectangles.map((r,index)=>{
+      this.terrainBase.fillStyle(0x392a29);this.terrainBase.fillRect(r.x,r.y,r.w,r.h);
+      this.terrainBase.fillStyle(0x9aa36d);this.terrainBase.fillRect(r.x,r.y,r.w,2);
+      const texture=index===0?(mine?'mine-ground':'ground'):(mine?'mine-platform':'platform');
+      return this.add.tileSprite(r.x,r.y,r.w,r.h,texture).setOrigin(0,0).setDepth(-5);
+    });
+    this.terrainSignature=signature;
+  }
   renderWorld(){
+    this.syncTerrainViews();
     const p=this.run.player,cam=this.cameras.main,boss=this.run.boss;
     const intro=this.run.bossSequence==='worm-intro'&&boss.kind==='worm'?getWormIntroTimeline(boss.stateTicks):null;
     this.wormIntroView?.sync(this.run,this.stage,intro);
