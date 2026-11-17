@@ -28,6 +28,51 @@ test('roots use a distinct ground contact followed by phase-specific delays and 
   if(phase===2){assert.notEqual(hits[1].x,hits[0].x);assert.equal(b.state,'recovery');assert.equal(b.rootEffects[0].strike,2);assert.equal(b.rootEffects[0].age,0);}
  }
 });
+test('root targets use the nearest eligible profile or rectangle surface beneath the player',()=>{
+ const beginRoot=(target,platforms=[],phase=1)=>{
+  let boss=createBoss(spawn);Object.assign(boss,{phase,transitioned:phase===2,state:'recovery',stateTicks:1,cycle:0});
+  return stepBoss(boss,target,arena,platforms).boss.telegraphs[0];
+ };
+ const profile={x:10896,w:64,topProfile:[248,260,256,260],variant:0};
+ const boundaryPlayer={x:10904,y:224,w:16,h:28};
+ const selected=beginRoot(boundaryPlayer,[profile]);
+ assert.equal(selected.x,10888);
+ assert.equal(selected.y,212,'the player center is exactly on the next 16px profile section');
+
+ const standing=beginRoot({x:10896,y:232,w:16,h:28},[{x:10896,w:64,topProfile:[260,264,260,264],variant:1}]);
+ assert.equal(standing.y,212,'a surface at the player feet is eligible');
+ const airborne=beginRoot({x:10896,y:220,w:16,h:28},[{x:10896,w:64,topProfile:[260,264,260,264],variant:1}]);
+ assert.equal(airborne.y,212,'the first profile surface below an airborne player is selected');
+ const higher=beginRoot({x:10896,y:242,w:16,h:28},[{x:10896,w:64,topProfile:[260,264,260,264],variant:1}]);
+ assert.equal(higher.y,arena.bottom-48,'a surface above the player feet is ignored');
+ const absent=beginRoot({x:10896,y:232,w:16,h:28},[{x:11000,w:64,topProfile:[260,260,260,260],variant:0}]);
+ assert.equal(absent.y,arena.bottom-48,'the floor is used when no surface lies below the player x');
+ const legacy=beginRoot({x:10896,y:228,w:16,h:28},[{x:10880,y:256,w:64,h:16}]);
+ assert.equal(legacy.y,208,'legacy rectangular platform tops remain eligible');
+
+ const clamped=beginRoot({x:arena.left,y:224,w:16,h:28},[{x:arena.left+32,w:32,topProfile:[260,260],variant:0}]);
+ assert.equal(clamped.x,arena.left+16);
+ assert.equal(clamped.y,212,'surface lookup follows the clamped root center at the arena edge');
+ assert.equal(beginRoot({x:11500,y:276,w:16,h:28}).x,arena.right-48);
+});
+test('phase-two additional root locks its new surface at warning start and reuses it at impact',()=>{
+ const firstProfile={x:10896,w:64,topProfile:[260,260,260,260],variant:0};
+ const secondProfile={x:11040,w:64,topProfile:[272,272,272,272],variant:1};
+ const profiles=[firstProfile,secondProfile],firstPlayer={x:10896,y:232,w:16,h:28},secondPlayer={x:11040,y:244,w:16,h:28};
+ let boss=createBoss(spawn);Object.assign(boss,{phase:2,transitioned:true,state:'recovery',stateTicks:1,cycle:0});
+ boss=stepBoss(boss,firstPlayer,arena,profiles).boss;const firstWarning={...boss.telegraphs[0]};
+ for(let i=0;i<53;i++)boss=stepBoss(boss,firstPlayer,arena,profiles).boss;
+ boss=stepBoss(boss,secondPlayer,arena,profiles).boss;
+ const secondWarning={...boss.secondRoot};
+ assert.deepEqual(boss.hitboxes[0],{...firstWarning,ticks:12});
+ assert.equal(secondWarning.y,secondProfile.topProfile[0]-48);
+ assert.deepEqual(boss.telegraphs,[secondWarning]);
+ const locked={...secondWarning};
+ for(let i=0;i<30;i++)boss=stepBoss(boss,{...secondPlayer,x:10496},arena,profiles).boss;
+ assert.equal(boss.secondRootDelay,0);
+ assert.ok(boss.hitboxes.some(({ticks,...box})=>ticks===12&&JSON.stringify(box)===JSON.stringify(locked)));
+ assert.ok(boss.rootEffects.some(({age,strike,...box})=>age===0&&strike===2&&JSON.stringify(box)===JSON.stringify(locked)));
+});
 test('phase change and death cancel pending roots and their independent effects',()=>{
  let b=createBoss(spawn);Object.assign(b,{state:'recovery',attackKind:'root',hp:10,secondRootDelay:20,secondRoot:{x:10900,y:256,w:48,h:48},rootEffects:[{x:10900,y:256,w:48,h:48,age:6,strike:1}]});
  const transition=damageBoss(b).boss;assert.deepEqual(transition.rootEffects,[]);assert.equal(transition.secondRootDelay,0);assert.ok(b.rootEffects.length);

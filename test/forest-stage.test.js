@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {FOREST_STAGE,validateStage} from '../src/game/content/forestStage.js';
+import {createStageRun,stepStage} from '../src/game/sim/stage.js';
+
+const idle={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 
 test('forest stage is a supported single-screen arena with three enemy templates',()=>{
   assert.equal(validateStage(FOREST_STAGE),true);
@@ -31,4 +34,20 @@ test('forest validation rejects out-of-bounds geometry and duplicate or missing 
 
   const unsupported=structuredClone(FOREST_STAGE);unsupported.enemies[0].y--;
   assert.throws(()=>validateStage(unsupported),RangeError);
+});
+
+test('Forest rounds 5, 7, and 8 pass active saved profiles to root targeting',()=>{
+ const profiles=[
+  {x:96,w:64,topProfile:[260,260,260,260],variant:0},
+  {x:224,w:64,topProfile:[272,272,272,272],variant:1}
+ ];
+ for(const round of [5,7,8]){
+  const run=createStageRun(FOREST_STAGE,{}, {seed:round});
+  run.round=round;run.enemies=[];run.terrainLayout={mode:'random',platforms:profiles};
+  Object.assign(run.player,{x:224,y:244,grounded:true,mode:'idle'});
+  Object.assign(run.boss,{state:'recovery',stateTicks:1,cycle:0,phase:1,transitioned:false});
+  const result=stepStage(run,idle,FOREST_STAGE);
+  assert.equal(result.run.boss.attackKind,'root',`round ${round}`);
+  assert.equal(result.run.boss.telegraphs[0].y,224,`round ${round}`);
+ }
 });

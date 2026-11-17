@@ -292,7 +292,7 @@ export function stepStage(previous,input,stage){
     }
   }
 
-  const bossResult=run.stageId==='mine-1'?stepMineBoss(run.boss,run.player,stage.arena,run.rngState):stepBoss(run.boss,run.player,stage.arena);
+  const bossResult=run.stageId==='mine-1'?stepMineBoss(run.boss,run.player,stage.arena,run.rngState):stepBoss(run.boss,run.player,stage.arena,run.terrainLayout.platforms);
   run.boss=bossResult.boss;events.push(...bossResult.events);
   if(run.stageId==='mine-1'){run.rngState=bossResult.rng;run.hazards.push(...bossResult.hazards);}
   if(!interactionLocked&&!['dormant','intro','dying','dead'].includes(run.boss.state)){

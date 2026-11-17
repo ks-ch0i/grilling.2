@@ -1,3 +1,4 @@
+import {isProfiledPlatform,platformTopY} from './platforms.js';
 export const ROOT_PLUNGE_TICKS=24;
 export const ROOT_DELAY_TICKS=Object.freeze({1:60,2:30});
 export const ROOT_EFFECT_TICKS=24;
@@ -11,15 +12,27 @@ export function createBoss(spawn) {
     attackKind:null,lockedFacing:-1,telegraphs:[],hitboxes:[],secondRootDelay:0,secondRoot:null,transitioned:false,rootEffects:[]};
 }
 export function resetBoss(spawn) { return createBoss(spawn); }
-function targetRect(kind,boss,player,arena) {
+function rootSurfaceY(targetX,playerFeet,arena,platforms){
+  let selectedY=arena.bottom;
+  for(const platform of platforms??[]){
+    let surfaceY=null;
+    if(isProfiledPlatform(platform))surfaceY=platformTopY(platform,targetX);
+    else if(platform&&Object.keys(platform).length===4&&['x','y','w','h'].every(key=>Object.hasOwn(platform,key))&&
+      [platform.x,platform.y,platform.w,platform.h].every(Number.isFinite)&&platform.w>0&&targetX>=platform.x&&targetX<platform.x+platform.w)surfaceY=platform.y;
+    if(surfaceY!==null&&surfaceY>=playerFeet&&surfaceY<selectedY)selectedY=surfaceY;
+  }
+  return selectedY;
+}
+function targetRect(kind,boss,player,arena,platforms=[]) {
   if (kind==='branch') return {x:boss.lockedFacing<0?boss.x-90:boss.x+boss.w,y:boss.y+30,w:90,h:66};
   if (kind==='slam') return {x:boss.lockedFacing<0?boss.x-64:boss.x+boss.w,y:boss.y+12,w:64,h:84};
-  return {x:Math.max(arena.left+16,Math.min(arena.right-48,player.x+player.w/2-24)),y:arena.bottom-48,w:48,h:48};
+  const x=Math.max(arena.left+16,Math.min(arena.right-48,player.x+player.w/2-24));
+  return {x,y:rootSurfaceY(x+24,player.y+player.h,arena,platforms)-48,w:48,h:48};
 }
-function beginWindup(boss,player,arena,events) {
+function beginWindup(boss,player,arena,events,platforms) {
   const spec=attacks[boss.cycle%attacks.length]; boss.attackKind=spec.kind;
   boss.lockedFacing=(player.x+player.w/2 < boss.x+boss.w/2)?-1:1;
-  boss.telegraphs=[targetRect(spec.kind,boss,player,arena)];
+  boss.telegraphs=[targetRect(spec.kind,boss,player,arena,platforms)];
   boss.state='windup'; boss.stateTicks=spec.kind==='root'?ROOT_PLUNGE_TICKS+ROOT_DELAY_TICKS[boss.phase]:boss.phase===2?Math.round(spec.windup*.75):spec.windup;
   events.push({type:'boss:windup',kind:spec.kind});
 }
@@ -32,7 +45,7 @@ export function damageBoss(state, amount=1, {allowPhaseTransition=true}={}) {
   else if (allowPhaseTransition && boss.hp<=9 && !boss.transitioned) { boss.transitioned=true;boss.state='transition';boss.stateTicks=90;boss.telegraphs=[];boss.hitboxes=[];boss.secondRootDelay=0;boss.secondRoot=null;boss.rootEffects=[];events.push({type:'boss:transition'}); }
   return {boss,events};
 }
-export function stepBoss(state,player,arena) {
+export function stepBoss(state,player,arena,platforms=[]) {
   const boss={...state,telegraphs:state.telegraphs.map(r=>({...r})),hitboxes:state.hitboxes.map(r=>({...r})),secondRoot:state.secondRoot?{...state.secondRoot}:null,rootEffects:(state.rootEffects??[]).map(r=>({...r}))}, events=[];
   if (boss.state==='dormant' || boss.state==='dead') return {boss,events};
   if (boss.state==='dying') { if (--boss.stateTicks<=0) {boss.state='dead';events.push({type:'boss:defeated'});} return {boss,events}; }
@@ -44,7 +57,7 @@ export function stepBoss(state,player,arena) {
     boss.telegraphs=[];boss.secondRoot=null;
   }
   if (boss.state==='intro' || boss.state==='transition') {
-    if (--boss.stateTicks<=0) { if(boss.state==='transition') boss.phase=2;beginWindup(boss,player,arena,events); }
+    if (--boss.stateTicks<=0) { if(boss.state==='transition') boss.phase=2;beginWindup(boss,player,arena,events,platforms); }
   } else if (boss.state==='windup') {
     --boss.stateTicks;
     if(boss.attackKind==='root'&&boss.stateTicks===ROOT_DELAY_TICKS[boss.phase])events.push({type:'boss:root-ground'});
@@ -52,12 +65,12 @@ export function stepBoss(state,player,arena) {
       boss.state='attack';boss.stateTicks=12;boss.hitboxes=boss.telegraphs.map(r=>({...r,ticks:12}));boss.telegraphs=[];
       if(boss.attackKind==='root')for(const box of boss.hitboxes){const {x,y,w,h}=box;boss.rootEffects.push({x,y,w,h,age:0,strike:1});events.push({type:'boss:root-erupt',strike:1,x,y,w,h});}
       if (boss.phase===2 && boss.attackKind==='root') {
-        boss.secondRoot=targetRect('root',boss,player,arena);boss.telegraphs=[{...boss.secondRoot}];boss.secondRootDelay=30;
+        boss.secondRoot=targetRect('root',boss,player,arena,platforms);boss.telegraphs=[{...boss.secondRoot}];boss.secondRootDelay=30;
       }
       events.push({type:'boss:attack',kind:boss.attackKind});
     }
   } else if (boss.state==='attack') {
     if (--boss.stateTicks<=0) {const spec=attacks[boss.cycle%attacks.length];boss.state='recovery';boss.stateTicks=boss.phase===2?Math.round(spec.recovery*.75):spec.recovery;}
-  } else if (boss.state==='recovery' && --boss.stateTicks<=0) { boss.cycle=(boss.cycle+1)%attacks.length;beginWindup(boss,player,arena,events); }
+  } else if (boss.state==='recovery' && --boss.stateTicks<=0) { boss.cycle=(boss.cycle+1)%attacks.length;beginWindup(boss,player,arena,events,platforms); }
   return {boss,events};
 }

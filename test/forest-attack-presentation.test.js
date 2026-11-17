@@ -37,6 +37,37 @@ test('all root stages preserve their next simulation tick and presentation throu
   b=stepBoss(b,player,stage.arena).boss;
  }
 });
+test('profile-root warnings and phase-two second warnings keep their saved rectangles',()=>{
+ const platforms=[
+  {x:96,w:64,topProfile:[288,288,288,288],variant:0},
+  {x:224,w:64,topProfile:[272,272,272,272],variant:1},
+  {x:352,w:64,topProfile:[280,280,280,280],variant:2},
+  {x:480,w:64,topProfile:[288,288,288,288],variant:3}
+ ];
+ const makeRun=()=>{
+  const run=createStageRun(stage,{}, {seed:22});run.round=8;run.terrainLayout={mode:'random',platforms};
+  const encounter=createRoundEnemies(stage,8,run.rngState,{player:run.player,boss:run.boss});run.enemies=encounter.enemies;run.rngState=encounter.rngState;
+  Object.assign(run.player,{x:96,y:260,grounded:true,mode:'idle'});
+  return run;
+ };
+
+ const first=makeRun();Object.assign(first.boss,{state:'recovery',stateTicks:1,cycle:0,phase:1,transitioned:false});
+ let pending=stepStage(first,input,stage).run;const firstRect={...pending.boss.telegraphs[0]};
+ assert.equal(firstRect.y,240);
+ let restored=restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(pending))));
+ assert.deepEqual(restored.boss.telegraphs,[firstRect]);
+ assert.deepEqual(stepStage(restored,input,stage),stepStage(pending,input,stage));
+
+ const second=makeRun();Object.assign(second.player,{x:224,y:244});Object.assign(second.boss,{phase:2,transitioned:true,state:'windup',stateTicks:1,attackKind:'root',
+  telegraphs:[{x:100,y:240,w:48,h:48}],secondRoot:null,secondRootDelay:0});
+ pending=stepStage(second,input,stage).run;const secondRect={...pending.boss.secondRoot};
+ assert.equal(secondRect.y,224);
+ assert.deepEqual(pending.boss.telegraphs,[secondRect]);
+ restored=restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(pending))));
+ assert.deepEqual(restored.boss.secondRoot,secondRect);assert.deepEqual(restored.boss.telegraphs,[secondRect]);
+ const moved={...input};restored.player.x=224;pending.player.x=224;
+ assert.deepEqual(stepStage(restored,moved,stage),stepStage(pending,moved,stage));
+});
 test('legacy snapshots get only missing presentation state; malformed new state is rejected',()=>{
  const run=createStageRun(stage);run.round=8;const encounter=createRoundEnemies(stage,8,run.rngState,{player:run.player,boss:run.boss});run.enemies=encounter.enemies;run.rngState=encounter.rngState;Object.assign(run.boss,{state:'recovery',stateTicks:20,phase:2,attackKind:'root',hitboxes:[{x:11000,y:256,w:48,h:48,ticks:7}]});
  const old=snapshotStageRun(run);delete old.boss.rootEffects;const restored=restoreStageRun(stage,old);
