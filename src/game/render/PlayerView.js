@@ -2,8 +2,7 @@ import Phaser from 'phaser';
 import { isAttackActive } from '../sim/player.js';
 import { playerAnimation,animationFrame,playerAttackFrame } from '../assets/animation.js';
 import { ATTACK_STARTUP,ATTACK_ACTIVE,ATTACK_RECOVERY } from '../sim/constants.js';
-import { attackRangePolygon } from '../sim/combat.js';
-import { stageTerrain } from '../sim/stage.js';
+import { playerAttackRangePoints } from './playerAttackRange.js';
 import { attackIndicatorState } from './attackIndicator.js';
 import { attackSwordOffset } from './attackMotion.js';
 export class PlayerView {
@@ -40,7 +39,7 @@ export class PlayerView {
     if(player.mode==='attack'){
       const active=isAttackActive(player),after=player.attackTick>ATTACK_STARTUP+ATTACK_ACTIVE;
       const fade=after?Math.max(0,1-(player.attackTick-ATTACK_STARTUP-ATTACK_ACTIVE)/ATTACK_RECOVERY):1;
-      const points=attackRangePolygon(player,stageTerrain(scene.stage,scene.run.arenaLocked));
+      const points=playerAttackRangePoints(player,scene.stage,scene.run);
       const center=points[0],edge=points.slice(1),last=edge.length-1;
       const arc=(scale,from,to)=>{const first=Math.floor(last*from),end=Math.max(first+1,Math.floor(last*to));g.beginPath();
         for(let i=first;i<=Math.min(last,end);i++){const p=edge[i],x=center.x+(p.x-center.x)*scale,y=center.y+(p.y-center.y)*scale;if(i===first)g.moveTo(x,y);else g.lineTo(x,y);}g.strokePath();};

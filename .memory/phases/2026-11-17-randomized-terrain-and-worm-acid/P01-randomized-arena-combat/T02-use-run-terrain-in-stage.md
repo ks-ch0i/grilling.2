@@ -110,4 +110,5 @@ Task: T02-use-run-terrain-in-stage
 - [x] Implementation complete
 - [x] Validation passed
 - Manual browser QA was unavailable: the CUA browser host returned unavailable and no local browser executable was found. Focused tests, Vite build, and local HTTP responses passed.
+- Post-plan review correction: `PlayerView` now builds attack-range clipping from the active run's `terrainLayout`; `test/player-attack-range.test.js` covers the platform-blocked attack sector.
 - commit: see repository history
