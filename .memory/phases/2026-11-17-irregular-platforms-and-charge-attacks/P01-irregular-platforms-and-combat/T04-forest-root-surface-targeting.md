@@ -1,6 +1,6 @@
 # Task: T04 Forest Root Surface Targeting
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -9,6 +9,7 @@ Make every Forest Guardian root warning and strike in Forest rounds 5, 7, and 8 
 ## Decision Summary
 
 - At the start of each root warning, select the first walkable top surface below the player's feet; if none exists, select the fixed floor. If the player is standing on a surface, that surface is the nearest support beneath the target x.
+- Clamp the root rectangle to the arena first, then sample the surface beneath that rectangle's center so its warning and hitbox occupy the selected platform even at arena edges.
 - Keep the existing 48×48 root hitbox, damage, windup, phase delays, strike count, and saved boss attack records. The warning and its corresponding hit share one selected rectangle.
 
 ## Implementation
@@ -40,11 +41,11 @@ Make every Forest Guardian root warning and strike in Forest rounds 5, 7, and 8 
   ```
 - **Data & Schema Fields**:
 - A profile's horizontal sections are 16 pixels wide and `topProfile[index]` is its absolute world y. A legacy rectangular platform's walkable top is `platform.y`. The fixed floor top is `arena.bottom`.
-  - Root rectangle remains `{x, y, w:48, h:48}`; `x` is the player's center minus 24 clamped to `[arena.left+16, arena.right-48]`, and `y = selectedSurfaceY - 48`.
+  - Root rectangle remains `{x, y, w:48, h:48}`; `x` is the player's center minus 24 clamped to `[arena.left+16, arena.right-48]`, and `y = selectedSurfaceY - 48`. Resolve `selectedSurfaceY` under the final rectangle center (`x + 24`).
   - Do not add persistent root-target fields. Existing `telegraphs`, `hitboxes`, `secondRoot`, and `rootEffects` rectangles already hold the selected x/y through JSON save/restore.
 - **Execution Flow / Logic**:
   1. Add an optional `platforms` parameter to `stepBoss` and pass the active Forest run's entire `terrainLayout.platforms` array from `stepStage`; do not filter out legacy rectangles. Direct unit tests and callers may omit it and retain floor-only targeting.
-  2. When `beginWindup` selects a root attack, compute the clamped target x first. For each active platform containing that x (`platform.x <= x < platform.x + platform.w`), get its surface y from the profile sample when `topProfile` exists or from `platform.y` for a legacy rectangle. Include the fixed floor. Select the eligible support with the smallest y that is at or below the player's feet (`surfaceY >= player.y + player.h`). If the player is already standing on a platform, accept that support at equal feet y. If airborne above multiple surfaces, choose the first one downward; ignore surfaces above the player's feet. If no platform is eligible, use `arena.bottom`.
+  2. When `beginWindup` selects a root attack, compute the clamped target x first and sample beneath the resulting rectangle center (`x + 24`). For each active platform containing that x (`platform.x <= x < platform.x + platform.w`), get its surface y from the profile sample when `topProfile` exists or from `platform.y` for a legacy rectangle. Include the fixed floor. Select the eligible support with the smallest y that is at or below the player's feet (`surfaceY >= player.y + player.h`). If the player is already standing on a platform, accept that support at equal feet y. If airborne above multiple surfaces, choose the first one downward; ignore surfaces above the player's feet. If no platform is eligible, use `arena.bottom`.
   3. Use one shared helper to construct the root rectangle from the selected surface. Do not independently recompute x or y at eruption. `beginWindup` stores the first root in `telegraphs`; the existing transition from windup copies that rectangle to `hitboxes` and `rootEffects`.
   4. For phase two, when the first root erupts, choose the second target once at that second warning's start using the player's then-current position, profiles, and floor. Store the rectangle in both `secondRoot` and `telegraphs`; after the existing 30-tick delay, copy that same stored rectangle into the second hitbox/root effect. Do not re-target while the warning is active.
   5. Apply the same helper in every Forest Guardian encounter. No encounter-specific exception: R5 and R7 phase one roots, R8 phase one root, and R8 phase two's first and additional root all use surface targeting.
@@ -67,14 +68,16 @@ Make every Forest Guardian root warning and strike in Forest rounds 5, 7, and 8 
 
 ## Acceptance Criteria
 
-- [ ] Forest Guardian root warnings in rounds 5, 7, and 8 select the nearest eligible new profile or legacy rectangle surface below the player, or the fixed floor if none exists.
-- [ ] The player's grounded supporting surface is eligible at equal feet y; higher surfaces are ignored when the player is airborne below them.
-- [ ] Each hitbox/root effect has exactly the same rectangle as its warning, including the round 8 phase-two additional strike.
-- [ ] Existing root timing, dimensions, damage, strike counts, phase schedule, cancellation, and saved in-progress rectangles remain unchanged.
+- [x] Forest Guardian root warnings in rounds 5, 7, and 8 select the nearest eligible new profile or legacy rectangle surface below the player, or the fixed floor if none exists.
+- [x] The player's grounded supporting surface is eligible at equal feet y; higher surfaces are ignored when the player is airborne below them.
+- [x] Each hitbox/root effect has exactly the same rectangle as its warning, including the round 8 phase-two additional strike.
+- [x] Existing root timing, dimensions, damage, strike counts, phase schedule, cancellation, and saved in-progress rectangles remain unchanged.
 
 ## Validation
 
-- `node --test test/boss.test.js test/forest-stage.test.js test/forest-attack-presentation.test.js test/stage-lifecycle.test.js` — target selection, all Forest rounds, attack timing/presentation, and save/restore pass.
+- `node --test test/boss.test.js test/forest-stage.test.js test/forest-attack-presentation.test.js test/stage-lifecycle.test.js` — 27 tests passed, including target selection, all Forest rounds, attack timing/presentation, and save/restore.
+- `npm.cmd run build` — passed; Vite emitted the existing warning for a 1.49 MB minified JavaScript chunk.
+- `git diff --check` — passed.
 
 ## Commit Message
 
@@ -91,6 +94,6 @@ Task: T04-forest-root-surface-targeting
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation passed
-- commit: pending
+- [x] Implementation complete
+- [x] Validation passed
+- commit: `76d4eff`

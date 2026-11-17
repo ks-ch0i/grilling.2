@@ -7,11 +7,11 @@
 | T01 | `done ✅` | Generate and persist valid one-way platform profiles; let players and ground enemies follow their tops. | [T01](./T01-profiled-platform-layouts-and-movement.md) |
 | T02 | `done ✅` | Create and render modular Forest-root and Mine-rock platform sprites. | [T02](./T02-themed-platform-art-and-rendering.md) |
 | T03 | `done ✅` | Start the Forest boar on the floor and allow all three explicit charge attacks to pass through platforms. | [T03](./T03-charge-platform-piercing.md) |
-| T04 | `in_progress 🔵` | Place Forest Guardian root warnings and hits on the selected platform or floor surface. | [T04](./T04-forest-root-surface-targeting.md) |
+| T04 | `done ✅` | Place Forest Guardian root warnings and hits on the selected platform or floor surface. | [T04](./T04-forest-root-surface-targeting.md) |
 
 ## Progress
 
-- done: 3/4 (active: T04)
+- done: 4/4
 
 ## Dependencies
 

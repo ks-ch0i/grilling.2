@@ -8,7 +8,7 @@ Replace newly generated rectangular platforms with saved, themed, one-way surfac
 
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Generate and simulate irregular platform surfaces, add matching Forest/Mine art, then connect charge and root attacks to those surfaces. | [P01](../phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/phase.md) |
+| P01 | `complete` | Generate and simulate irregular platform surfaces, add matching Forest/Mine art, then connect charge and root attacks to those surfaces. | [P01](../phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/phase.md) |
 
 ## Scope Notes
 
