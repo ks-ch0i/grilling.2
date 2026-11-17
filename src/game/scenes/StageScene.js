@@ -17,6 +17,7 @@ import { getAudioManager } from '../audio/AudioManager.js';
 import {EVENT_SFX} from '../audio/eventSounds.js';
 import { mountMenu } from '../ui/menu.js';
 import {createPracticeRun,isRoundSelectorEnabled} from '../dev/roundSelector.js';
+import {platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../render/platforms.js';
 const STEP=1000/60;
 export class StageScene extends Phaser.Scene {
   constructor(){super('stage');}
@@ -118,17 +119,32 @@ export class StageScene extends Phaser.Scene {
   restoreStageSnapshot(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
   syncTerrainViews(){
     if(!this.run?.terrainLayout||!Array.isArray(this.run.terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
-    const mine=this.stage.id==='mine-1',rectangles=[this.stage.solids[0],...this.run.terrainLayout.platforms];
-    const signature=rectangles.map(({x,y,w,h})=>`${x},${y},${w},${h}`).join(';');
+    const mine=this.stage.id==='mine-1',floor=this.stage.solids[0],layout=this.run.terrainLayout;
+    const signature=terrainLayoutSignature(layout,floor);
     if(signature===this.terrainSignature)return;
     for(const view of this.terrainViews)view.destroy();
     this.terrainBase.clear();
-    this.terrainViews=rectangles.map((r,index)=>{
-      this.terrainBase.fillStyle(0x392a29);this.terrainBase.fillRect(r.x,r.y,r.w,r.h);
-      this.terrainBase.fillStyle(0x9aa36d);this.terrainBase.fillRect(r.x,r.y,r.w,2);
-      const texture=index===0?(mine?'mine-ground':'ground'):(mine?'mine-platform':'platform');
-      return this.add.tileSprite(r.x,r.y,r.w,r.h,texture).setOrigin(0,0).setDepth(-5);
-    });
+    this.terrainBase.fillStyle(0x392a29).fillRect(floor.x,floor.y,floor.w,floor.h);
+    this.terrainBase.fillStyle(0x9aa36d).fillRect(floor.x,floor.y,floor.w,2);
+    this.terrainViews=[this.add.tileSprite(floor.x,floor.y,floor.w,floor.h,mine?'mine-ground':'ground').setOrigin(0,0).setDepth(-5)];
+    for(const platform of layout.platforms){
+      if(Array.isArray(platform.topProfile)){
+        const texture=mine?'mine-platform-modules':'forest-platform-modules';
+        const topColor=mine?[0x211916,0x17181d,0x211c1f,0x2b2623][platform.variant]:[0x272517,0x302e1c,0x363322,0x2e2c1b][platform.variant];
+        for(const placement of platformModulePlacements(platform)){
+          this.terrainBase.fillStyle(mine?0x111116:0x321f29).fillRect(placement.x,placement.y,16,32);
+          // The packed frame has a one-pixel top gutter; lift it so the visible
+          // top row lines up with the saved collision surface.
+          this.terrainViews.push(this.add.image(placement.x,placement.y-1,texture,placement.frame).setOrigin(0,0).setDepth(-5));
+        }
+        this.terrainBase.fillStyle(topColor);
+        for(const segment of platformTopEdgeSegments(platform))this.terrainBase.fillRect(segment.x,segment.y,segment.w,segment.h);
+      }else{
+        this.terrainBase.fillStyle(0x392a29).fillRect(platform.x,platform.y,platform.w,platform.h);
+        this.terrainBase.fillStyle(0x9aa36d).fillRect(platform.x,platform.y,platform.w,2);
+        this.terrainViews.push(this.add.tileSprite(platform.x,platform.y,platform.w,platform.h,mine?'mine-platform':'platform').setOrigin(0,0).setDepth(-5));
+      }
+    }
     this.terrainSignature=signature;
   }
   renderWorld(){

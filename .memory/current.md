@@ -11,15 +11,16 @@
 [P01 Irregular Platforms and Combat](./phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/phase.md)
 
 ## Active Task
-[T02 Themed Platform Art and Rendering](./phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/T02-themed-platform-art-and-rendering.md)
+[T03 Charge Platform Piercing](./phases/2026-11-17-irregular-platforms-and-charge-attacks/P01-irregular-platforms-and-combat/T03-charge-platform-piercing.md)
 
 ## Status
 - Plan: execution is in progress.
-- Phase: T01 complete and validated; 1/4 tasks done; T02 is active.
-- T01 focused validation passed: 60 tests, 0 failures. Implementation tests ran after a RED check that failed on the missing profile behavior.
+- Phase: T01 and T02 complete and validated; 2/4 tasks done; T03 is active.
+- T01 focused validation passed: 60 tests, 0 failures. A post-review compatibility fix for saved rectangular layouts is committed as `123b7c8`; terrain, save-store, and stage-lifecycle validation passed (27 tests).
+- T02 validation passed: `node scripts/pack-art.mjs`, asset/render tests (9 tests), `npm.cmd run build`, and `git diff --check`. T02 commit: `3c0ec1f`.
 
 ## Queued Plan
 [Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) remains queued and deferred until this active plan is complete.
 
 ## Next Step
-Read the T02 blueprint, create and pack the Forest/Mine module sheets, render saved profiles, and run the asset checks and production build.
+Read the T03 blueprint, test boar floor spawns and all three charge attacks through profiles, preserve floor/arena bounds, then sync the pointer to T04.

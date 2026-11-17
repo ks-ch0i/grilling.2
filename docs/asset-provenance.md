@@ -97,3 +97,14 @@
 ## 광산 기계 공격 애니메이션 — 2026-11-08
 
 `mine-machine-attack-original.png`는 사용자 제공 광산 드릴 거인 콘셉트를 외형 참고로 삼아 내장 `image_gen.imagegen`으로 생성한 1536×1024 투명 이미지다. 6×4 격자의 포즈는 등장(0–1), 대기(2–3), 돌진 준비/공격(4–7), 낙석 준비/공격(8–11), 충격파 준비/공격(12–15), 광물 분출 준비/공격(16–20), 피격(21), 사망(22–23) 순이다. `mine-mineral-original.png`는 별도 투명 투사체 이미지다. 패커는 기계 포즈를 112×112, 광물을 16×16 런타임 프레임으로 재패킹한다. 이전 `mine-machine-original.png`는 원본 기록으로 보존하고 런타임에는 사용하지 않는다.
+
+## 불규칙 발판 모듈 — 2026-11-17
+
+두 원본은 내장 `image_gen.imagegen`으로 생성했다. 숲 시트는 기존 `public/assets/world/forest/platform.png`의 이끼색 팔레트를, 광산 시트는 `public/assets/world/mine/platform.png`의 회갈색·청록색 팔레트를 참고했다. 각 원본은 48×128 투명 PNG이며 16×32 셀 12개를 3열×4행으로 담는다. 열은 왼쪽 끝, 반복 중간, 오른쪽 끝이며 행은 저장된 발판 variant 0–3이다. 원본 셀의 실제 픽셀 아트는 셀 경계에서 한 픽셀 이상 안쪽에 놓인다.
+
+| 원본 경로 | 생성 프롬프트 핵심 | 런타임 경로 |
+|---|---|---|
+| `public/assets/source/forest-platform-modules-original.png` | 투명 배경의 픽셀 아트. 나무뿌리와 다져진 흙, 위쪽의 연속된 평평한 이끼 표면, 4개 숲 변형, 왼쪽 캡·반복 중앙·오른쪽 캡 | `public/assets/world/forest/platform-modules.png` |
+| `public/assets/source/mine-platform-modules-original.png` | 투명 배경의 픽셀 아트. 층진 어두운 바위, 드문 호박색·청록색 광석, 위쪽의 연속된 평평한 바위 표면, 4개 광산 변형, 왼쪽 캡·반복 중앙·오른쪽 캡 | `public/assets/world/mine/platform-modules.png` |
+
+생성 시트에서 각 모듈을 분리하고 16×32 셀에 최근접 이웃으로 맞춰 투명 원본을 구성했다. `scripts/pack-art.mjs`에 두 원본을 3×4 격자로 등록했으며 `node scripts/pack-art.mjs`로 런타임 이미지를 다시 생성한다. 런타임 manifest는 16×32 프레임 12개를 선언하고 `test/assets.test.js`가 원본·런타임의 48×128 크기, 투명 픽셀, 각 프레임의 비어 있지 않은 내용과 1픽셀 테두리 여백을 검사한다.

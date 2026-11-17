@@ -2,8 +2,10 @@ const entries=[
  ['hero-actions','/assets/characters/hero/actions.png',32,32,16],['hero-dive','/assets/characters/hero/dive.png',32,32,4],['hero-walk','/assets/characters/hero/walk.png',32,32,16],['hero-directions','/assets/characters/hero/directions.png',32,32,8],['hero-attacks','/assets/characters/hero/attacks.png',32,32,24],
  ['soldier','/assets/characters/soldier/poses.png',40,40,16],['wisp','/assets/characters/wisp/poses.png',32,32,16],['boar','/assets/characters/boar/poses.png',48,32,16],['boss','/assets/characters/boss/poses.png',112,112,24],
  ['objects','/assets/world/forest/objects.png',64,64,8],['effects','/assets/effects/effects.png',48,48,8],['sword','/assets/characters/hero/sword.png',32,12,1],
- ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1]
- ,['mine-backdrop','/assets/world/mine/backdrop.png',640,304,1],['mine-ground','/assets/world/mine/ground.png',64,56,1],['mine-platform','/assets/world/mine/platform.png',64,16,1],
+ ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1],
+ ['forest-platform-modules','/assets/world/forest/platform-modules.png',16,32,12],
+ ['mine-backdrop','/assets/world/mine/backdrop.png',640,304,1],['mine-ground','/assets/world/mine/ground.png',64,56,1],['mine-platform','/assets/world/mine/platform.png',64,16,1],
+ ['mine-platform-modules','/assets/world/mine/platform-modules.png',16,32,12],
  ['golem','/assets/characters/golem/poses.png',48,48,16],['insect','/assets/characters/insect/poses.png',40,40,16],['bat','/assets/characters/bat/poses.png',40,40,16],
  ['machine','/assets/characters/machine/poses.png',112,112,24],['worm','/assets/characters/worm/poses.png',128,112,24],['mine-cart','/assets/world/mine/cart.png',48,32,1],['mine-mineral','/assets/world/mine/mineral.png',16,16,1],
  ['boss-forest-fx','/assets/effects/boss/forest.png',128,128,16],['boss-machine-fx','/assets/effects/boss/machine.png',128,128,16],['boss-worm-fx','/assets/effects/boss/worm.png',128,128,16],['worm-entrance-fx','/assets/effects/boss/worm-entrance.png',256,192,8]

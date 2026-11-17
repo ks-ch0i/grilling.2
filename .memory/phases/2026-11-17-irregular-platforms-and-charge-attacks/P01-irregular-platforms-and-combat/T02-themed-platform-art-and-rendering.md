@@ -1,6 +1,6 @@
 # Task: T02 Themed Platform Art and Rendering
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -112,6 +112,6 @@ Task: T02-themed-platform-art-and-rendering
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation passed
-- commit: pending
+- [x] Implementation complete
+- [x] Validation passed
+- commit: `3c0ec1f`

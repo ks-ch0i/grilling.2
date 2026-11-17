@@ -13,6 +13,14 @@ async function inspect(bytes,asset){
  }
 }
 test('real PNG files decode with valid alpha, cells and frame gutters',async()=>{for(const asset of ASSETS)await inspect(await readFile(`public${asset.url}`),asset);});
+test('themed platform module sheets register all 12 16x32 frames',async()=>{
+ for(const [key,url] of [['forest-platform-modules','/assets/world/forest/platform-modules.png'],['mine-platform-modules','/assets/world/mine/platform-modules.png']]){
+  const asset=ASSETS.find(item=>item.key===key);assert.ok(asset,`${key} is registered`);assert.equal(asset.url,url);assert.equal(asset.frameWidth,16);assert.equal(asset.frameHeight,32);assert.equal(asset.count,12);
+  const info=await sharp(await readFile(`public${url}`)).metadata();assert.equal(info.width,48);assert.equal(info.height,128);
+  const sourceName=key==='forest-platform-modules'?'forest-platform-modules-original.png':'mine-platform-modules-original.png';
+  const sourceInfo=await sharp(await readFile(`public/assets/source/${sourceName}`)).metadata();assert.equal(sourceInfo.width,48);assert.equal(sourceInfo.height,128);
+ }
+});
 test('invalid real image fixture and missing runtime textures are rejected',async()=>{
  await assert.rejects(()=>inspect(Buffer.from('not a png'),ASSETS[0]));
  const missing=validateAssets({exists:()=>false});assert.equal(missing.ok,false);assert.ok(missing.errors.some(e=>e.includes('hero-actions')));

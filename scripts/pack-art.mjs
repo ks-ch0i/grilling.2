@@ -12,13 +12,15 @@ const specs=[
   ['wisp-original.png','characters/wisp/poses.png',4,4,32,32],
   ['boar-spaced-original.png','characters/boar/poses.png',4,4,48,32],
   ['terrain-ui-spaced-original.png','world/forest/objects.png',4,2,64,64],
+  ['forest-platform-modules-original.png','world/forest/platform-modules.png',3,4,16,32],
   ['effects-original.png','effects/effects.png',4,2,48,48],
   ['sword-original.png','characters/hero/sword.png',1,1,32,12],
   ['mine-golem-original.png','characters/golem/poses.png',4,4,48,48],
   ['mine-insect-original.png','characters/insect/poses.png',4,4,40,40],
   ['mine-bat-original.png','characters/bat/poses.png',4,4,40,40],
   ['mine-cart-original.png','world/mine/cart.png',1,1,48,32],
-  ['mine-mineral-original.png','world/mine/mineral.png',1,1,16,16]
+  ['mine-mineral-original.png','world/mine/mineral.png',1,1,16,16],
+  ['mine-platform-modules-original.png','world/mine/platform-modules.png',3,4,16,32]
 ];
 const root='public/assets';
 const range=(from,to)=>Array.from({length:to-from+1},(_,i)=>from+i);
