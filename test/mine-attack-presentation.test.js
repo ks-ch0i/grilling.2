@@ -6,9 +6,11 @@ import {createMineBoss} from '../src/game/sim/mineBoss.js';import {MINE_STAGE as
 const arena=stage.arena,input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:12000,aimY:290};
 const h=(kind,ownerId,extra={})=>({id:ownerId+'-'+kind,ownerId,kind,x:11000,y:270,w:12,h:12,vx:120,vy:-40,life:60,alive:true,...extra});
 test('only promised boss owner and kind pairs select new hazard sprites',()=>{
- const hazards=[h('wave','mine-machine',{w:8,h:30,life:488}),h('rock','mine-machine',{w:20,h:20,life:180}),h('mineral','mine-machine'),h('acid-shot','mine-worm',{w:8,h:8,life:180}),h('acid-pool','mine-worm',{w:28,h:6,life:1}),h('wave','golem-1'),h('acid-shot','insect-1'),h('acid-pool','insect-1'),h('cart','cart-1')];
+ const hazards=[h('wave','mine-machine',{w:8,h:30,life:488}),h('rock','mine-machine',{w:20,h:20,life:180}),h('mineral','mine-machine'),h('acid-shot','mine-worm',{w:16,h:16,life:180}),h('acid-pool','mine-worm',{w:48,h:8,life:1}),h('wave','golem-1'),h('acid-shot','insect-1'),h('acid-pool','insect-1'),h('cart','cart-1')];
  const original=structuredClone(hazards),items=collectBossHazardItems(hazards,30,arena);assert.equal(items.length,5);
  for(let i=0;i<5;i++){assert.equal(items[i].id,hazards[i].id);assert.equal(items[i].width*.75,hazards[i].w);assert.equal(items[i].height*.75,hazards[i].h);}
+ assert.ok(Math.abs(items[3].width-21.333333333333332)<1e-9);assert.ok(Math.abs(items[3].height-21.333333333333332)<1e-9);
+ assert.equal(items[4].width,64);assert.ok(Math.abs(items[4].height-10.666666666666666)<1e-9);
  for(const hazard of hazards.slice(5))assert.equal(isBossSpriteHazard(hazard),false);
  assert.equal(items[0].flipX,true);assert.equal(items[2].rotation,Math.atan2(-40,120));assert.equal(items[4].alpha,1);assert.deepEqual(hazards,original);
  assert.deepEqual(collectBossHazardItems([{...hazards[0],alive:false}],0,arena),[]);
@@ -35,7 +37,13 @@ test('real hazard view renders boss sprites while keeping ordinary enemy geometr
  const calls=[];function obj(){return new Proxy({destroyed:0,destroy(){this.destroyed++;}},{get(target,key){if(key in target)return target[key];return (...args)=>{calls.push([key,...args]);return target.proxy;};}});}
  function make(){const o=obj();o.proxy=o;return o;}
  const scene={stage,textures:{exists:()=>true},add:{graphics:make,sprite:make},cameras:{main:{scrollX:0}},audio:{playSfx:()=>true}};
- const view=new MineHazardView(scene),run=createStageRun(stage,{}, {seed:1});run.cartZones=[];run.hazards=[h('wave','mine-machine',{w:8,h:30,life:488}),h('wave','golem-1',{w:8,h:30})];
- view.sync(run);assert.equal(view.hazardLayer.items.size,1);assert.ok(view.hazardLayer.items.has('mine-machine-wave'));assert.equal(calls.filter(c=>c[0]==='fillTriangle').length,2);
+ const view=new MineHazardView(scene),run=createStageRun(stage,{}, {seed:1});run.cartZones=[];run.hazards=[
+  h('wave','mine-machine',{w:8,h:30,life:488}),h('wave','golem-1',{w:8,h:30}),
+  h('acid-shot','mine-worm',{w:16,h:16,life:180}),h('acid-pool','mine-worm',{w:48,h:8,life:240})
+ ];
+ view.sync(run);assert.equal(view.hazardLayer.items.size,3);assert.ok(view.hazardLayer.items.has('mine-machine-wave'));assert.equal(calls.filter(c=>c[0]==='fillTriangle').length,2);
+ const sizes=calls.filter(c=>c[0]==='setDisplaySize').map(c=>c.slice(1));
+ assert.ok(sizes.some(([width,height])=>Math.abs(width-21.333333333333332)<1e-9&&Math.abs(height-21.333333333333332)<1e-9));
+ assert.ok(sizes.some(([width,height])=>width===64&&Math.abs(height-10.666666666666666)<1e-9));
  const sprite=view.hazardLayer.items.get('mine-machine-wave');run.hazards=[];view.sync(run);assert.equal(sprite.destroyed,1);view.destroy();assert.equal(view.hazardLayer.items.size,0);
 });

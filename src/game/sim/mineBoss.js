@@ -69,7 +69,7 @@ export function stepMineBoss(state,player,arena,rng){
   }else if(boss.attackKind==='rocks'){
    for(const [i,r] of boss.telegraphs.entries())hazards.push({...base,id:`${id}-rock-${i}`,kind:'rock',x:r.x,y:arena.top,w:20,h:20,vx:0,vy:140,life:180});
   }else if(boss.attackKind==='spit'){
-   hazards.push({...base,id:`${id}-acid`,kind:'acid-shot',x:boss.x+boss.w/2-4,y:boss.y,w:8,h:8,vx:boss.lockedFacing*110,vy:-180,life:180,poolTicks:240});
+   hazards.push({...base,id:`${id}-acid`,kind:'acid-shot',x:boss.x+boss.w/2-8,y:boss.y-4,w:16,h:16,vx:boss.lockedFacing*110,vy:-180,life:180,poolTicks:240});
   }else if(boss.attackKind==='mineral'){
    const minerals=emitMinerals(boss,player,arena,rng,id);rng=minerals.rng;hazards.push(...minerals.hazards);
   }

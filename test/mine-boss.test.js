@@ -65,7 +65,10 @@ test('machine emits paired 30px waves and falling rocks; worm spit makes a four-
  let result=stepMineBoss(b,player,arena,1);assert.equal(result.hazards.length,2);assert.ok(result.hazards.every(h=>h.h===30&&Math.abs(h.vx)===120));
  b=createMineBoss('machine',stage.boss);Object.assign(b,{state:'windup',stateTicks:1,attackKind:'rocks',telegraphs:[{x:400,y:0,w:20,h:304},{x:450,y:0,w:20,h:304},{x:500,y:0,w:20,h:304}]});
  result=stepMineBoss(b,player,arena,1);assert.equal(result.hazards.filter(h=>h.kind==='rock').length,3);
- b=createMineBoss('worm',{x:400,y:240});Object.assign(b,{state:'windup',stateTicks:1,attackKind:'spit'});result=stepMineBoss(b,player,arena,1);assert.equal(result.hazards[0].poolTicks,240);
+ b=createMineBoss('worm',{x:400,y:240});Object.assign(b,{state:'windup',stateTicks:1,attackKind:'spit'});result=stepMineBoss(b,player,arena,1);
+ assert.equal(result.hazards[0].ownerId,'mine-worm');assert.deepEqual({x:result.hazards[0].x,y:result.hazards[0].y,w:result.hazards[0].w,h:result.hazards[0].h},{x:440,y:236,w:16,h:16});
+ assert.equal(result.hazards[0].x+result.hazards[0].w/2,b.x+b.w/2);assert.equal(result.hazards[0].y+result.hazards[0].h/2,b.y+4);
+ assert.equal(result.hazards[0].life,180);assert.equal(result.hazards[0].poolTicks,240);
 });
 test('machine mineral spray launches 5–7 deterministic crystals toward the player within 120px',()=>{
  const boss=createMineBoss('machine',stage.boss);Object.assign(boss,{state:'windup',stateTicks:1,attackKind:'mineral'});
@@ -92,13 +95,15 @@ test('boss falling hazards pass through platforms and impact the fixed floor',()
  ]};
  run.enemies[0].state='hurt';run.enemies[0].stateTicks=1000;
  run.hazards=[
-  {id:'worm-acid',ownerId:'mine-worm',kind:'acid-shot',x:100,y:280,w:8,h:8,vx:0,vy:0,life:180,poolTicks:240,alive:true},
+  {id:'worm-acid',ownerId:'mine-worm',kind:'acid-shot',x:96,y:280,w:16,h:16,vx:0,vy:0,life:180,poolTicks:240,alive:true},
   {id:'machine-rock',ownerId:'mine-machine',kind:'rock',x:120,y:260,w:20,h:20,vx:0,vy:0,life:180,alive:true},
   {id:'machine-mineral',ownerId:'mine-machine',kind:'mineral',x:140,y:250,w:12,h:12,vx:0,vy:0,life:60,alive:true}
  ];
  const events=[];let poolAtImpact=null;for(let i=0;i<40;i++){const result=stepStage(run,input,stage);run=result.run;events.push(...result.events);if(result.events.some(event=>event.type==='acid:pool'))poolAtImpact=structuredClone(run.hazards.find(h=>h.id==='worm-acid-pool'));}
  const pool=run.hazards.find(h=>h.id==='worm-acid-pool');
- assert.ok(pool);assert.equal(pool.y+pool.h,stage.arena.bottom);assert.equal(poolAtImpact.life,240);assert.ok(pool.life>0);
+ assert.ok(pool);assert.equal(pool.w,48);assert.equal(pool.h,8);assert.equal(pool.x+pool.w/2,104);assert.equal(pool.y+pool.h,stage.arena.bottom);assert.equal(poolAtImpact.life,240);assert.ok(pool.life>0);
+ const contact=stepHazards([poolAtImpact],{x:96,y:276,w:16,h:28,mode:'idle'},[stage.solids[0]]);
+ assert.equal(contact.events.filter(event=>event.type==='hazard:hit').length,1);
  assert.ok(events.some(event=>event.type==='hazard:impact'&&event.id==='machine-mineral'&&event.y===stage.arena.bottom));
  assert.equal(run.hazards.some(h=>h.id==='machine-rock'),false);
 });

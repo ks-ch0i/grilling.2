@@ -9,7 +9,10 @@ export function stepHazards(input,player,collisionTerrain,supportTerrain=collisi
     const previousBottom=h.y+h.h;h.x+=dx/steps;h.y+=dy/steps;
     const solid=collisionTerrain.find(r=>intersects(h,r));
     if(solid){h.alive=false;
-     if(h.kind==='acid-shot'&&dy>0&&previousBottom<=solid.y){hazards.push({id:`${h.id}-pool`,ownerId:h.ownerId,kind:'acid-pool',x:h.x+h.w/2-14,y:solid.y-6,w:28,h:6,vx:0,vy:0,life:h.poolTicks,alive:true});events.push({type:'acid:pool',id:h.id});}
+     if(h.kind==='acid-shot'&&dy>0&&previousBottom<=solid.y){
+      const worm=h.ownerId==='mine-worm',width=worm?48:28,height=worm?8:6;
+      hazards.push({id:`${h.id}-pool`,ownerId:h.ownerId,kind:'acid-pool',x:h.x+h.w/2-width/2,y:solid.y-height,w:width,h:height,vx:0,vy:0,life:h.poolTicks,alive:true});events.push({type:'acid:pool',id:h.id});
+     }
      if(h.kind==='mineral'){
       const x=h.x+h.w/2,y=solid.y;
       if(dy>0&&previousBottom<=solid.y){events.push({type:'hazard:impact',id:h.id,x,y});const impact={x:x-12,y:solid.y-16,w:24,h:16};if(player.mode!=='dead'&&intersects(impact,player))events.push({type:'hazard:hit',id:h.id,originX:x});}

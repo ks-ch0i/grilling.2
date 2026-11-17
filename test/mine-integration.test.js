@@ -111,6 +111,25 @@ test('mine encounters round-trip and produce identical next ticks at each danger
  for(const [label,savedRun] of states)assert.deepEqual(stepStage(roundTrip(savedRun),input,MINE_STAGE),stepStage(savedRun,input,MINE_STAGE),label);
 });
 
+test('enlarged Worm acid hazards survive save parsing and resume at their saved dimensions',()=>{
+ let run=finalMineRun(createStageRun(MINE_STAGE,{}, {seed:52}),'worm','worm');
+ run.boss.state='recovery';run.boss.stateTicks=100;
+ run.hazards=[
+  {id:'worm-shot-saved',ownerId:'mine-worm',kind:'acid-shot',x:300,y:250,w:16,h:16,vx:-110,vy:-40,life:90,poolTicks:240,alive:true},
+  {id:'worm-pool-saved',ownerId:'mine-worm',kind:'acid-pool',x:276,y:296,w:48,h:8,vx:0,vy:0,life:155,alive:true},
+  {id:'worm-shot-legacy-size',ownerId:'mine-worm',kind:'acid-shot',x:500,y:200,w:8,h:8,vx:-10,vy:-20,life:150,poolTicks:240,alive:true},
+  {id:'worm-pool-legacy-size',ownerId:'mine-worm',kind:'acid-pool',x:180,y:298,w:28,h:6,vx:0,vy:0,life:70,alive:true}
+ ];
+ const parsed=roundTrip(run);
+ assert.deepEqual(parsed.hazards,run.hazards);
+ const resumed=stepStage(parsed,input,MINE_STAGE),continued=stepStage(run,input,MINE_STAGE);
+ assert.deepEqual(resumed,continued);
+ assert.deepEqual(resumed.run.hazards.filter(h=>h.ownerId==='mine-worm').map(({id,w,h})=>({id,w,h})),[
+  {id:'worm-shot-saved',w:16,h:16},{id:'worm-pool-saved',w:48,h:8},
+  {id:'worm-shot-legacy-size',w:8,h:8},{id:'worm-pool-legacy-size',w:28,h:6}
+ ]);
+});
+
 test('mine enemy, both bosses, cart and shockwave each deal one heart and then respect invulnerability',()=>{
  const cases=[];
  let run=createStageRun(MINE_STAGE,{}, {seed:31});run.enemies=[{id:'golem-contact',kind:'golem',x:120,y:276,w:32,h:40,hp:5,maxHp:5,state:'hurt',stateTicks:50,homeY:276,lockedFacing:1,shotCount:0,hitIds:new Set()}];run.player.x=120;cases.push(['golem',run]);

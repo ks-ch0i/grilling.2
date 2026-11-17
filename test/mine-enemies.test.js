@@ -19,8 +19,8 @@ test('a wave can use platform support while its collision surface stays floor-on
  assert.ok(furthest>=180,`wave stopped at ${furthest}`);
  assert.equal(hazards.length,0,'wave should stop after the platform support ends');
 });
-test('acid arcs and leaves a 120 tick puddle; persistent contact emits repeated hit opportunities',()=>{
- const {shots}=attack(createEnemy({id:'i',kind:'insect',x:200,y:280}),{...player,x:300});assert.equal(shots.length,1);assert.equal(shots[0].vy,-180);
+test('acid arcs and leaves an unchanged 28x6, 120 tick puddle; contact remains damaging',()=>{
+ const {shots}=attack(createEnemy({id:'i',kind:'insect',x:200,y:280}),{...player,x:300});assert.equal(shots.length,1);assert.equal(shots[0].w,8);assert.equal(shots[0].h,8);assert.equal(shots[0].vy,-180);
  let h=shots;for(let i=0;i<180&&h[0]?.kind!=='acid-pool';i++)h=stepHazards(h,{...player,x:900},floor).hazards;
  assert.equal(h[0].kind,'acid-pool');assert.equal(h[0].w,28);assert.equal(h[0].h,6);assert.equal(h[0].life,120);const target={...player,x:h[0].x,y:276};assert.equal(stepHazards(h,target,floor).events.filter(e=>e.type==='hazard:hit').length,1);
  for(let i=0;i<120;i++)h=stepHazards(h,{...player,x:900},floor).hazards;assert.equal(h.length,0);

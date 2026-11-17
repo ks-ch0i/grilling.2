@@ -1,22 +1,22 @@
 # Current Context
 
-## Active Plan
+## Completed Plan
 [Randomized Terrain, Piercing Attacks, and Worm Acid](./plans/2026-11-17-randomized-terrain-and-worm-acid.md)
 
-## Active Phase
+## Completed Phase
 [P01 Randomized Arena Combat](./phases/2026-11-17-randomized-terrain-and-worm-acid/P01-randomized-arena-combat/phase.md)
 
 ## Active Task
-[T04 Enlarge Worm Acid Hazards](./phases/2026-11-17-randomized-terrain-and-worm-acid/P01-randomized-arena-combat/T04-enlarge-worm-acid-hazards.md)
+None. T01–T04 are complete.
 
 ## Status
-- Plan: confirmed decisions have been expanded into four ordered implementation tasks.
-- Phase: 3/4 tasks complete; per-run terrain is active and ranged attacks pass platforms while retaining floor and wall collision.
-- T01–T03 focused validations passed. T02 manual browser QA was blocked because the browser host and local browser executable were unavailable; Vite build and HTTP smoke requests passed.
+- Plan: all four confirmed implementation tasks are complete.
+- Phase: 4/4 tasks complete; per-run terrain is active, ranged attacks pass platforms while retaining floor and wall collision, and Worm acid hazards use the enlarged dimensions.
+- T01–T04 focused validations and production builds passed. T02 and T04 manual browser QA were blocked because the browser host is unavailable; T02's Vite HTTP smoke requests and T04's automated presentation-size checks passed.
 - The prior active pointer for round-based progression remains complete.
 
 ## Queued Plan
 [Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) remains queued and is deferred until this active plan is complete.
 
 ## Next Step
-Read T04's complete blueprint and enlarge the mine worm's acid projectile and floor pool while preserving their damage and duration. Then run only T04's listed focused validation before completing P01.
+The active plan has no remaining tasks. The camera-framing decision plan remains queued until the user chooses a framing direction.

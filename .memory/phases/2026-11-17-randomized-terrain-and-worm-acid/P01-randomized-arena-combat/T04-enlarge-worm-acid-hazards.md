@@ -1,6 +1,6 @@
 # Task: T04 Enlarge Worm Boss Acid Hazards
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -75,11 +75,11 @@ Make the Mine worm boss's ranged acid projectile and floor pool clearly larger i
 
 ## Acceptance Criteria
 
-- [ ] Newly emitted Worm acid shots are 16×16; existing attack speed, arc, damage, and timing are unchanged.
-- [ ] Worm pools are 48×8, centered at the impact point and grounded on the floor; they last 240 ticks and deal the existing damage.
-- [ ] Regular Insect shots and pools remain 8×8 / 28×6 and 120 ticks.
-- [ ] Existing Worm sprite frames display at the selected approximate sizes with no source asset edit.
-- [ ] New and existing Worm hazard snapshots parse and resume without changing saved active hazard dimensions.
+- [x] Newly emitted Worm acid shots are 16×16; existing attack speed, arc, damage, and timing are unchanged.
+- [x] Worm pools are 48×8, centered at the impact point and grounded on the floor; they last 240 ticks and deal the existing damage.
+- [x] Regular Insect shots and pools remain 8×8 / 28×6 and 120 ticks.
+- [x] Existing Worm sprite frames display at the selected approximate sizes with no source asset edit.
+- [x] New and existing Worm hazard snapshots parse and resume without changing saved active hazard dimensions.
 
 ## Validation
 
@@ -108,6 +108,7 @@ Task: T04-enlarge-worm-acid-hazards
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation passed
-- commit: pending
+- [x] Implementation complete
+- [x] Focused tests and production build passed.
+- [ ] Manual browser visual inspection: unavailable because the CUA host reported no browser or native apps. Automated presentation tests confirm the requested display dimensions; actual in-game appearance remains unverified.
+- commit: see repository history

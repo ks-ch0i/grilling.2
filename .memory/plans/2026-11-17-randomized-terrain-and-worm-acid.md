@@ -8,7 +8,7 @@
 
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | 런 단위 지형 생성·저장, 시뮬레이션·렌더링 연결, 발판 관통 공격, 벌레 산성 공격 크기를 구현한다. | [P01](../phases/2026-11-17-randomized-terrain-and-worm-acid/P01-randomized-arena-combat/phase.md) |
+| P01 | `complete ✅` | 런 단위 지형 생성·저장, 시뮬레이션·렌더링 연결, 발판 관통 공격, 벌레 산성 공격 크기를 구현한다. | [P01](../phases/2026-11-17-randomized-terrain-and-worm-acid/P01-randomized-arena-combat/phase.md) |
 
 ## Scope Notes
 
