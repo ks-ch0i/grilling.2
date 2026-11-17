@@ -85,6 +85,23 @@ test('mineral flight collision and landing impact each damage at most once',()=>
  result=stepHazards([{...mineral,id:'m2',x:100,y:292}],{x:113,y:276,w:16,h:28,mode:'idle'},floor);
  assert.equal(result.hazards.length,0);assert.equal(result.events.filter(e=>e.type==='hazard:impact').length,1);assert.equal(result.events.filter(e=>e.type==='hazard:hit').length,1);
 });
+test('boss falling hazards pass through platforms and impact the fixed floor',()=>{
+ let run=createStageRun(stage,{}, {seed:41});run.terrainLayout={mode:'random',platforms:[
+  {x:96,y:288,w:64,h:16},{x:224,y:288,w:64,h:16},
+  {x:352,y:288,w:64,h:16},{x:480,y:288,w:64,h:16}
+ ]};
+ run.enemies[0].state='hurt';run.enemies[0].stateTicks=1000;
+ run.hazards=[
+  {id:'worm-acid',ownerId:'mine-worm',kind:'acid-shot',x:100,y:280,w:8,h:8,vx:0,vy:0,life:180,poolTicks:240,alive:true},
+  {id:'machine-rock',ownerId:'mine-machine',kind:'rock',x:120,y:260,w:20,h:20,vx:0,vy:0,life:180,alive:true},
+  {id:'machine-mineral',ownerId:'mine-machine',kind:'mineral',x:140,y:250,w:12,h:12,vx:0,vy:0,life:60,alive:true}
+ ];
+ const events=[];let poolAtImpact=null;for(let i=0;i<40;i++){const result=stepStage(run,input,stage);run=result.run;events.push(...result.events);if(result.events.some(event=>event.type==='acid:pool'))poolAtImpact=structuredClone(run.hazards.find(h=>h.id==='worm-acid-pool'));}
+ const pool=run.hazards.find(h=>h.id==='worm-acid-pool');
+ assert.ok(pool);assert.equal(pool.y+pool.h,stage.arena.bottom);assert.equal(poolAtImpact.life,240);assert.ok(pool.life>0);
+ assert.ok(events.some(event=>event.type==='hazard:impact'&&event.id==='machine-mineral'&&event.y===stage.arena.bottom));
+ assert.equal(run.hazards.some(h=>h.id==='machine-rock'),false);
+});
 test('machine mineral hazards and attack kinds survive snapshots; removed swipe is rejected',()=>{
  const run=makeRound(createStageRun(stage,{}, {seed:77}),5);run.boss.state='attack';run.boss.stateTicks=20;run.boss.attackKind='mineral';run.boss.lastAttack='mineral';run.boss.attackSerial=1;
  run.hazards.push({id:'mine-machine-1-mineral-0',ownerId:run.boss.id,kind:'mineral',x:300,y:270,w:12,h:12,vx:12,vy:-100,life:55,alive:true});

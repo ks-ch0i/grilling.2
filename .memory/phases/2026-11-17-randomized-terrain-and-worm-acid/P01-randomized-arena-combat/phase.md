@@ -6,12 +6,12 @@
 | :--- | :--- | :--- | :--- |
 | T01 | `done ✅` | 결정된 범위와 도달 가능성 규칙으로 런 지형을 생성하고 스냅샷 호환성을 추가한다. | [T01](./T01-random-platform-layout-and-snapshots.md) |
 | T02 | `done ✅` | 런 지형을 플레이어·적 시뮬레이션, 적 생성, 스테이지 렌더링에 연결한다. | [T02](./T02-use-run-terrain-in-stage.md) |
-| T03 | `in_progress 🔵` | 발판은 관통하고 바닥·화면 경계는 유지하는 원거리 공격 충돌을 구현한다. | [T03](./T03-ranged-attacks-pierce-platforms.md) |
-| T04 | `pending` | 광산 벌레 보스 산성탄과 웅덩이의 판정·표시 크기를 조정한다. | [T04](./T04-enlarge-worm-acid-hazards.md) |
+| T03 | `done ✅` | 발판은 관통하고 바닥·화면 경계는 유지하는 원거리 공격 충돌을 구현한다. | [T03](./T03-ranged-attacks-pierce-platforms.md) |
+| T04 | `in_progress 🔵` | 광산 벌레 보스 산성탄과 웅덩이의 판정·표시 크기를 조정한다. | [T04](./T04-enlarge-worm-acid-hazards.md) |
 
 ## Progress
 
-- done: 2/4 (active: T03)
+- done: 3/4 (active: T04)
 
 ## Dependencies
 

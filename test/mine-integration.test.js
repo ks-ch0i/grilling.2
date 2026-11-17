@@ -76,6 +76,20 @@ test('mine death save restores the countdown then resets the full encounter and 
  coordinator.dispose();
 });
 
+test('run waves pass over randomized platforms while locked arena walls still stop them',()=>{
+ let run=createStageRun(MINE_STAGE,{}, {seed:45});run.terrainLayout={mode:'random',platforms:[
+  {x:96,y:288,w:64,h:16},{x:224,y:288,w:64,h:16},
+  {x:352,y:288,w:64,h:16},{x:480,y:288,w:64,h:16}
+ ]};run.enemies[0].state='hurt';run.enemies[0].stateTicks=1000;
+ run.hazards=[{id:'platform-wave',ownerId:'golem',kind:'wave',x:90,y:274,w:8,h:30,vx:120,vy:0,life:60,remaining:120,alive:true}];
+ run=stepStage(run,input,MINE_STAGE).run;
+ assert.equal(run.hazards.find(h=>h.id==='platform-wave')?.x,92);
+ run.player.x=100;run.player.y=276;run.player.grounded=true;run.player.mode='idle';
+ run.arenaLocked=true;run.hazards=[{id:'locked-wave',ownerId:'machine',kind:'wave',x:34,y:274,w:8,h:30,vx:-120,vy:0,life:60,remaining:120,alive:true}];
+ run=stepStage(run,input,MINE_STAGE).run;assert.ok(run.hazards.some(h=>h.id==='locked-wave'));
+ run=stepStage(run,input,MINE_STAGE).run;assert.equal(run.hazards.some(h=>h.id==='locked-wave'),false);
+});
+
 test('mine encounters round-trip and produce identical next ticks at each dangerous save boundary',()=>{
  const states=[];
  let run=createStageRun(MINE_STAGE,{}, {seed:21});run.cartZones[0].state='warning';run.cartZones[0].ticks=1;

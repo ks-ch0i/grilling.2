@@ -12,10 +12,17 @@ test('waves stop at their range, a ledge, or a wall',()=>{
  const ledge=[{x:0,y:304,w:120,h:56}];h=[{...base,x:110}];assert.equal(stepHazards(h,far,ledge).hazards.length,0);
  const wall=[...floor,{x:120,y:200,w:16,h:104}];h=[{...base,x:110}];h=stepHazards(h,far,wall).hazards;assert.equal(stepHazards(h,far,wall).hazards.length,0);
 });
+test('a wave can use platform support while its collision surface stays floor-only',()=>{
+ const collision=[{x:0,y:304,w:120,h:56}],support=[...collision,{x:120,y:288,w:96,h:16}];
+ let hazards=[{id:'platform-wave',ownerId:'g',kind:'wave',x:110,y:280,w:8,h:8,vx:120,vy:0,life:60,alive:true,remaining:120}],furthest=110;
+ for(let i=0;i<60&&hazards.length;i++){hazards=stepHazards(hazards,{...player,x:900},collision,support).hazards;if(hazards[0])furthest=Math.max(furthest,hazards[0].x);}
+ assert.ok(furthest>=180,`wave stopped at ${furthest}`);
+ assert.equal(hazards.length,0,'wave should stop after the platform support ends');
+});
 test('acid arcs and leaves a 120 tick puddle; persistent contact emits repeated hit opportunities',()=>{
  const {shots}=attack(createEnemy({id:'i',kind:'insect',x:200,y:280}),{...player,x:300});assert.equal(shots.length,1);assert.equal(shots[0].vy,-180);
  let h=shots;for(let i=0;i<180&&h[0]?.kind!=='acid-pool';i++)h=stepHazards(h,{...player,x:900},floor).hazards;
- assert.equal(h[0].kind,'acid-pool');assert.equal(h[0].life,120);const target={...player,x:h[0].x,y:276};assert.equal(stepHazards(h,target,floor).events.filter(e=>e.type==='hazard:hit').length,1);
+ assert.equal(h[0].kind,'acid-pool');assert.equal(h[0].w,28);assert.equal(h[0].h,6);assert.equal(h[0].life,120);const target={...player,x:h[0].x,y:276};assert.equal(stepHazards(h,target,floor).events.filter(e=>e.type==='hazard:hit').length,1);
  for(let i=0;i<120;i++)h=stepHazards(h,{...player,x:900},floor).hazards;assert.equal(h.length,0);
 });
 test('bat keeps the windup target and returns to its original height',()=>{

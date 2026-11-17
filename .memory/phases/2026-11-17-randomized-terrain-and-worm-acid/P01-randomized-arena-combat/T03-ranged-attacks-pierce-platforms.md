@@ -1,6 +1,6 @@
 # Task: T03 Make Ranged Attacks Pierce Platforms
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -75,12 +75,12 @@ Allow regular-monster projectiles and all boss ranged or area hazards to cross f
 
 ## Acceptance Criteria
 
-- [ ] Every regular-monster ranged attack and every boss ranged/area hazard crosses fixed and randomized platforms.
-- [ ] Floor, world boundary, and arena-lock wall collision remains in effect.
-- [ ] Acid pools and falling impacts still occur at the floor; falling hazards no longer land on a platform.
-- [ ] Golem waves still stop at ledges, range limits, and walls while passing over platform surfaces.
-- [ ] Player movement, enemy body movement, melee attacks, boss body movement, and boss melee damage are unchanged.
-- [ ] The regular insect acid pool remains 28×6 and 120 ticks.
+- [x] Every regular-monster ranged attack and every boss ranged/area hazard crosses fixed and randomized platforms.
+- [x] Floor, world boundary, and arena-lock wall collision remains in effect.
+- [x] Acid pools and falling impacts still occur at the floor; falling hazards no longer land on a platform.
+- [x] Golem waves still stop at ledges, range limits, and walls while passing over platform surfaces.
+- [x] Player movement, enemy body movement, melee attacks, boss body movement, and boss melee damage are unchanged.
+- [x] The regular insect acid pool remains 28×6 and 120 ticks.
 
 ## Validation
 
@@ -107,6 +107,6 @@ Task: T03-ranged-attacks-pierce-platforms
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation passed
-- commit: pending
+- [x] Implementation complete
+- [x] Validation passed
+- commit: see repository history

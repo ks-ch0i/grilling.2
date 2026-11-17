@@ -23,12 +23,20 @@ const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 
 function freshPlayer(point){const player=createPlayer(point.x,point.y);player.grounded=true;return player;}
 
-export function stageTerrain(stage,locked,terrainLayout){
-  if(!terrainLayout||!Array.isArray(terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
+function stageWalls(stage,locked){
   const {width,height}=stage.world;
   const walls=[{x:-16,y:0,w:16,h:height},{x:width,y:0,w:16,h:height},{x:0,y:-16,w:width,h:16}];
   if(locked)walls.push({x:stage.arena.left,y:stage.arena.top,w:16,h:stage.arena.bottom-stage.arena.top},{x:stage.arena.right,y:stage.arena.top,w:16,h:stage.arena.bottom-stage.arena.top});
-  return [stage.solids[0],...terrainLayout.platforms,...walls];
+  return walls;
+}
+
+export function stageTerrain(stage,locked,terrainLayout){
+  if(!terrainLayout||!Array.isArray(terrainLayout.platforms))throw new TypeError('Run terrain layout is required');
+  return [stage.solids[0],...terrainLayout.platforms,...stageWalls(stage,locked)];
+}
+
+export function stageRangedTerrain(stage,locked){
+  return [stage.solids[0],...stageWalls(stage,locked)];
 }
 
 function stageForRun(stage,run){
@@ -241,7 +249,7 @@ export function stepStage(previous,input,stage){
     return {run,events};
   }
 
-  const terrain=stageTerrain(stage,run.arenaLocked,run.terrainLayout);let pushCompleted;
+  const terrain=stageTerrain(stage,run.arenaLocked,run.terrainLayout),rangedTerrain=stageRangedTerrain(stage,run.arenaLocked);let pushCompleted;
   const playerStep=stepPlayer(run.player,input,terrain,stage.pitDeathY);
   run.player=playerStep.player;pushCompleted=playerStep.pushCompleted;events.push(...playerStep.events);
   if(run.player.mode==='dead')return death(run,events);
@@ -265,13 +273,13 @@ export function stepStage(previous,input,stage){
       if(hitbox&&!enemy.hitIds.has('player')&&intersects(hitbox,run.player)){enemy.hitIds.add('player');hurt(run,events,'enemy-attack',enemy.x+enemy.w/2);}
     }
     run.projectiles=run.projectiles.map(projectile=>{
-      const result=stepProjectile(projectile,solids,run.player);
+      const result=stepProjectile(projectile,rangedTerrain,run.player);
       for(const event of result.events){events.push(event);hurt(run,events,'projectile',result.projectile.x+result.projectile.w/2);}
       return result.projectile;
     }).filter(projectile=>projectile.alive);
     if(run.hazards){
       const carts=stepCartZones(run.cartZones,run.hazards,stage);run.cartZones=carts.zones;run.hazards=carts.hazards;events.push(...carts.events);
-      const stepped=stepHazards(run.hazards,run.player,solids);run.hazards=stepped.hazards;
+      const stepped=stepHazards(run.hazards,run.player,rangedTerrain,solids);run.hazards=stepped.hazards;
       for(const event of stepped.events){events.push(event);if(event.type==='hazard:hit')hurt(run,events,'hazard',event.originX);}
     }
   }
