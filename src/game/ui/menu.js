@@ -3,11 +3,14 @@ import {createStageRun,snapshotStageRun} from '../sim/stage.js';
 export function formatTicks(ticks){const seconds=Math.floor(ticks/60);return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
 export function createNewRun(save,stageId='forest-1'){if(!save.unlockedStageIds.includes(stageId))throw new TypeError('Stage is locked');return {...save,run:snapshotStageRun(createStageRun(getStage(stageId)))};}
 export function menuState(save){return {canContinue:save.run!==null,hasRecords:Object.values(save.records).some(r=>r.best!==null||r.recent!==null),unlockedStageIds:[...save.unlockedStageIds]};}
-export function mountMenu(title,subtitle=''){
-  const root=document.createElement('section');root.className='game-overlay';root.setAttribute('aria-label',title);
-  const panel=document.createElement('div');panel.className='game-panel';root.append(panel);
-  const heading=document.createElement('h2');heading.textContent=title;panel.append(heading);
-  if(subtitle){const p=document.createElement('p');p.textContent=subtitle;panel.append(p);}
+export function mountMenu(title,subtitle='',{variant='panel',layout='panel'}={}){
+  const titleLayout=variant==='title'&&(layout==='main'||layout==='submenu')?layout:null;
+  const root=document.createElement('section');root.className=titleLayout?`game-overlay game-overlay--title game-overlay--title-${titleLayout}`:'game-overlay';root.setAttribute('aria-label',title);
+  const panel=document.createElement('div');panel.className=titleLayout?'game-panel game-panel--title':'game-panel';
+  const heading=document.createElement('h2');heading.textContent=title;
+  if(titleLayout==='main'){heading.className='title-menu-heading';root.append(heading,panel);}
+  else{root.append(panel);panel.append(heading);}
+  if(subtitle&&titleLayout!=='main'){const p=document.createElement('p');p.textContent=subtitle;panel.append(p);}
   document.getElementById('game').append(root);
   function text(value){const p=document.createElement('p');p.textContent=value;panel.append(p);return p;}
   function button(label,action,{disabled=false}={}){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=disabled;b.addEventListener('click',action);panel.append(b);return b;}
