@@ -9,7 +9,7 @@ import { MineHazardView } from '../render/MineHazardView.js';
 import {WormIntroView} from '../render/WormIntroView.js';
 import {getWormIntroTimeline} from '../sim/wormIntro.js';
 import { bossDirection } from '../render/bossDirection.js';
-import { cameraScrollTarget } from '../render/cameraDeadZone.js';
+import { CAMERA_EASING, CAMERA_ZOOM, cameraScrollTarget, visibleWorldBounds } from '../render/cameraFraming.js';
 import { getAppStore } from '../storage/appStore.js';
 import { createRunCoordinator } from '../storage/runCoordinator.js';
 import { markRunActive,clearRunActive } from '../storage/reloadRecovery.js';
@@ -38,7 +38,7 @@ export class StageScene extends Phaser.Scene {
     this.hudGraphics=this.add.graphics().setScrollFactor(0).setDepth(10);
     this.bossDirectionGraphics=this.add.graphics().setScrollFactor(0).setDepth(11);
     this.message=this.add.text(320,120,'',{fontFamily:'monospace',fontSize:'20px',color:'#ffffff',stroke:'#17131c',strokeThickness:4}).setOrigin(.5).setScrollFactor(0).setDepth(10);
-    this.cameras.main.setBounds(0,-80,this.stage.world.width,this.stage.world.height+80);this.cameras.main.roundPixels=true;
+    this.configureCameras();
     this.inputController=new InputController(window,this.game.canvas);
     this.pauseReset=()=>{this.accumulator=0;this.inputController.reset();};
     this.coordinator=this.practiceTarget?{tick(){},flush(){return {ok:true};},dispose(){},isFinished:()=>false}:createRunCoordinator({store:this.store}).bind(this);
@@ -50,6 +50,7 @@ export class StageScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{
       if(!this.coordinator.isFinished())this.coordinator.flush();this.coordinator.dispose();
       window.removeEventListener('keydown',this.onEscape);window.removeEventListener('blur',this.onBlur);window.removeEventListener('pagehide',this.onPageHide);document.removeEventListener('visibilitychange',this.onVisibility);
+      this.events.off(Phaser.Scenes.Events.ADDED_TO_SCENE,this.routeWorldObject,this);if(this.hudCamera)this.cameras.remove(this.hudCamera);this.screenSpaceObjects?.clear();this.hudCamera=null;
       this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
     });
     this.renderWorld();
@@ -76,6 +77,17 @@ export class StageScene extends Phaser.Scene {
       this.accumulator-=STEP;
     }
     this.renderWorld();
+  }
+  configureCameras(){
+    this.worldCamera=this.cameras.main.setZoom(CAMERA_ZOOM).setBounds(0,0,this.stage.world.width,this.stage.world.height).setRoundPixels(true);
+    const initialTarget=cameraScrollTarget({player:this.run.player,boss:this.run.boss,worldWidth:this.stage.world.width,worldHeight:this.stage.world.height});
+    this.worldCamera.setScroll(initialTarget.scrollX,initialTarget.scrollY);
+    this.hudCamera=this.cameras.add(0,0,640,360,false,'hud').setZoom(1).setScroll(0,0).setRoundPixels(true);
+    this.screenSpaceObjects=new Set([this.hud,this.roundHud,this.bossHud,...this.hearts,this.hudGraphics,this.bossDirectionGraphics,this.message,this.bossBlackout,this.wormIntroView?.dim,this.wormIntroView?.blackout].filter(Boolean));
+    this.worldCamera.ignore([...this.screenSpaceObjects]);
+    this.hudCamera.ignore(this.children.list.filter(object=>!this.screenSpaceObjects.has(object)));
+    this.routeWorldObject=object=>{if(!this.screenSpaceObjects.has(object))this.hudCamera?.ignore(object);};
+    this.events.on(Phaser.Scenes.Events.ADDED_TO_SCENE,this.routeWorldObject,this);
   }
   playEventSound(event){
     let id=EVENT_SFX[event.type];if(event.type==='enemy:hurt'){const enemy=this.run.enemies.find(e=>e.id===event.id);id=enemy?.state==='dead'?'enemyDeath':'hit';}
@@ -153,9 +165,10 @@ export class StageScene extends Phaser.Scene {
     const intro=this.run.bossSequence==='worm-intro'&&boss.kind==='worm'?getWormIntroTimeline(boss.stateTicks):null;
     this.wormIntroView?.sync(this.run,this.stage,intro);
     const blackout=boss.kind==='worm'&&boss.state==='transition';this.bossBlackout?.setVisible(blackout).setAlpha(blackout ? 0.9 : 0);
-    const target=cameraScrollTarget({player:p,boss,camera:{scrollX:cam.scrollX,scrollY:cam.scrollY},worldWidth:this.stage.world.width,bossIntro:boss.state==='intro'});
-    cam.scrollX=Math.round(cam.scrollX+(target.scrollX-cam.scrollX)*.12);
-    cam.scrollY=Math.round(cam.scrollY+(target.scrollY-cam.scrollY)*.12);
+    const target=cameraScrollTarget({player:p,boss,worldWidth:this.stage.world.width,worldHeight:this.stage.world.height});
+    cam.scrollX+=(target.scrollX-cam.scrollX)*CAMERA_EASING;
+    cam.scrollY+=(target.scrollY-cam.scrollY)*CAMERA_EASING;
+    const bounds=visibleWorldBounds(cam);
     this.backdrop.tilePositionX=Math.round(cam.scrollX*.15);this.backdrop.tilePositionY=Math.round(cam.scrollY*.15);
     this.pickupViews.forEach((view,i)=>view.setVisible(!this.run.consumedPickupIds.includes(this.stage.pickups[i].id)));
     this.drawWorld();if(this.light){this.light.clear();this.light.fillStyle(0xffd793,.08).fillCircle(p.x+p.w/2,p.y+p.h/2,95);this.light.fillStyle(0xffeac0,.06).fillCircle(p.x+p.w/2,p.y+p.h/2,45);}this.enemyView.sync(this.run,{bossVisible:intro?.showBody??true,bossElapsedTicks:intro?.phase==='reveal'?intro.phaseTicks:undefined});this.mineHazardView?.sync(this.run);this.playerView.sync(p,this,this.run.elapsedTicks);
@@ -166,8 +179,8 @@ export class StageScene extends Phaser.Scene {
     this.bossHud.setText(showBoss?label:'').setVisible(showBoss);
     this.hearts.forEach((heart,i)=>heart.setFrame(i<p.hp?7:6));
     this.hudGraphics.clear();if(showBoss){this.hudGraphics.fillStyle(0x312c2d);this.hudGraphics.fillRect(190,29,430,8);this.hudGraphics.fillStyle(0xe99166);this.hudGraphics.fillRect(190,29,Math.round(430*boss.hp/boss.maxHp),8);}
-    const direction=this.run.outcome||intro&&!intro.showBossHud?null:bossDirection(boss,{scrollX:cam.scrollX,width:640}),arrow=this.bossDirectionGraphics;
-    arrow.clear();if(direction){const x=direction==='right'?626:14,y=Phaser.Math.Clamp(Math.round(boss.y+boss.h/2-cam.scrollY),72,280),tip=direction==='right'?x+5:x-5,base=direction==='right'?x-5:x+5;
+    const direction=this.run.outcome||intro&&!intro.showBossHud?null:bossDirection(boss,bounds),arrow=this.bossDirectionGraphics;
+    arrow.clear();if(direction){const x=direction==='right'?626:14,y=Phaser.Math.Clamp(Math.round((boss.y+boss.h/2-bounds.top)*cam.zoom),72,280),tip=direction==='right'?x+5:x-5,base=direction==='right'?x-5:x+5;
       arrow.fillStyle(0xffdf9e).fillTriangle(tip,y,base,y-6,base,y+6);arrow.lineStyle(1,0x392a29).strokeTriangle(tip,y,base,y-6,base,y+6);}
     const roundCleared=this.run.roundClearTicks!==null;
     this.message.setColor(roundCleared?'#ffe49b':'#ffffff').setFontSize(roundCleared?'24px':'20px');

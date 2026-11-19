@@ -1,5 +1,6 @@
 import {AttackSpriteLayer} from './AttackSpriteLayer.js';
 import {collectBossHazardItems,isBossSpriteHazard} from './mineAttackPresentation.js';
+import {visibleWorldBounds} from './cameraFraming.js';
 export class MineHazardView {
  constructor(scene){this.scene=scene;this.graphics=scene.add.graphics().setDepth(5);this.hazardLayer=new AttackSpriteLayer(scene);this.carts=new Map();this.minerals=new Map();this.warned=new Set();this.drop=scene.add.sprite(0,0,'objects',5).setOrigin(.5,1).setScale(.65).setDepth(5);}
  sync(run){
@@ -40,8 +41,8 @@ export class MineHazardView {
    const entry=z.direction>0?Math.max(0,z.centerX-96):Math.min(this.scene.stage.world.width,z.centerX+96);
    const source=cart?cart.x+cart.w/2:entry,playerX=run.player.x+run.player.w/2;
    if(Math.abs(source-playerX)>500||cart&&z.direction*(playerX-source)<0)continue;
-   const cam=this.scene.cameras.main,x=Math.max(cam.scrollX+15,Math.min(cam.scrollX+625,source)),y=244;
-   g.fillStyle(0xffbd50,.9);g.fillTriangle(x,y,x-z.direction*18,y-10,x-z.direction*18,y+10);
+   const cam=this.scene.cameras.main,bounds=visibleWorldBounds(cam),inset=15/cam.zoom,halfArrow=18/cam.zoom,x=Math.max(bounds.left+inset,Math.min(bounds.right-inset,source)),y=bounds.top+244/cam.zoom;
+   g.fillStyle(0xffbd50,.9);g.fillTriangle(x,y,x-z.direction*halfArrow,y-10/cam.zoom,x-z.direction*halfArrow,y+10/cam.zoom);
    if(!this.warned.has(z.id)&&this.scene.audio.playSfx('cartWarning'))this.warned.add(z.id);
   }
   const d=run.bossDrop;this.drop.setVisible(d.spawned&&!d.consumed).setPosition(d.x+8,d.y+16);

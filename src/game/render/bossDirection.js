@@ -1,6 +1,7 @@
 export function bossDirection(boss, viewport) {
   if (boss.state === 'dormant' || boss.state === 'dead') return null;
-  if (boss.x + boss.w <= viewport.scrollX) return 'left';
-  if (boss.x >= viewport.scrollX + viewport.width) return 'right';
+  const right = Number.isFinite(viewport.right) ? viewport.right : viewport.left + viewport.width;
+  if (boss.x + boss.w <= viewport.left) return 'left';
+  if (boss.x >= right) return 'right';
   return null;
 }
