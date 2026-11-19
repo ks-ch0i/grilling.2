@@ -11,21 +11,21 @@
 - Its focused validations and production builds passed. Manual browser QA was unavailable for T02/T04; the prior pointer records the HTTP smoke and automated presentation checks used instead.
 
 ## Active Plan
-[Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md)
+None.
 
 ## Active Phase
-[P01 Camera Framing Decision](./phases/2026-11-16-camera-framing-decision/P01-camera-framing-decision/phase.md)
+None.
 
 ## Active Task
-[T02 Implement Blended Camera Framing](./phases/2026-11-16-camera-framing-decision/P01-camera-framing-decision/T02-implement-blended-camera-framing.md)
+None.
 
 ## Status
 - Previous plan, Title Screen Background and Text Menu, is complete; T01 was committed as `4680fe3`.
-- Camera T01 decision is complete and committed as a separate planning task; T02 implements the selected camera behavior.
+- Camera Framing and Motion Decision is complete; T01 decision is `af095d7` and T02 implementation is `56a575e`.
 - Current stage definitions are 640×360, the same as the internal viewport. The older dead-zone decision's 11520px stage-width note is stale relative to the current Forest and Mine stage files.
 
 ## Queued Plan
 None.
 
 ## Next Step
-Implement the selected 1.20× blended camera framing and unzoomed HUD for both stages, then run focused tests/build and inspect gameplay.
+No active memory task. The camera framing plan is complete.

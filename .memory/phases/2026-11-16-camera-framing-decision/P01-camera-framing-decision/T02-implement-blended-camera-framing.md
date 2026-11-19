@@ -78,4 +78,4 @@ Task: T02-implement-blended-camera-framing
 - [x] Framing behavior implemented.
 - [x] Focused tests passed: 9 tests, 0 failures; production build passed; `git diff --check` passed.
 - [x] Visual check completed at 640×360: Forest start/boss and Mine start/machine-boss screens; HUD scale and separation confirmed.
-- commit: pending
+- commit: 56a575e

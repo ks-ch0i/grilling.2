@@ -6,7 +6,7 @@ Implement the user's selected blended, zoomed camera behavior in the Forest and 
 ## Phases
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Record the selected direction and implement the blended zoomed framing. | [P01](../phases/2026-11-16-camera-framing-decision/P01-camera-framing-decision/phase.md) |
+| P01 | `complete` | Record the selected direction and implement the blended zoomed framing. | [P01](../phases/2026-11-16-camera-framing-decision/P01-camera-framing-decision/phase.md) |
 
 ## Decision
 - Option A selected at 1.20× zoom for all rounds in both Forest and Mine.
@@ -17,3 +17,7 @@ Implement the user's selected blended, zoomed camera behavior in the Forest and 
 - This plan is separate from [round-based progression](./2026-11-16-round-based-progression.md).
 - Replace the obsolete dead-zone helper and its tests as part of implementation.
 - The round-based plan is complete. Camera behavior is tracked in T02.
+
+## Completion
+- T01 decision record: `af095d7`.
+- T02 implementation: `56a575e`; focused camera tests, production build, and 640×360 Forest/Mine visual inspection completed.

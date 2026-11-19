@@ -63,4 +63,4 @@ Task: T01-compare-camera-framing-options
 ## Progress
 - [x] Decision recorded
 - [x] Implementation blueprint added after decision
-- commit: pending
+- commit: af095d7
