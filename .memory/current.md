@@ -11,24 +11,21 @@
 - Its focused validations and production builds passed. Manual browser QA was unavailable for T02/T04; the prior pointer records the HTTP smoke and automated presentation checks used instead.
 
 ## Active Plan
-None.
+[Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md)
 
 ## Active Phase
-None.
+[P01 Camera Framing Decision](./phases/2026-11-16-camera-framing-decision/P01-camera-framing-decision/phase.md)
 
 ## Active Task
-None.
+[T02 Implement Blended Camera Framing](./phases/2026-11-16-camera-framing-decision/P01-camera-framing-decision/T02-implement-blended-camera-framing.md)
 
 ## Status
-- Plan: Irregular Platforms, Charge Attacks, and Root Targeting is complete.
-- Phase: all 4 tasks complete and validated.
-- T01 focused validation passed: 60 tests, 0 failures. A post-review compatibility fix for saved rectangular layouts is committed as `123b7c8`; terrain, save-store, and stage-lifecycle validation passed (27 tests).
-- T02 validation passed: `node scripts/pack-art.mjs`, asset/render tests (9 tests), `npm.cmd run build`, and `git diff --check`. T02 commit: `f80bbcb`.
-- T03 validation passed: `node --test test/enemies.test.js test/round-selector.test.js` (12 tests), `node --test test/mine-boss.test.js test/mine-integration.test.js` (21 tests), and `git diff --check`. T03 commit: `d9538f6`.
-- T04 validation passed: `node --test test/boss.test.js test/forest-stage.test.js test/forest-attack-presentation.test.js test/stage-lifecycle.test.js` (27 tests), `npm.cmd run build`, and `git diff --check`. Commit: `76d4eff`.
+- Previous plan, Title Screen Background and Text Menu, is complete; T01 was committed as `4680fe3`.
+- Camera T01 decision is complete and committed as a separate planning task; T02 implements the selected camera behavior.
+- Current stage definitions are 640×360, the same as the internal viewport. The older dead-zone decision's 11520px stage-width note is stale relative to the current Forest and Mine stage files.
 
 ## Queued Plan
-[Camera Framing and Motion Decision](./plans/2026-11-16-camera-framing-decision.md) remains queued; its camera direction is still undecided.
+None.
 
 ## Next Step
-If continuing queued work, resolve the camera direction in the Camera Framing and Motion Decision plan before writing its implementation blueprint.
+Implement the selected 1.20× blended camera framing and unzoomed HUD for both stages, then run focused tests/build and inspect gameplay.

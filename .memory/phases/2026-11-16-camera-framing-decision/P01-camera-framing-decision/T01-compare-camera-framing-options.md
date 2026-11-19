@@ -1,14 +1,16 @@
 # Task: T01 Compare Camera Framing Options
 
-## Status: pending
+## Status: done
 
 ## Goal
 Record the user's camera framing choice and measurable constraints before camera implementation or dead-zone cleanup begins.
 
 ## Decision Summary
 - Compare only the two options the user named: modest character zoom with more expressive camera movement, or a fixed view that shows the whole boss room.
-- The user has not selected an option. Do not choose on the user's behalf.
-- Do not modify production code or delete camera helpers/tests in this task.
+- The user selected Option A, 1.20× zoom, for both Forest and Mine throughout all rounds.
+- Blend player follow, movement-direction look-ahead and player-boss midpoint equally when a boss is active; otherwise blend player center and look-ahead equally.
+- Use 60 world pixels of velocity-direction look-ahead, 0.12 easing, stage-bounded camera movement and a separate unzoomed HUD camera.
+- Implementation is specified in T02; no production code was changed in T01.
 
 ## Implementation
 
@@ -36,11 +38,11 @@ Record the user's camera framing choice and measurable constraints before camera
   - Keep this plan independent from the fixed-camera work in the round-based plan.
 
 ## Acceptance Criteria
-- [ ] Both options are presented using the comparison points in I01.
-- [ ] The user selects an option and its required settings, or the decision remains explicitly open.
-- [ ] The decision record contains the selected option, scope, and measurable camera constraints.
-- [ ] A follow-up implementation task is added only after the choice is recorded.
-- [ ] No production camera code or helper tests are changed in this decision task.
+- [x] Both options were presented using the comparison points in I01.
+- [x] The user selected Option A and specified zoom, movement style, and stage scope.
+- [x] The decision record contains the selected option, scope, and measurable camera constraints.
+- [x] A follow-up implementation task was added after the choice was recorded.
+- [x] No production camera code or helper tests were changed in this decision task.
 
 ## Validation
 - User review of `.memory/decisions/2026-11-16-camera-framing.md` — one option and its settings are explicit, or the record remains open.
@@ -48,17 +50,17 @@ Record the user's camera framing choice and measurable constraints before camera
 
 ## Commit Message
 ```text
-docs(memory): plan camera framing decision
+docs(memory): record camera framing decision
 
 Plan: 2026-11-16-camera-framing-decision
 Phase: P01-camera-framing-decision
 Task: T01-compare-camera-framing-options
 
-- Record the two camera framing candidates without selecting one.
-- Gate code changes and dead-zone cleanup on the user's decision.
+- Record the selected zoom, blended motion and stage scope.
+- Define the follow-up implementation task.
 ```
 
 ## Progress
-- [ ] Decision recorded
-- [ ] Implementation blueprint added after decision
+- [x] Decision recorded
+- [x] Implementation blueprint added after decision
 - commit: pending
