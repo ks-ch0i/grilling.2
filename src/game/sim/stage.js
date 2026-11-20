@@ -99,6 +99,8 @@ export function createStageRun(stage,data={},options={}){
   validateStage(stage);
   if(!data||typeof data!=='object'||Array.isArray(data))throw new TypeError('Invalid run data');
   if(Object.keys(data).length)return restoreStageRun(stage,data);
+  const initialRound=options.startRound===undefined?1:options.startRound;
+  if(!Number.isInteger(initialRound)||initialRound<1||initialRound>ROUND_COUNT)throw new RangeError('Invalid starting round');
   const seed=(options.seed??Math.floor(Math.random()*4294967296))>>>0;
   const terrain=createRandomPlatformLayout(stage,seed);
   const run={stageId:stage.id,player:freshPlayer(stage.spawn),enemies:[],projectiles:[],boss:null,arenaLocked:false,
@@ -110,7 +112,7 @@ export function createStageRun(stage,data={},options={}){
     run.cartZones=createCartZones(stage,random);run.rngState=state;run.hazards=[];
     run.bossDrop={rolled:false,spawned:false,consumed:false,x:0,y:0};
   }
-  startRound(run,stage,1);
+  startRound(run,stage,initialRound);
   return run;
 }
 

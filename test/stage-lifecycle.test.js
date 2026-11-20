@@ -28,6 +28,25 @@ test('round schedule is fixed and rejects rounds outside the stage',()=>{
   for(const stage of [FOREST_STAGE,MINE_STAGE])for(const round of [5,7,8])assert.equal(isBossRound(stage.id,round),true);
 });
 
+test('fresh runs may start at a selected round while snapshot restores keep their saved round',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const defaultRun=createStageRun(stage,{}, {seed:63});
+    assert.equal(defaultRun.round,1);assert.equal(defaultRun.elapsedTicks,0);assert.equal(defaultRun.player.hp,3);
+    for(let round=1;round<=ROUND_COUNT;round++){
+      const run=createStageRun(stage,{}, {seed:63,startRound:round});
+      assert.equal(run.round,round);assert.equal(run.elapsedTicks,0);assert.equal(run.deaths,0);assert.equal(run.player.hp,3);
+      assert.equal(run.enemies.length,roundEnemyCount(round));
+      assert.equal(run.boss.state,isBossRound(stage.id,round)?'intro':'dormant');
+      if(stage===MINE_STAGE)assert.equal(run.bossSequence,isBossRound(stage.id,round)?'machine':'none');
+      if(round===7||round===8)assert.deepEqual([...new Set(run.enemies.map(enemy=>enemy.kind))].sort(),stage.enemies.map(enemy=>enemy.kind).sort());
+    }
+    const saved=createStageRun(stage,{}, {seed:63,startRound:6});
+    const continued=createStageRun(stage,snapshotStageRun(saved),{startRound:8});
+    assert.equal(continued.round,6);
+  }
+  for(const round of [0,9,1.5])assert.throws(()=>createStageRun(FOREST_STAGE,{}, {startRound:round}),RangeError);
+});
+
 test('a fresh run retains its exact platform layout through all eight rounds',()=>{
   for(const stage of [FOREST_STAGE,MINE_STAGE]){
     const expected=createStageRun(stage,{}, {seed:91}).terrainLayout;

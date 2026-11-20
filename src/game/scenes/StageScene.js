@@ -12,20 +12,24 @@ import { bossDirection } from '../render/bossDirection.js';
 import { CAMERA_EASING, CAMERA_ZOOM, cameraScrollTarget, visibleWorldBounds } from '../render/cameraFraming.js';
 import { getAppStore } from '../storage/appStore.js';
 import { createRunCoordinator } from '../storage/runCoordinator.js';
-import { markRunActive,clearRunActive } from '../storage/reloadRecovery.js';
 import { getAudioManager } from '../audio/AudioManager.js';
 import {EVENT_SFX} from '../audio/eventSounds.js';
 import { mountMenu } from '../ui/menu.js';
+import {initializeEasyRun,isEasyRoundUnlocked,handleEasyDeath as handleEasyDeathFlow,handleEasyRoundClear as handleEasyRoundClearFlow,handleEasyStageClear as handleEasyStageClearFlow,showEasyChoice as showEasyChoiceFlow,showEasyRoundSelector as showEasyRoundSelectorFlow,startEasyRound as startEasyRoundFlow,leaveEasySession as leaveEasySessionFlow} from './easySession.js';
 import {createPracticeRun,isRoundSelectorEnabled} from '../dev/roundSelector.js';
 import {platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../render/platforms.js';
 const STEP=1000/60;
+const noopCoordinator=()=>({tick(){},flush(){return {ok:true};},dispose(){},isFinished:()=>false});
 export class StageScene extends Phaser.Scene {
   constructor(){super('stage');}
   create(data={}){
+    this.store=getAppStore();
     this.practiceTarget=isRoundSelectorEnabled({development:import.meta.env.DEV,enabled:import.meta.env.VITE_DEV_ROUND_SELECTOR!=='false'})?data.practiceTarget:null;
-    this.run=this.practiceTarget?createPracticeRun(this.practiceTarget):createStageRun(getStage(data.run?.stageId??'forest-1'),data.run??{});
-    this.stage=getStage(this.run.stageId);this.accumulator=0;
-    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.store=getAppStore();this.audio=getAudioManager();if(!this.practiceTarget)markRunActive();
+    this.easyDecisionOpen=false;this.easyDecisionMenu=null;this.easyDeathHandled=false;this.easyResultHandled=false;
+    if(this.practiceTarget){this.mode='hard';this.run=createPracticeRun(this.practiceTarget);this.stage=getStage(this.run.stageId);}
+    else if(!this.initializeRun(data))return;
+    this.accumulator=0;
+    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.audio=getAudioManager();
     const mine=this.stage.id==='mine-1';
     this.backdrop=this.add.tileSprite(0,0,640,304,mine?'mine-backdrop':'forest').setOrigin(0,0).setScrollFactor(0).setDepth(-20).setTint(mine?0xffffff:0xb8b8b8);
     this.terrainBase=this.add.graphics().setDepth(-6);this.terrainViews=[];this.terrainSignature=null;this.syncTerrainViews();
@@ -41,8 +45,8 @@ export class StageScene extends Phaser.Scene {
     this.configureCameras();
     this.inputController=new InputController(window,this.game.canvas);
     this.pauseReset=()=>{this.accumulator=0;this.inputController.reset();};
-    this.coordinator=this.practiceTarget?{tick(){},flush(){return {ok:true};},dispose(){},isFinished:()=>false}:createRunCoordinator({store:this.store}).bind(this);
-    this.onEscape=e=>{if(e.code==='Escape'&&!e.repeat&&!this.settingsOpen){e.preventDefault();if(this.paused)this.resumeGame();else this.pauseGame();}};
+    this.coordinator=this.practiceTarget||this.mode==='easy'?noopCoordinator():createRunCoordinator({store:this.store}).bind(this);
+    this.onEscape=e=>{if(e.code==='Escape'&&!e.repeat&&!this.settingsOpen){e.preventDefault();if(this.paused){if(!this.easyDecisionOpen)this.resumeGame();}else this.pauseGame();}};
     this.onBlur=()=>this.pauseGame();
     this.onVisibility=()=>{if(document.hidden){this.pauseGame();this.coordinator.flush();}};
     this.onPageHide=()=>this.coordinator.flush();
@@ -51,12 +55,24 @@ export class StageScene extends Phaser.Scene {
       if(!this.coordinator.isFinished())this.coordinator.flush();this.coordinator.dispose();
       window.removeEventListener('keydown',this.onEscape);window.removeEventListener('blur',this.onBlur);window.removeEventListener('pagehide',this.onPageHide);document.removeEventListener('visibilitychange',this.onVisibility);
       this.events.off(Phaser.Scenes.Events.ADDED_TO_SCENE,this.routeWorldObject,this);if(this.hudCamera)this.cameras.remove(this.hudCamera);this.screenSpaceObjects?.clear();this.hudCamera=null;
-      this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
+      this.easyDecisionOpen=false;this.easyDecisionMenu?.remove();this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
     });
     this.renderWorld();
-    if(data.recovered)this.pauseGame('마지막 저장 지점에서 복구했습니다.');
-    else {this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());}
+    this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());
   }
+  initializeRun(data={}){
+    return initializeEasyRun(this,data);
+  }
+  isEasyRoundUnlocked(stageId,round){
+    return isEasyRoundUnlocked(this.store.getSave(),stageId,round);
+  }
+  handleEasyDeath(){return handleEasyDeathFlow(this);}
+  handleEasyRoundClear(){return handleEasyRoundClearFlow(this);}
+  handleEasyStageClear(){return handleEasyStageClearFlow(this);}
+  showEasyChoice(kind){return showEasyChoiceFlow(this,kind);}
+  showEasyRoundSelector(returnToKind){return showEasyRoundSelectorFlow(this,returnToKind);}
+  startEasyRound(stageId,round){return startEasyRoundFlow(this,stageId,round);}
+  leaveEasySession(){return leaveEasySessionFlow(this);}
   update(_time,delta){
     if(document.hidden||!document.hasFocus())this.pauseGame();
     if(this.paused){this.pauseReset();this.renderWorld();return;}
@@ -69,11 +85,17 @@ export class StageScene extends Phaser.Scene {
       for(const event of result.events){
         if(event.type==='stage:death'){for(const effect of this.visualEffects)effect.sprite.destroy();this.visualEffects=[];}
         this.playEventSound(event);this.events.emit(event.type,event);
+        if(this.mode==='easy'){
+          if(event.type==='stage:death')this.handleEasyDeath();
+          else if(event.type==='round:clear')this.handleEasyRoundClear();
+          else if(event.type==='stage:clear')this.handleEasyStageClear();
+        }
       }
+      if(this.easyDecisionOpen){this.accumulator=0;this.renderWorld();return;}
       this.visualEffects=this.visualEffects.filter(effect=>{if(effect.until>this.run.elapsedTicks){if(effect.draw)effect.draw(this.run.elapsedTicks-effect.start);if(effect.fade)effect.sprite.setAlpha((effect.until-this.run.elapsedTicks)/effect.fade*(effect.strength??1));return true;}effect.sprite.destroy();return false;});
       if(this.run.player.mode==='run'&&this.run.player.grounded&&this.run.elapsedTicks%18===0)this.audio.playSfx('step');
       this.coordinator.tick();
-      if(result.events.some(event=>event.type==='stage:clear')){if(!this.practiceTarget)clearRunActive();this.audio.pauseMusic();const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{stageId:this.run.stageId,record,practice:Boolean(this.practiceTarget),practiceTarget:this.practiceTarget});return;}
+      if(result.events.some(event=>event.type==='stage:clear')){this.audio.pauseMusic();const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{stageId:this.run.stageId,record,practice:Boolean(this.practiceTarget),practiceTarget:this.practiceTarget});return;}
       this.accumulator-=STEP;
     }
     this.renderWorld();
@@ -122,11 +144,15 @@ export class StageScene extends Phaser.Scene {
     draw(0);this.visualEffects.push({sprite,start:this.run.elapsedTicks,until:this.run.elapsedTicks+duration,fade:duration,strength:canDamage?1:.4,draw});
   }
   pauseGame(notice=''){
+    if(this.easyDecisionOpen){this.pauseReset();return;}
     if(this.paused)return;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.coordinator.flush();this.audio.pauseMusic();
-    this.pauseMenu=mountMenu('일시정지',notice);this.pauseMenu.button('재개',()=>this.resumeGame());this.pauseMenu.button('설정',()=>{this.settingsOpen=true;this.pauseMenu.hide();this.scene.launch('settings',{onClose:()=>{this.settingsOpen=false;this.pauseMenu?.show();}});});this.pauseMenu.button('처음 화면',()=>{if(!this.practiceTarget)clearRunActive();this.coordinator.flush();this.scene.start('title');});this.pauseMenu.focus();
+    this.pauseMenu=mountMenu('일시정지',notice);this.pauseMenu.button('재개',()=>this.resumeGame());this.pauseMenu.button('설정',()=>{this.settingsOpen=true;this.pauseMenu.hide();this.scene.launch('settings',{onClose:()=>{this.settingsOpen=false;this.pauseMenu?.show();}});});this.pauseMenu.button('처음 화면',()=>{this.coordinator.flush();this.scene.start('title');});this.pauseMenu.focus();
   }
   musicForRun(){return this.run.boss.state!=='dormant'&&this.run.player.mode!=='dead'?(this.stage.id==='mine-1'?'mine-boss':'forest-boss'):(this.stage.id==='mine-1'?'mine':'forest');}
-  resumeGame(){if(!this.paused||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();}this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());}
+  resumeGame(){if(!this.paused||this.easyDecisionOpen||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();}this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());}
+  pauseEasyDecision(){
+    this.easyDecisionOpen=true;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.audio.pauseMusic();
+  }
   exportStageSnapshot(){return snapshotStageRun(this.run);}
   restoreStageSnapshot(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
   syncTerrainViews(){
