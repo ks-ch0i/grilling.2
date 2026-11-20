@@ -51,7 +51,7 @@ test('boss hitbox direction comes from the hitbox and boss body can be separated
 test('deep contact separates after push, while a solid wall prevents escape and damage resumes',()=>{
  function setup(world){let r=createStageRun(world);Object.assign(r.player,{x:200,y:276,grounded:true});const e=r.enemies[0];Object.assign(e,{x:200,y:276,state:'hurt',stateTicks:100});r.enemies=[e];return r;}
  let r=step(setup(stage)).run;assert.equal(r.player.hp,2);for(let i=0;i<12;i++)r=step(r).run;assert.equal(r.player.x,184);assert.equal(intersects(r.player,r.enemies[0]),false);
- const world=structuredClone(stage);world.solids.push({x:180,y:200,w:20,h:104});r=step(setup(world),world).run;for(let i=0;i<12;i++)r=step(r,world).run;assert.equal(r.player.x,200);assert.equal(intersects(r.player,r.enemies[0]),true);
+ const world=structuredClone(stage),wall={x:180,y:200,w:20,h:104};r=setup(world);r.terrainLayout.platforms.push(wall);r=step(r,world).run;for(let i=0;i<12;i++)r=step(r,world).run;assert.equal(r.player.x,200);assert.equal(intersects(r.player,r.enemies[0]),true);
  for(let i=0;i<34;i++)r=step(r,world).run;assert.equal(r.player.hp,1);assert.equal(r.player.x,200);
  const restored=createStageRun(world);assert.equal(restored.player.hurtPushTicks,0);
 });

@@ -13,6 +13,14 @@ const record=value=>shape(value,['elapsedTicks','deaths'])&&count(value.elapsedT
 const settings=value=>shape(value,['musicVolume','sfxVolume','screenShake'])&&[value.musicVolume,value.sfxVolume].every(item=>typeof item==='number'&&Number.isFinite(item)&&item>=0&&item<=1)&&typeof value.screenShake==='boolean';
 const records=value=>shape(value,['best','recent'])&&(value.best===null||record(value.best))&&(value.recent===null||record(value.recent));
 const unlocked=value=>Array.isArray(value)&&value.includes('forest-1')&&new Set(value).size===value.length&&value.every(id=>['forest-1','mine-1'].includes(id));
+const ROUND_KEYS=Array.from({length:8},(_,index)=>String(index+1));
+const easyRoundRecords=value=>shape(value,['forest-1','mine-1'])&&['forest-1','mine-1'].every(stageId=>
+  shape(value[stageId],ROUND_KEYS)&&ROUND_KEYS.every(round=>records(value[stageId][round])));
+const easyProgress=value=>shape(value,['unlockedRoundByStage','totalDeaths','roundRecords'])&&
+  shape(value.unlockedRoundByStage,['forest-1','mine-1'])&&
+  Number.isInteger(value.unlockedRoundByStage['forest-1'])&&value.unlockedRoundByStage['forest-1']>=1&&value.unlockedRoundByStage['forest-1']<=8&&
+  Number.isInteger(value.unlockedRoundByStage['mine-1'])&&value.unlockedRoundByStage['mine-1']>=0&&value.unlockedRoundByStage['mine-1']<=8&&
+  count(value.totalDeaths)&&easyRoundRecords(value.roundRecords);
 const oldV1Run=value=>shape(value,['stageId','checkpoint','consumedPickupIds','elapsedTicks','deaths'])&&value.stageId==='forest-1'&&['start','mid'].includes(value.checkpoint)&&Array.isArray(value.consumedPickupIds)&&new Set(value.consumedPickupIds).size===value.consumedPickupIds.length&&value.consumedPickupIds.every(id=>typeof id==='string'&&LEGACY_PICKUP_IDS.has(id))&&count(value.elapsedTicks)&&count(value.deaths);
 
 function legacyRect(value,ticks=false){
@@ -92,19 +100,38 @@ function oldV2Save(value){
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&settings(value.settings);
 }
 const currentSnapshot=value=>{try{return value.outcome===null&&Boolean(restoreStageRun(getStage(value.stageId),value));}catch{return false;}};
+function currentV3Save(value){
+  return shape(value,['version','run','unlockedStageIds','records','settings'])&&value.version===3&&
+    (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
+    shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&settings(value.settings);
+}
+function currentV4Save(value){
+  return shape(value,['version','run','unlockedStageIds','records','easy','settings'])&&value.version===4&&
+    (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
+    shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
+    easyProgress(value.easy)&&settings(value.settings);
+}
+function freshEasyProgress(){
+  const emptyRecord=()=>({best:null,recent:null});
+  const stageRoundRecords=()=>Object.fromEntries(ROUND_KEYS.map(round=>[round,emptyRecord()]));
+  return {
+    unlockedRoundByStage:{'forest-1':1,'mine-1':0},
+    totalDeaths:0,
+    roundRecords:{'forest-1':stageRoundRecords(),'mine-1':stageRoundRecords()}
+  };
+}
 
 export function freshSave(){
-  return {version:3,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
+  return {version:4,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},easy:freshEasyProgress(),settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
 }
 export function parseSave(raw){
   if(raw===null)return {ok:true,save:freshSave()};
   if(typeof raw!=='string')return {ok:false,reason:'invalid'};
   let value;try{value=JSON.parse(raw);}catch{return {ok:false,reason:'invalid'};}
-  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>3)return {ok:false,reason:'unsupported-version'};
+  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>4)return {ok:false,reason:'unsupported-version'};
   if(oldV1Save(value)||oldV2Save(value))return {ok:true,save:freshSave(),migrated:true};
-  if(!shape(value,['version','run','unlockedStageIds','records','settings'])||value.version!==3||
-    !(value.run===null||currentSnapshot(value.run))||!unlocked(value.unlockedStageIds)||
-    !shape(value.records,['forest-1','mine-1'])||!records(value.records['forest-1'])||!records(value.records['mine-1'])||!settings(value.settings))return {ok:false,reason:'invalid'};
+  if(currentV3Save(value))return {ok:true,save:{...value,version:4,easy:freshEasyProgress()},migrated:true};
+  if(!currentV4Save(value))return {ok:false,reason:'invalid'};
   return {ok:true,save:value};
 }
 export function loadSave(storage){try{return parseSave(storage.getItem(SAVE_KEY));}catch{return {ok:false,reason:'unavailable'};}}
@@ -119,4 +146,31 @@ export function recordCompletion(save,stageId,result){
   const unlockedStageIds=stageId==='forest-1'&&!save.unlockedStageIds.includes('mine-1')?[...save.unlockedStageIds,'mine-1']:save.unlockedStageIds;
   const run=stageId==='forest-1'?snapshotStageRun(createStageRun(getStage('mine-1'))):null;
   return {...save,run,unlockedStageIds,records:{...save.records,[stageId]:{recent:{...result},best:!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best}}}};
+}
+
+export function recordEasyDeath(save){
+  if(!currentV4Save(save))throw new TypeError('Invalid save');
+  if(save.easy.totalDeaths===Number.MAX_SAFE_INTEGER)throw new RangeError('Easy death count is full');
+  return {...save,easy:{...save.easy,totalDeaths:save.easy.totalDeaths+1}};
+}
+
+export function recordEasyRoundCompletion(save,stageId,round,result){
+  if(!currentV4Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||!record(result))throw new TypeError('Invalid Easy round record');
+  if(round>save.easy.unlockedRoundByStage[stageId])throw new TypeError('Easy round is locked');
+  const roundKey=String(round),previous=save.easy.roundRecords[stageId][roundKey];
+  const best=!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best};
+  const unlockedRoundByStage={...save.easy.unlockedRoundByStage};
+  if(round<8)unlockedRoundByStage[stageId]=Math.max(unlockedRoundByStage[stageId],round+1);
+  else if(stageId==='forest-1')unlockedRoundByStage['mine-1']=Math.max(unlockedRoundByStage['mine-1'],1);
+  return {
+    ...save,
+    easy:{
+      ...save.easy,
+      unlockedRoundByStage,
+      roundRecords:{
+        ...save.easy.roundRecords,
+        [stageId]:{...save.easy.roundRecords[stageId],[roundKey]:{best,recent:{...result}}}
+      }
+    }
+  };
 }
