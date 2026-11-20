@@ -2,9 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {FOREST_STAGE} from '../src/game/content/forestStage.js';
 import {MINE_STAGE} from '../src/game/content/mineStage.js';
-
-const terrain = await import('../src/game/sim/terrain.js').catch(() => ({}));
-const platforms = await import('../src/game/sim/platforms.js').catch(() => ({}));
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
+import {nextRandom} from '../src/game/sim/mineCarts.js';
+import {createPlayer,stepPlayer} from '../src/game/sim/player.js';
+import {createEnemy,stepEnemy} from '../src/game/sim/enemies.js';
+import * as terrain from '../src/game/sim/terrain.js';
+import * as platforms from '../src/game/sim/platforms.js';
 
 function validProfiles(){
   return [
@@ -13,45 +16,117 @@ function validProfiles(){
   ];
 }
 
-test('terrain exports deterministic profile generation and validation',()=>{
-  assert.equal(typeof terrain.createRandomPlatformLayout,'function');
-  assert.equal(typeof terrain.validatePlatformLayout,'function');
-  assert.equal(typeof platforms.platformTopY,'function');
-  assert.equal(typeof platforms.nearestPlatformSurface,'function');
-  assert.equal(typeof platforms.platformOcclusionRects,'function');
-});
-
-test('generated profile layouts are deterministic and valid in both stages',()=>{
-  for(const stage of [FOREST_STAGE,MINE_STAGE])for(const seed of [0,1,42,0xffffffff]){
-    const first=terrain.createRandomPlatformLayout(stage,seed);
-    const second=terrain.createRandomPlatformLayout(stage,seed);
-    assert.deepEqual(first,second);
-    assert.equal(terrain.validatePlatformLayout(stage,{mode:'random',platforms:first.platforms}),true);
-    assert.ok(first.platforms.length>=2&&first.platforms.length<=4);
-    for(const platform of first.platforms){
-      assert.equal(platform.topProfile.length,platform.w/16);
-      assert.ok(platform.topProfile.every(y=>Number.isInteger(y)&&y>=248&&y<=288));
-      assert.ok(Math.max(...platform.topProfile)-Math.min(...platform.topProfile)<=16);
-      for(let i=1;i<platform.topProfile.length;i++)assert.ok(Math.abs(platform.topProfile[i]-platform.topProfile[i-1])<=4);
-      assert.ok(Number.isInteger(platform.variant)&&platform.variant>=0&&platform.variant<=3);
+test('authored selection uses one seeded roll and returns an independent layout',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const presets=ARENA_PLATFORM_PRESETS[stage.id];
+    assert.ok(Object.isFrozen(ARENA_PLATFORM_PRESETS)&&Object.isFrozen(presets));
+    for(const [seed,index] of [[0,0],[251,1],[1112,2],[0xffffffff,0]]){
+      const first=terrain.createAuthoredPlatformLayout(stage,seed);
+      assert.deepEqual(first,terrain.createAuthoredPlatformLayout(stage,seed));
+      assert.equal(first.rngState,nextRandom(seed).state);
+      const preset=presets[index];
+      assert.deepEqual(first.layout,{mode:'authored',presetId:preset.id,platforms:preset.platforms});
+      assert.equal(terrain.validatePlatformLayout(stage,first.layout),true);
+      assert.ok(Object.isFrozen(preset)&&Object.isFrozen(preset.platforms)&&Object.isFrozen(preset.platforms[0])&&Object.isFrozen(preset.platforms[0].topProfile));
+      first.layout.platforms[0].topProfile[0]++;
+      assert.throws(()=>terrain.validatePlatformLayout(stage,first.layout),RangeError);
+      assert.notEqual(first.layout.platforms[0].topProfile[0],preset.platforms[0].topProfile[0]);
     }
-    assert.notEqual(first.rngState,seed);
   }
 });
 
-test('profile counts are uniform and width classes retain the 80/20 bias',()=>{
-  const counts={2:0,3:0,4:0};let narrow=0,wide=0,total=0;
-  for(let index=0;index<240;index++){
-    const seed=Math.imul(index,2654435761)>>>0;
-    const result=terrain.createRandomPlatformLayout(FOREST_STAGE,seed);
-    counts[result.platforms.length]++;
-    for(const platform of result.platforms){total++;if(platform.w<=64)narrow++;else wide++;}
+test('each stage has three reachable authored layouts with one layered path',()=>{
+  for(const stage of [FOREST_STAGE,MINE_STAGE]){
+    const presets=ARENA_PLATFORM_PRESETS[stage.id];
+    assert.equal(presets.length,3);
+    const layered=[];
+    for(const {id,platforms:surfaces} of presets){
+      assert.equal(terrain.validateAuthoredPlatformGeometry(stage,surfaces),true,id);
+      if(surfaces.some((first,index)=>surfaces.slice(index+1).some(second=>first.x<second.x+second.w&&second.x<first.x+first.w)))layered.push(id);
+    }
+    assert.deepEqual(layered,[presets[1].id]);
   }
-  for(const count of Object.values(counts))assert.ok(count>=60&&count<=100,JSON.stringify(counts));
-  assert.ok(narrow/total>=.75&&narrow/total<=.85);
-  assert.ok(wide/total>=.15&&wide/total<=.25);
-  const fallback={mode:'random',platforms:[96,224,352,480].map(x=>({x,w:64,topProfile:[288,288,288,288],variant:0}))};
-  assert.equal(terrain.validatePlatformLayout(FOREST_STAGE,fallback),true);
+});
+
+test('authored layouts require the exact stage preset and preserve legacy geometry limits',()=>{
+  const {layout}=terrain.createAuthoredPlatformLayout(FOREST_STAGE,251);
+  assert.throws(()=>terrain.validatePlatformLayout(MINE_STAGE,layout),RangeError);
+  assert.throws(()=>terrain.validatePlatformLayout(FOREST_STAGE,{...layout,presetId:'missing'}),RangeError);
+  assert.throws(()=>terrain.validatePlatformLayout(FOREST_STAGE,{...layout,presetId:1}),TypeError);
+  assert.throws(()=>terrain.validatePlatformLayout(FOREST_STAGE,{...layout,extra:true}),TypeError);
+  assert.throws(()=>terrain.validatePlatformLayout(FOREST_STAGE,{...layout,platforms:[...layout.platforms].reverse()}),RangeError);
+  const invalid=structuredClone(layout);
+  invalid.platforms[0].extra=true;
+  assert.throws(()=>terrain.validatePlatformLayout(FOREST_STAGE,invalid),TypeError);
+  const [lower,upper,third]=layout.platforms;
+  assert.throws(()=>platforms.validatePlatformProfile(upper),RangeError);
+  assert.throws(()=>terrain.validateAuthoredPlatformGeometry(FOREST_STAGE,[lower,{...upper,topProfile:[217,219,220,220]},third]),/48 pixels/);
+  assert.throws(()=>terrain.validateAuthoredPlatformGeometry(FOREST_STAGE,[{...lower,x:72},upper,third]),/start corridor/);
+  assert.throws(()=>terrain.validateAuthoredPlatformGeometry(FOREST_STAGE,[lower,{...upper,x:320},third]),/cannot be reached/);
+  const crossing=[
+    {x:176,w:64,topProfile:[260,256,252,248],variant:0},
+    {x:176,w:64,topProfile:[248,252,256,260],variant:1},third
+  ];
+  assert.throws(()=>terrain.validateAuthoredPlatformGeometry(FOREST_STAGE,crossing),RangeError);
+});
+
+const stepInput=(move=0,jumpPressed=false)=>({move,jumpPressed,jumpHeld:true,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290});
+const feet=player=>player.y+player.h;
+const center=player=>player.x+player.w/2;
+
+function jumpTo(player,stage,surfaces,targetX,targetY){
+  for(let tick=0;tick<100;tick++){
+    const delta=targetX-center(player);
+    const move=feet(player)<=targetY&&Math.abs(delta)>=1?Math.sign(delta):0;
+    player=stepPlayer(player,stepInput(move,tick===0),[stage.solids[0]],stage.pitDeathY,surfaces).player;
+    if(player.grounded)return player;
+  }
+  assert.fail('The jump never landed');
+}
+
+test('player can jump from floor to lower to upper and fall sideways back down in both stages',()=>{
+  for(const {stage,lowerIndex,upperIndex,takeoffX,upperX,offDirection} of [
+    {stage:FOREST_STAGE,lowerIndex:0,upperIndex:1,takeoffX:228,upperX:252,offDirection:-1},
+    {stage:MINE_STAGE,lowerIndex:2,upperIndex:1,takeoffX:366,upperX:340,offDirection:1}
+  ]){
+    const surfaces=ARENA_PLATFORM_PRESETS[stage.id][1].platforms;
+    const lower=surfaces[lowerIndex],upper=surfaces[upperIndex];
+    const lowerY=platforms.platformTopY(lower,takeoffX),upperY=platforms.platformTopY(upper,upperX);
+    const floorPlayer={...createPlayer(takeoffX-8,stage.solids[0].y-28),grounded:true};
+    let player=jumpTo(floorPlayer,stage,surfaces,takeoffX,lowerY);
+    assert.equal(feet(player),lowerY,stage.id);
+    player=jumpTo(player,stage,surfaces,upperX,upperY);
+    assert.equal(feet(player),upperY,stage.id);
+    for(let tick=0;tick<90;tick++){
+      const move=platforms.platformTopY(upper,center(player))===null?0:offDirection;
+      player=stepPlayer(player,stepInput(move),[stage.solids[0]],stage.pitDeathY,surfaces).player;
+      if(player.grounded&&feet(player)>upperY+4)break;
+    }
+    assert.ok(player.grounded&&feet(player)>upperY+4,stage.id);
+    assert.equal(feet(player),platforms.platformTopY(lower,center(player)),stage.id);
+  }
+});
+
+test('walking, falling and enemy support use the matching layer regardless of array order',()=>{
+  const lower={x:200,w:80,topProfile:[272,268,266,266,264],variant:0};
+  const upper={x:200,w:80,topProfile:[216,218,220,220,222],variant:1};
+  const floor=[FOREST_STAGE.solids[0]];
+  for(const order of [[lower,upper],[upper,lower]]){
+    for(const [previous,next] of [[272,268],[216,218],[304,304]]){
+      const player={...createPlayer(207,previous-28),grounded:true};
+      assert.equal(feet(stepPlayer(player,stepInput(1),floor,FOREST_STAGE.pitDeathY,order).player),next);
+    }
+    const actor={x:212,w:16};
+    assert.equal(platforms.crossedPlatformSurface(actor,order,208,276).platform,upper);
+    assert.equal(platforms.crossedPlatformSurface(actor,order,228,276).platform,lower);
+    assert.equal(platforms.crossedPlatformSurface(actor,order,280,304),null);
+    for(const [previous,next] of [[272,268],[216,218]]){
+      const enemy=createEnemy({id:'test-soldier',kind:'soldier',x:205.5,y:previous-28});
+      const moved=stepEnemy(enemy,{x:350,w:16},floor,order).enemy;
+      assert.ok(moved.x>enemy.x);
+      assert.equal(moved.y+moved.h,next);
+    }
+  }
 });
 
 test('profile surface lookup returns the section and nearest eligible support',()=>{
@@ -95,6 +170,6 @@ test('profile validation rejects malformed records and preserves old rectangle l
 });
 
 test('generator rejects unsupported stages and non-uint32 seeds',()=>{
-  assert.throws(()=>terrain.createRandomPlatformLayout({id:'unknown'},1),TypeError);
-  for(const seed of [-1,1.5,0x100000000])assert.throws(()=>terrain.createRandomPlatformLayout(FOREST_STAGE,seed),RangeError);
+  assert.throws(()=>terrain.createAuthoredPlatformLayout({id:'unknown'},1),TypeError);
+  for(const seed of [-1,1.5,0x100000000])assert.throws(()=>terrain.createAuthoredPlatformLayout(FOREST_STAGE,seed),RangeError);
 });

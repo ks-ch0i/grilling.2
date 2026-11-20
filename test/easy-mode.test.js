@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {FOREST_STAGE} from '../src/game/content/forestStage.js';
 import {MINE_STAGE} from '../src/game/content/mineStage.js';
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
 import {createStageRun,snapshotStageRun} from '../src/game/sim/stage.js';
 import {freshSave} from '../src/game/storage/saveStore.js';
 import {handleEasyDeath,handleEasyRoundClear,handleEasyStageClear,initializeEasyRun} from '../src/game/scenes/easySession.js';
@@ -58,6 +59,8 @@ test('Easy starts at an unlocked round with full health and leaves the saved Har
   const starts=[],scene={store:makeStore(save),scene:{start:(name,data)=>starts.push([name,data])}};
   assert.equal(initializeEasyRun(scene,{mode:'easy',stageId:'forest-1',round:4}),true);
   assert.equal(scene.run.round,4);assert.equal(scene.run.elapsedTicks,0);assert.equal(scene.run.player.hp,3);
+  assert.equal(scene.run.terrainLayout.mode,'authored');
+  assert.ok(ARENA_PLATFORM_PRESETS['forest-1'].some(preset=>preset.id===scene.run.terrainLayout.presetId));
   assert.equal(Object.hasOwn(scene.run,'mode'),false);assert.deepEqual(scene.store.getSave().run,hardRun);
 });
 
@@ -111,6 +114,9 @@ test('Forest Round 8 unlocks Mine Round 1 and offers stage advance, selector, an
   assert.deepEqual(buttons(scene.easyDecisionMenu).map(button=>button.textContent),['다음 스테이지','스테이지/라운드 선택','홈']);
   click(scene.easyDecisionMenu,'다음 스테이지');
   assert.deepEqual(scene.restarted,{mode:'easy',stageId:'mine-1',round:1});
+  assert.equal(initializeEasyRun(scene,scene.restarted),true);
+  assert.equal(scene.run.terrainLayout.mode,'authored');
+  assert.ok(ARENA_PLATFORM_PRESETS['mine-1'].some(preset=>preset.id===scene.run.terrainLayout.presetId));
 }));
 
 test('Mine Round 8 overall clear has no Next Stage action',()=>withFakeDocument(()=>{

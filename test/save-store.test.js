@@ -9,8 +9,12 @@ import {createBoss} from '../src/game/sim/boss.js';
 import {createMineBoss} from '../src/game/sim/mineBoss.js';
 import {MINE_STAGE} from '../src/game/content/mineStage.js';
 import {createCartZones} from '../src/game/sim/mineCarts.js';
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
 function memory(raw=null){const values=new Map(raw===null?[]:[[SAVE_KEY,raw]]);return {values,writes:0,getItem(k){return values.get(k)??null;},setItem(k,v){values.set(k,v);this.writes++;}};}
 const validRun=()=>snapshotStageRun(createStageRun(FOREST_STAGE,{}, {seed:1234}));
+const oldProfileLayout=()=>({mode:'random',platforms:[
+ {x:80,w:48,topProfile:[280,284,280],variant:0},{x:192,w:48,topProfile:[276,272,276],variant:1}
+]});
 const v1={version:1,run:{stageId:'forest-1',checkpoint:'mid',consumedPickupIds:['heal-1'],elapsedTicks:600,deaths:2},best:{elapsedTicks:30,deaths:4},recent:{elapsedTicks:60,deaths:1},settings:{musicVolume:.2,sfxVolume:.4,screenShake:false}};
 function legacyV2Run(){
  const player=createPlayer(120,276);player.grounded=true;player.hitIds=[...player.hitIds];
@@ -26,7 +30,7 @@ function legacyV2MineRun(){
 function validV2Save(){return {version:2,run:legacyV2Run(),unlockedStageIds:['forest-1','mine-1'],records:{'forest-1':{best:{elapsedTicks:20,deaths:4},recent:{elapsedTicks:25,deaths:2}},'mine-1':{best:null,recent:null}},settings:{musicVolume:.2,sfxVolume:.4,screenShake:false}};}
 function validV3Save(){
  const {easy,...legacy}=freshSave();
- return {...legacy,version:3,run:validRun(),unlockedStageIds:['forest-1','mine-1'],records:{'forest-1':{best:{elapsedTicks:420,deaths:4},recent:{elapsedTicks:500,deaths:5}},'mine-1':{best:{elapsedTicks:350,deaths:2},recent:{elapsedTicks:390,deaths:3}},},settings:{musicVolume:.2,sfxVolume:.4,screenShake:false}};
+ return {...legacy,version:3,run:{...validRun(),terrainLayout:oldProfileLayout()},unlockedStageIds:['forest-1','mine-1'],records:{'forest-1':{best:{elapsedTicks:420,deaths:4},recent:{elapsedTicks:500,deaths:5}},'mine-1':{best:{elapsedTicks:350,deaths:2},recent:{elapsedTicks:390,deaths:3}},},settings:{musicVolume:.2,sfxVolume:.4,screenShake:false}};
 }
 test('v4 validates complete snapshots, records, Easy progress and settings',()=>{
  const save={...freshSave(),run:validRun()};assert.deepEqual(parseSave(JSON.stringify(save)),{ok:true,save});
@@ -40,15 +44,22 @@ test('v4 accepts a legacy run without terrain but rejects an invalid present lay
  const invalid={...freshSave(),run:validRun()};invalid.run.terrainLayout={mode:'random',platforms:[]};
  assert.equal(parseSave(JSON.stringify(invalid)).ok,false);
 });
-test('v4 accepts new profiles and preserves old random rectangular layouts',()=>{
- const profileSave={...freshSave(),run:validRun()};
- assert.ok(profileSave.run.terrainLayout.platforms.every(platform=>Array.isArray(platform.topProfile)));
- assert.equal(parseSave(JSON.stringify(profileSave)).ok,true);
- const oldRun=validRun();oldRun.terrainLayout={mode:'random',platforms:[
+test('v4 round-trips authored, older profile and older rectangular runs with records intact',()=>{
+ const authored=snapshotStageRun(createStageRun(FOREST_STAGE,{}, {seed:251}));
+ assert.equal(authored.terrainLayout.presetId,'forest-terrace-v1');
+ const oldRectangles={mode:'random',platforms:[
   {x:96,y:288,w:64,h:16},{x:224,y:288,w:64,h:16},
   {x:352,y:288,w:64,h:16},{x:480,y:288,w:64,h:16}
  ]};
- assert.equal(parseSave(JSON.stringify({...freshSave(),run:oldRun})).ok,true);
+ for(const terrainLayout of [authored.terrainLayout,oldProfileLayout(),oldRectangles]){
+  const save={...freshSave(),run:{...authored,elapsedTicks:721,deaths:2,terrainLayout}};
+  save.records['forest-1'].best={elapsedTicks:900,deaths:1};
+  save.easy.totalDeaths=3;
+  const storage=memory();assert.deepEqual(writeSave(storage,save),{ok:true});
+  assert.deepEqual(loadSave(storage),{ok:true,save});
+ }
+ const mismatched=structuredClone(authored);mismatched.terrainLayout.platforms[1].topProfile[0]++;
+ assert.equal(parseSave(JSON.stringify({...freshSave(),run:mismatched})).ok,false);
 });
 test('fresh save starts at v4 with only Easy Forest Round 1 unlocked',()=>{
  const save=freshSave();
@@ -91,6 +102,7 @@ test('storage errors are returned and writes validate before touching storage',(
 test('records are stage-specific and ties retain the earlier paired deaths',()=>{
  let s=recordCompletion(freshSave(),'forest-1',{elapsedTicks:500,deaths:7});s=recordCompletion(s,'forest-1',{elapsedTicks:500,deaths:1});assert.deepEqual(s.records['forest-1'],{best:{elapsedTicks:500,deaths:7},recent:{elapsedTicks:500,deaths:1}});
  assert.ok(s.unlockedStageIds.includes('mine-1'));assert.equal(s.run.stageId,'mine-1');assert.equal(s.run.round,1);assert.equal(s.run.elapsedTicks,0);assert.equal(s.run.deaths,0);assert.equal(s.run.player.hp,3);assert.equal(parseSave(JSON.stringify(s)).ok,true);
+ assert.equal(s.run.terrainLayout.mode,'authored');assert.ok(ARENA_PLATFORM_PRESETS['mine-1'].some(preset=>preset.id===s.run.terrainLayout.presetId));
  s=recordCompletion(s,'mine-1',{elapsedTicks:400,deaths:3});assert.equal(s.records['forest-1'].best.elapsedTicks,500);assert.equal(s.records['mine-1'].best.elapsedTicks,400);assert.equal(s.run,null);
 });
 test('Easy deaths persist independently from Hard state and reject overflow',()=>{

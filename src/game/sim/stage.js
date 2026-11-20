@@ -7,7 +7,7 @@ import {createBoss,damageBoss,stepBoss} from './boss.js';
 import {stepHazards} from './hazards.js';
 import {createCartZones,stepCartZones,nextRandom} from './mineCarts.js';
 import {createMineBoss,damageMineBoss,stepMineBoss,shouldDropPotion} from './mineBoss.js';
-import {createRandomPlatformLayout,validatePlatformLayout} from './terrain.js';
+import {createAuthoredPlatformLayout,validatePlatformLayout} from './terrain.js';
 import {isProfiledPlatform,platformOcclusionRects} from './platforms.js';
 import {WORM_INTRO_TICKS,WORM_INTRO_BURST_TICK} from './wormIntro.js';
 import {createRoundEnemies,isBossRound,roundEnemyCount,ROUND_COUNT,ROUND_CLEAR_TICKS} from './rounds.js';
@@ -95,22 +95,30 @@ function startRound(run,stage,round,events=null){
   events?.push({type:'round:start',round,enemyCount:encounter.enemies.length});
 }
 
+function createRunState(stage,terrainLayout,rngState){
+  const run={stageId:stage.id,player:freshPlayer(stage.spawn),enemies:[],projectiles:[],boss:null,arenaLocked:false,
+    consumedPickupIds:[],elapsedTicks:0,deaths:0,outcome:null,deathTicks:0,round:1,roundClearTicks:null,rngState,bossSequence:'none',
+    terrainLayout};
+  if(stage.id==='mine-1'){
+    run.cartZones=[];run.hazards=[];
+    run.bossDrop={rolled:false,spawned:false,consumed:false,x:0,y:0};
+  }
+  return run;
+}
+
 export function createStageRun(stage,data={},options={}){
-  validateStage(stage);
   if(!data||typeof data!=='object'||Array.isArray(data))throw new TypeError('Invalid run data');
   if(Object.keys(data).length)return restoreStageRun(stage,data);
+  validateStage(stage);
   const initialRound=options.startRound===undefined?1:options.startRound;
   if(!Number.isInteger(initialRound)||initialRound<1||initialRound>ROUND_COUNT)throw new RangeError('Invalid starting round');
   const seed=(options.seed??Math.floor(Math.random()*4294967296))>>>0;
-  const terrain=createRandomPlatformLayout(stage,seed);
-  const run={stageId:stage.id,player:freshPlayer(stage.spawn),enemies:[],projectiles:[],boss:null,arenaLocked:false,
-    consumedPickupIds:[],elapsedTicks:0,deaths:0,outcome:null,deathTicks:0,round:1,roundClearTicks:null,rngState:terrain.rngState,bossSequence:'none',
-    terrainLayout:{mode:'random',platforms:terrain.platforms}};
+  const {layout,rngState}=createAuthoredPlatformLayout(stage,seed);
+  const run=createRunState(stage,layout,rngState);
   if(stage.id==='mine-1'){
     let state=run.rngState;
     const random=()=>{const next=nextRandom(state);state=next.state;return next.value;};
-    run.cartZones=createCartZones(stage,random);run.rngState=state;run.hazards=[];
-    run.bossDrop={rolled:false,spawned:false,consumed:false,x:0,y:0};
+    run.cartZones=createCartZones(stage,random);run.rngState=state;
   }
   startRound(run,stage,initialRound);
   return run;
@@ -124,9 +132,11 @@ export function snapshotStageRun(run){
 }
 
 export function restoreStageRun(stage,snapshot){
-  const s=structuredClone(snapshot),fresh=createStageRun(stage,{}, {seed:1});
+  validateStage(stage);
+  const s=structuredClone(snapshot);
   if(!Object.hasOwn(s,'terrainLayout'))s.terrainLayout={mode:'legacy-fixed',platforms:structuredClone(stage.solids.slice(1))};
   else validatePlatformLayout(stage,s.terrainLayout);
+  const fresh=createRunState(stage,s.terrainLayout,0);
   if(stage.id==='forest-1'&&object(s.boss)&&!Object.hasOwn(s.boss,'rootEffects')){
     s.boss.rootEffects=[];
     if(s.boss.attackKind==='root'&&Array.isArray(s.boss.hitboxes))s.boss.rootEffects=s.boss.hitboxes.filter(h=>rect(h,true)&&h.w===48&&h.h===48&&h.ticks>0&&h.ticks<=12).map(({x,y,w,h,ticks})=>({x,y,w,h,age:12-ticks,strike:s.boss.secondRootDelay>0?1:s.boss.phase===2&&s.boss.state==='recovery'?2:1}));
@@ -135,7 +145,7 @@ export function restoreStageRun(stage,snapshot){
   if(!Number.isInteger(s.round)||s.round<1||s.round>ROUND_COUNT||!(s.roundClearTicks===null||Number.isSafeInteger(s.roundClearTicks)&&s.roundClearTicks>0&&s.roundClearTicks<=ROUND_CLEAR_TICKS)||!count(s.rngState)||s.rngState>0xffffffff||typeof s.bossSequence!=='string')throw new TypeError('Invalid round snapshot');
   if(s.outcome==='clear'&&s.round!==ROUND_COUNT)throw new TypeError('Only round 8 can clear a stage');
 
-  const p=s.player,pt=snapshotStageRun(fresh).player;
+  const p=s.player,pt={...fresh.player,hitIds:[]};
   if(!keys(p,Object.keys(pt))||!sameTypes(p,pt)||!strings(p.hitIds)||!keys(p.aim,['x','y'])||!Number.isFinite(p.aim.x)||!Number.isFinite(p.aim.y)||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(p.mode)||!Number.isInteger(p.hp)||p.hp<0||p.hp>3||p.w!==16||p.h!==28)throw new TypeError('Invalid player snapshot');
   for(const k of ['invulnerableTicks','rollCooldown','rollTicks','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks'])if(!count(p[k]))throw new RangeError('Invalid player timer');
   if((p.mode==='dead')!==(p.hp===0)||p.mode==='dead'&&s.deathTicks===0)throw new TypeError('Invalid death snapshot');
@@ -157,7 +167,7 @@ export function restoreStageRun(stage,snapshot){
 
   const b=s.boss;
   if(stage.id==='mine-1'&&!['machine','worm'].includes(b?.kind))throw new TypeError('Invalid mine boss kind');
-  const bt=stage.id==='mine-1'?createMineBoss(b.kind,{x:stage.boss.x,y:stage.boss.y}):fresh.boss;
+  const bt=stage.id==='mine-1'?createMineBoss(b.kind,{x:stage.boss.x,y:stage.boss.y}):createBoss(stage.boss);
   if(!keys(b,Object.keys(bt))||!sameTypes(b,bt)||b.id!==bt.id||b.w!==bt.w||b.h!==bt.h||b.maxHp!==bt.maxHp||!Number.isInteger(b.hp)||b.hp<0||b.hp>b.maxHp||![1,2].includes(b.phase)||!['dormant','intro','transition','windup','attack','recovery','dying','dead'].includes(b.state)||!count(b.stateTicks)||!count(b.cycle)||typeof b.transitioned!=='boolean'||!Array.isArray(b.telegraphs)||!b.telegraphs.every(v=>rect(v))||!Array.isArray(b.hitboxes)||!b.hitboxes.every(v=>rect(v,true)))throw new TypeError('Invalid boss snapshot');
   if(stage.id==='forest-1'&&(!count(b.secondRootDelay)||![null,'branch','root','slam'].includes(b.attackKind)||!(b.secondRoot===null||rect(b.secondRoot))))throw new TypeError('Invalid forest boss');
   if(stage.id==='forest-1'&&(!Array.isArray(b.rootEffects)||b.rootEffects.length>2||new Set(b.rootEffects.map(e=>e?.strike)).size!==b.rootEffects.length||!b.rootEffects.every(e=>keys(e,['x','y','w','h','age','strike'])&&rect({x:e.x,y:e.y,w:e.w,h:e.h})&&e.w===48&&e.h===48&&count(e.age)&&e.age<24&&[1,2].includes(e.strike))))throw new TypeError('Invalid root effects');

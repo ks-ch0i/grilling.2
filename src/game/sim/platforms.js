@@ -6,7 +6,7 @@ export function isProfiledPlatform(platform) {
   return hasExactKeys(platform, ['x', 'w', 'topProfile', 'variant']);
 }
 
-export function validatePlatformProfile(platform) {
+export function validatePlatformProfile(platform, { minY = 248, maxY = 288 } = {}) {
   if (!isProfiledPlatform(platform) || !Number.isSafeInteger(platform.x) || !Array.isArray(platform.topProfile)) {
     throw new TypeError('Invalid platform profile');
   }
@@ -14,7 +14,7 @@ export function validatePlatformProfile(platform) {
       !Number.isSafeInteger(platform.variant) || platform.variant < 0 || platform.variant > 3) {
     throw new RangeError('Invalid platform profile dimensions');
   }
-  if (!platform.topProfile.every(y => Number.isSafeInteger(y) && y >= 248 && y <= 288)) {
+  if (![...platform.topProfile].every(y => Number.isSafeInteger(y) && y >= minY && y <= maxY)) {
     throw new RangeError('Invalid platform profile surface');
   }
   for (let i = 1; i < platform.topProfile.length; i++) {
@@ -59,8 +59,11 @@ export function platformOcclusionRects(platforms) {
 }
 
 export function followPlatformTop(actor, platforms, previousFeet = actor.y + actor.h, previousCenter = actor.x + actor.w / 2) {
-  const currentTop = platforms?.map(platform => platformTopY(platform, previousCenter)).find(y => y !== null) ?? null;
-  if (currentTop === null || Math.abs(currentTop - previousFeet) > 1e-6) return false;
+  const hasSupport = platforms?.some(platform => {
+    const top = platformTopY(platform, previousCenter);
+    return top !== null && Math.abs(top - previousFeet) <= 1e-6;
+  });
+  if (!hasSupport) return false;
   const surface = nearestPlatformSurface(platforms, actor.x + actor.w / 2, previousFeet - 4);
   if (!surface || Math.abs(surface.y - previousFeet) > 4) return false;
   actor.y = surface.y - actor.h;

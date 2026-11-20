@@ -1,13 +1,13 @@
+import {ARENA_PLATFORM_PRESETS} from '../content/arenaPlatformPresets.js';
 import {createPlayer,stepPlayer} from './player.js';
 import {nextRandom} from './mineCarts.js';
 import {isProfiledPlatform,platformTopY,validatePlatformProfile} from './platforms.js';
 
 const PLATFORM_HEIGHT=16;
 const WIDTHS=[32,48,64,80,96,112];
-const NARROW_WIDTHS=WIDTHS.slice(0,3);
-const WIDE_WIDTHS=WIDTHS.slice(3);
 const RECT_KEYS=['x','y','w','h'];
-const PROFILE_FALLBACK=[96,224,352,480].map(x=>({x,w:64,topProfile:[288,288,288,288],variant:0}));
+const PROFILE_STEP=16;
+const MIN_LAYER_GAP=48;
 const INPUT=(move,jumpPressed=false)=>({move,jumpPressed,jumpHeld:true,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290});
 const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const overlapsHorizontally=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x;
@@ -176,8 +176,59 @@ function validateProfileLayout(stage,platforms){
   return true;
 }
 
+function validateLayerGap(first,second){
+  let firstAbove;
+  for(let firstIndex=0;firstIndex<first.topProfile.length;firstIndex++){
+    const firstX=first.x+firstIndex*PROFILE_STEP;
+    for(let secondIndex=0;secondIndex<second.topProfile.length;secondIndex++){
+      const secondX=second.x+secondIndex*PROFILE_STEP;
+      if(firstX>=secondX+PROFILE_STEP||secondX>=firstX+PROFILE_STEP)continue;
+      const gap=second.topProfile[secondIndex]-first.topProfile[firstIndex];
+      if(Math.abs(gap)<MIN_LAYER_GAP)throw new RangeError('Platform layers are less than 48 pixels apart');
+      if(firstAbove!==undefined&&firstAbove!==(gap>0))throw new RangeError('Platform layers cross');
+      firstAbove=gap>0;
+    }
+  }
+}
+
+export function validateAuthoredPlatformGeometry(stage,platforms){
+  const {arena,floor}=getStageGeometry(stage);
+  if(!Array.isArray(platforms))throw new TypeError('Invalid authored platforms');
+  if(platforms.length!==3)throw new RangeError('Invalid authored platform count');
+  const clearance=startClearance(stage);
+  for(const platform of platforms){
+    validatePlatformProfile(platform,{minY:216,maxY:288});
+    if(platform.x<arena.left||platform.x+platform.w>arena.right||platform.x<floor.x||platform.x+platform.w>floor.x+floor.w||
+      platform.topProfile.some(top=>top<arena.top||top>=Math.min(arena.bottom,floor.y)))throw new RangeError('Platform is outside the arena');
+    if(overlapsHorizontally(platform,clearance))throw new RangeError('Platform blocks the start corridor');
+  }
+  for(let i=0;i<platforms.length;i++)for(let j=i+1;j<platforms.length;j++){
+    if(overlapsHorizontally(platforms[i],platforms[j]))validateLayerGap(platforms[i],platforms[j]);
+  }
+  if(!reachableFromFloor(stage,platforms))throw new RangeError('A platform cannot be reached from the floor');
+  return true;
+}
+
+function validateAuthoredLayout(stage,layout){
+  if(!hasExactKeys(layout,['mode','presetId','platforms'])||typeof layout.presetId!=='string'||!Array.isArray(layout.platforms))throw new TypeError('Invalid authored terrain layout');
+  const preset=ARENA_PLATFORM_PRESETS[stage.id].find(option=>option.id===layout.presetId);
+  if(!preset)throw new RangeError('Unknown authored terrain preset');
+  if(layout.platforms.length!==preset.platforms.length)throw new RangeError('Invalid authored platform count');
+  for(const [index,platform] of layout.platforms.entries()){
+    if(!isProfiledPlatform(platform)||!Array.isArray(platform.topProfile)||
+      ![platform.x,platform.w,platform.variant,...platform.topProfile].every(value=>typeof value==='number'))throw new TypeError('Invalid authored platform profile');
+    const expected=preset.platforms[index];
+    if(platform.x!==expected.x||platform.w!==expected.w||platform.variant!==expected.variant||
+      platform.topProfile.length!==expected.topProfile.length||expected.topProfile.some((top,section)=>platform.topProfile[section]!==top)){
+      throw new RangeError('Authored platform does not match its preset');
+    }
+  }
+  return true;
+}
+
 export function validatePlatformLayout(stage,layout){
   getStageGeometry(stage);
+  if(layout?.mode==='authored')return validateAuthoredLayout(stage,layout);
   if(!hasExactKeys(layout,['mode','platforms'])||!['random','legacy-fixed'].includes(layout.mode)||!Array.isArray(layout.platforms))throw new TypeError('Invalid terrain layout');
   const {mode,platforms}=layout;
   if(mode==='legacy-fixed')return validateRectangleLayout(stage,mode,platforms);
@@ -189,65 +240,13 @@ export function validatePlatformLayout(stage,layout){
   throw new TypeError('Invalid platform layout records');
 }
 
-function draw(state){
-  const result=nextRandom(state);
-  return {state:result.state,value:result.value};
-}
-
-function createTopProfile(width,state){
-  let nextState=state,choice=draw(nextState);nextState=choice.state;
-  const first=248+Math.floor(choice.value*41),profile=[first];
-  const low=Math.max(248,first-8),high=Math.min(288,first+8);
-  for(let i=1;i<width/16;i++){
-    choice=draw(nextState);nextState=choice.state;
-    const min=Math.max(low,profile[i-1]-4),max=Math.min(high,profile[i-1]+4);
-    profile.push(min+Math.floor(choice.value*(max-min+1)));
-  }
-  return {topProfile:profile,rngState:nextState};
-}
-
-function createCandidate(stage,state,count){
-  let nextState=state;
-  const platforms=[],{arena}=getStageGeometry(stage),clearance=startClearance(stage);
-  for(let i=0;i<count;i++){
-    let choice=draw(nextState);nextState=choice.state;
-    const widthClass=choice.value<.8?NARROW_WIDTHS:WIDE_WIDTHS;
-    choice=draw(nextState);nextState=choice.state;
-    const width=widthClass[Math.floor(choice.value*widthClass.length)];
-    const minX=Math.ceil(arena.left),maxX=Math.floor(arena.right-width);
-    if(maxX<minX)return {layout:null,rngState:nextState};
-    let x=null;
-    for(let attempt=0;attempt<64;attempt++){
-      choice=draw(nextState);nextState=choice.state;
-      const candidate=minX+Math.floor(choice.value*(maxX-minX+1));
-      if(overlapsHorizontally({x:candidate,w:width},clearance)||platforms.some(existing=>overlapsHorizontally({x:candidate,w:width},existing)))continue;
-      x=candidate;break;
-    }
-    if(x===null)return {layout:null,rngState:nextState};
-    const profile=createTopProfile(width,nextState);nextState=profile.rngState;
-    choice=draw(nextState);nextState=choice.state;
-    platforms.push({x,w:width,topProfile:profile.topProfile,variant:Math.floor(choice.value*4)});
-  }
-  return {layout:{mode:'random',platforms},rngState:nextState};
-}
-
-export function createRandomPlatformLayout(stage,rngState){
+export function createAuthoredPlatformLayout(stage,rngState){
   getStageGeometry(stage);
   if(!Number.isInteger(rngState)||rngState<0||rngState>0xffffffff)throw new RangeError('Invalid terrain RNG state');
-  const countChoice=draw(rngState),count=2+Math.floor(countChoice.value*3);
-  let state=countChoice.state;
-  for(let attempt=0;attempt<128;attempt++){
-    const candidate=createCandidate(stage,state,count);
-    state=candidate.rngState;
-    if(!candidate.layout)continue;
-    try{
-      validatePlatformLayout(stage,candidate.layout);
-      return {platforms:candidate.layout.platforms.map(platform=>({...platform,topProfile:[...platform.topProfile]})),rngState:state};
-    }catch(error){
-      if(!(error instanceof RangeError))throw error;
-    }
-  }
-  const fallback=PROFILE_FALLBACK.map(platform=>({...platform,topProfile:[...platform.topProfile]}));
-  validatePlatformLayout(stage,{mode:'random',platforms:fallback});
-  return {platforms:fallback,rngState:state};
+  const presets=ARENA_PLATFORM_PRESETS[stage.id],roll=nextRandom(rngState);
+  const preset=presets[Math.floor(roll.value*presets.length)];
+  return {
+    layout:{mode:'authored',presetId:preset.id,platforms:structuredClone(preset.platforms)},
+    rngState:roll.state
+  };
 }

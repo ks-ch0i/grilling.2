@@ -1,5 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createBoss,stepBoss,damageBoss,resetBoss} from '../src/game/sim/boss.js';
+import {FOREST_STAGE} from '../src/game/content/forestStage.js';
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
+import {platformTopY} from '../src/game/sim/platforms.js';
 const spawn={id:'forest-guardian',x:11040,y:208},arena={left:10496,right:11472,top:0,bottom:304},player={x:10900,y:276,w:16,h:28};
 test('boss intro, telegraphs and single phase transition follow fixed ticks',()=>{
  let b=createBoss(spawn);b.state='intro';b.stateTicks=90;
@@ -72,6 +75,29 @@ test('phase-two additional root locks its new surface at warning start and reuse
  assert.equal(boss.secondRootDelay,0);
  assert.ok(boss.hitboxes.some(({ticks,...box})=>ticks===12&&JSON.stringify(box)===JSON.stringify(locked)));
  assert.ok(boss.rootEffects.some(({age,strike,...box})=>age===0&&strike===2&&JSON.stringify(box)===JSON.stringify(locked)));
+});
+test('phase-two roots lock and erupt on the active layer of the authored Forest terraces',()=>{
+ const stage=FOREST_STAGE,surfaces=ARENA_PLATFORM_PRESETS[stage.id][1].platforms,[lower,upper]=surfaces;
+ const targetX=248;
+ const lowerY=platformTopY(lower,targetX),upperY=platformTopY(upper,targetX),floorY=stage.solids[0].y;
+ const onLayer=y=>({x:targetX-8,y:y-28,w:16,h:28});
+ for(const [firstY,secondY] of [[lowerY,upperY],[upperY,lowerY],[floorY,lowerY]]){
+  let boss=createBoss(stage.boss);Object.assign(boss,{phase:2,transitioned:true,state:'recovery',stateTicks:1,cycle:0});
+  boss=stepBoss(boss,onLayer(firstY),stage.arena,surfaces).boss;
+  const first={...boss.telegraphs[0]};
+  assert.deepEqual(first,{x:targetX-24,y:firstY-48,w:48,h:48});
+  for(let tick=0;tick<53;tick++)boss=stepBoss(boss,onLayer(secondY),stage.arena,surfaces).boss;
+  let result=stepBoss(boss,onLayer(secondY),stage.arena,surfaces);boss=result.boss;
+  assert.deepEqual(result.events.find(event=>event.type==='boss:root-erupt'),{type:'boss:root-erupt',strike:1,...first});
+  assert.deepEqual(boss.hitboxes[0],{...first,ticks:12});
+  const second={...boss.telegraphs[0]};
+  assert.deepEqual(second,{x:targetX-24,y:secondY-48,w:48,h:48});
+  for(let tick=0;tick<30;tick++){
+   result=stepBoss(boss,onLayer(floorY),stage.arena,surfaces);boss=result.boss;
+  }
+  assert.deepEqual(result.events.find(event=>event.type==='boss:root-erupt'),{type:'boss:root-erupt',strike:2,...second});
+  assert.deepEqual(boss.hitboxes[0],{...second,ticks:12});
+ }
 });
 test('phase change and death cancel pending roots and their independent effects',()=>{
  let b=createBoss(spawn);Object.assign(b,{state:'recovery',attackKind:'root',hp:10,secondRootDelay:20,secondRoot:{x:10900,y:256,w:48,h:48},rootEffects:[{x:10900,y:256,w:48,h:48,age:6,strike:1}]});

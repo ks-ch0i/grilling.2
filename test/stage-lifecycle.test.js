@@ -5,6 +5,7 @@ import {MINE_STAGE} from '../src/game/content/mineStage.js';
 import {createStageRun,stepStage,restoreStageRun,snapshotStageRun,stageTerrain} from '../src/game/sim/stage.js';
 import {createEnemy} from '../src/game/sim/enemies.js';
 import {roundEnemyCount,isBossRound,ROUND_COUNT,ROUND_CLEAR_TICKS} from '../src/game/sim/rounds.js';
+import {createAuthoredPlatformLayout} from '../src/game/sim/terrain.js';
 
 const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 const tick=(run,stage,n=1)=>{let events=[];for(let i=0;i<n;i++){const result=stepStage(run,input,stage);run=result.run;events.push(...result.events);}return {run,events};};
@@ -48,9 +49,9 @@ test('fresh runs may start at a selected round while snapshot restores keep thei
 });
 
 test('a fresh run retains its exact platform layout through all eight rounds',()=>{
-  for(const stage of [FOREST_STAGE,MINE_STAGE]){
-    const expected=createStageRun(stage,{}, {seed:91}).terrainLayout;
-    for(let round=1;round<=ROUND_COUNT;round++)assert.deepEqual(advanceTo(stage,round,91).terrainLayout,expected);
+  for(const stage of [FOREST_STAGE,MINE_STAGE])for(const seed of [0,251,1112]){
+    const expected=createAuthoredPlatformLayout(stage,seed).layout;
+    for(let round=1;round<=ROUND_COUNT;round++)assert.deepEqual(advanceTo(stage,round,seed).terrainLayout,expected);
   }
 });
 
@@ -97,12 +98,11 @@ test('Guardian keeps phase 1 in rounds 5 and 7, then transitions normally in rou
 
 test('death restarts round 1, adds one death, and keeps the stage elapsed time',()=>{
   let run=advanceTo(FOREST_STAGE,6,27);run.elapsedTicks=500;run.player.y=FOREST_STAGE.pitDeathY;
-  const previousTerrain=structuredClone(run.terrainLayout);
   let result=tick(run,FOREST_STAGE);assert.equal(result.run.player.mode,'dead');assert.equal(result.run.deaths,1);assert.equal(result.run.elapsedTicks,501);
   const saved=JSON.parse(JSON.stringify(snapshotStageRun(result.run))),restored=restoreStageRun(FOREST_STAGE,saved);
   assert.equal(restored.round,6);assert.equal(restored.deaths,1);assert.equal(restored.elapsedTicks,501);
   result=tick(restored,FOREST_STAGE,60);assert.equal(result.run.round,1);assert.equal(result.run.player.x,FOREST_STAGE.spawn.x);assert.equal(result.run.player.hp,3);assert.equal(result.run.enemies.length,1);assert.equal(result.run.deaths,1);assert.equal(result.run.elapsedTicks,501);assert.ok(result.events.some(event=>event.type==='round:start'&&event.respawn));
-  assert.notDeepEqual(result.run.terrainLayout,previousTerrain);
+  assert.deepEqual(result.run.terrainLayout,createAuthoredPlatformLayout(FOREST_STAGE,saved.rngState).layout);
 });
 
 test('JSON snapshot restore preserves the encounter, round timer, and future random sequence',()=>{
@@ -110,6 +110,7 @@ test('JSON snapshot restore preserves the encounter, round timer, and future ran
     let run=advanceTo(stage,7,42);run.player.hp=2;
     const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(run))),restored=restoreStageRun(stage,snapshot);
     assert.ok(restored.player.hitIds instanceof Set);assert.ok(restored.enemies.every(enemy=>enemy.hitIds instanceof Set));
+    assert.deepEqual(snapshotStageRun(restored),snapshot);
     assert.deepEqual(tick(restored,stage),tick(run,stage));
     const invalid=structuredClone(snapshot);invalid.rngState=-1;assert.throws(()=>restoreStageRun(stage,invalid),TypeError);
     const invalidKinds=structuredClone(snapshot);invalidKinds.enemies[0].kind=invalidKinds.enemies[1].kind;assert.throws(()=>restoreStageRun(stage,invalidKinds),TypeError);
@@ -120,10 +121,12 @@ test('JSON snapshot restore preserves the encounter, round timer, and future ran
 
 test('fresh runs save their deterministic terrain and legacy snapshots keep fixed terrain',()=>{
   for(const stage of [FOREST_STAGE,MINE_STAGE]){
-    const first=createStageRun(stage,{}, {seed:81});
-    const repeat=createStageRun(stage,{}, {seed:81});
+    const first=createStageRun(stage,{}, {seed:251});
+    const repeat=createStageRun(stage,{}, {seed:251});
     assert.deepEqual(first.terrainLayout,repeat.terrainLayout);
-    assert.ok(first.terrainLayout.platforms.length>=2&&first.terrainLayout.platforms.length<=4);
+    assert.equal(first.terrainLayout.mode,'authored');
+    assert.equal(first.terrainLayout.platforms.length,3);
+    assert.ok(first.terrainLayout.platforms.some(platform=>platform.topProfile[0]<248));
     assert.ok(first.terrainLayout.platforms.every(platform=>Array.isArray(platform.topProfile)&&Number.isInteger(platform.variant)));
     const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(first)));
     const restored=restoreStageRun(stage,snapshot);
