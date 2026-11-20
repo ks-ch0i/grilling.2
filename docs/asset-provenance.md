@@ -108,3 +108,16 @@
 | `public/assets/source/mine-platform-modules-original.png` | 투명 배경의 픽셀 아트. 층진 어두운 바위, 드문 호박색·청록색 광석, 위쪽의 연속된 평평한 바위 표면, 4개 광산 변형, 왼쪽 캡·반복 중앙·오른쪽 캡 | `public/assets/world/mine/platform-modules.png` |
 
 생성 시트에서 각 모듈을 분리하고 16×32 셀에 최근접 이웃으로 맞춰 투명 원본을 구성했다. `scripts/pack-art.mjs`에 두 원본을 3×4 격자로 등록했으며 `node scripts/pack-art.mjs`로 런타임 이미지를 다시 생성한다. 런타임 manifest는 16×32 프레임 12개를 선언하고 `test/assets.test.js`가 원본·런타임의 48×128 크기, 투명 픽셀, 각 프레임의 비어 있지 않은 내용과 1픽셀 테두리 여백을 검사한다.
+
+## 수작업 아레나 발판 — 2026-11-20
+
+숲과 광산의 기존 배경을 색 기준으로 삼아, 정수 픽셀의 다각형·선·색 띠를 조합하고 Sharp로 투명 RGBA PNG에 기록했다. 외부 이미지는 사용하지 않았다. 숲은 뿌리·이끼·나이테·석조 유적, 광산은 끊긴 철로·목재 작업대·광맥·철제 선반을 그렸다. 발판마다 몸체 깊이와 밑부분 실루엣을 따로 잡았다.
+
+| 편집 원본 | 런타임 |
+|---|---|
+| `public/assets/source/forest-arena-platforms-original.png` | `public/assets/world/forest/arena-platforms.png` |
+| `public/assets/source/mine-arena-platforms-original.png` | `public/assets/world/mine/arena-platforms.png` |
+
+원본은 348×108 PNG, 셀은 116×36 픽셀의 3×3 격자다. `arenaPlatformPresets.js` 배열 순서가 행과 열을 정한다. 각 발판 윗면은 왼쪽 1픽셀 여백 뒤에서 시작하며, 해당 발판의 가장 높은 면에 1픽셀 위 여백을 둔다. 열마다 첫 불투명 픽셀은 게임이 착지를 처리하는 높이와 일치한다. 이 기준 때문에 기존처럼 셀을 잘라 중앙에 다시 놓거나 확대하지 않는다.
+
+`node scripts/pack-art.mjs --arena-platforms-only`로 두 시트만 다시 만들고, `node scripts/pack-art.mjs`로 기존 시트까지 함께 재생성한다. 이전 저장에서 쓰는 모듈과 사각형 텍스처도 배포한다.

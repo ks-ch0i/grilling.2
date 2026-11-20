@@ -2,6 +2,7 @@
 import sharp from 'sharp';
 import {mkdir} from 'node:fs/promises';
 import path from 'node:path';
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
 const specs=[
   ['hero-original.png','characters/hero/actions.png',4,4,32,32],
   ['hero-dive-original.png','characters/hero/dive.png',2,2,32,32],
@@ -87,15 +88,51 @@ async function makeAtlas([source,dest,cols,rows,cellW,cellH]){
   await sharp({create:{width:cols*cellW,height:rows*cellH,channels:4,background:'#00000000'}}).composite(composite).png().toFile(output);
   console.log(`${dest}: ${bounds.length} frames`);
 }
-for(const spec of specs)await makeAtlas(spec);
-for(const spec of fixedSpecs)await makeFixedGrid(spec);
-await mkdir(path.join(root,'world/forest'),{recursive:true});
-await sharp(path.join(root,'source/forest-original.png')).extract({left:0,top:0,width:1672,height:680}).resize(640,304,{kernel:'nearest'}).png().toFile(path.join(root,'world/forest/backdrop.png'));
-const objects=path.join(root,'world/forest/objects.png');
-for(const [name,h] of [['ground.png',56],['platform.png',16]]){
-  const first=await sharp(objects).extract({left:0,top:0,width:64,height:64}).png().toBuffer();
-  await sharp(first).trim({background:'#00000000'}).resize(64,h,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/forest',name));
+async function packAlignedArenaPlatformSheet(stageId,sourcePath,outputPath){
+  const frameWidth=116,frameHeight=36,width=frameWidth*3,height=frameHeight*3;
+  const input=sharp(sourcePath,{failOn:'error'});
+  const meta=await input.metadata();
+  if(meta.format!=='png'||meta.width!==width||meta.height!==height||!meta.hasAlpha||meta.depth!=='uchar'){
+    throw new Error(`${stageId}: ${sourcePath} must be a ${width}x${height} 8-bit PNG with alpha`);
+  }
+  const pixels=await input.toColourspace('srgb').ensureAlpha().raw().toBuffer();
+  for(const [row,preset] of ARENA_PLATFORM_PRESETS[stageId].entries()){
+    for(const [col,platform] of preset.platforms.entries()){
+      const top=Math.min(...platform.topProfile),bottom=Math.max(...platform.topProfile);
+      const isUpper=preset.platforms.some(other=>platform.x<other.x+other.w&&other.x<platform.x+platform.w&&
+        bottom<Math.min(...other.topProfile));
+      const depth=isUpper?20:24;
+      for(let x=0;x<frameWidth;x++){
+        const contact=x>0&&x<=platform.w?platform.topProfile[Math.floor((x-1)/16)]-top+1:null;
+        for(let y=0;y<frameHeight;y++){
+          const alpha=pixels[((row*frameHeight+y)*width+col*frameWidth+x)*4+3];
+          const outside=contact===null||y===0||y===frameHeight-1||y<contact||y>=contact+depth;
+          const tag=`${stageId} ${preset.id} platform ${col} pixel (${x},${y})`;
+          if(alpha!==0&&alpha!==255)throw new Error(`${tag}: alpha must be 0 or 255`);
+          if(outside&&alpha!==0)throw new Error(`${tag}: pixels outside the platform surface or depth`);
+          if(y===contact&&alpha!==255)throw new Error(`${tag}: missing opaque surface pixel`);
+        }
+      }
+    }
+  }
+  await mkdir(path.dirname(outputPath),{recursive:true});
+  await sharp(pixels,{raw:{width,height,channels:4}}).png().toFile(outputPath);
+  console.log(`${outputPath}: 9 aligned arena platforms`);
 }
-await mkdir(path.join(root,'world/mine'),{recursive:true});
-await sharp(path.join(root,'source/mine-backdrop-original.png')).resize(640,304,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/mine/backdrop.png'));
-for(const [name,h] of [['ground.png',56],['platform.png',16]])await sharp(path.join(root,'source/mine-terrain-original.png')).resize(64,h,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/mine',name));
+
+if(!process.argv.includes('--arena-platforms-only')){
+  for(const spec of specs)await makeAtlas(spec);
+  for(const spec of fixedSpecs)await makeFixedGrid(spec);
+  await mkdir(path.join(root,'world/forest'),{recursive:true});
+  await sharp(path.join(root,'source/forest-original.png')).extract({left:0,top:0,width:1672,height:680}).resize(640,304,{kernel:'nearest'}).png().toFile(path.join(root,'world/forest/backdrop.png'));
+  const objects=path.join(root,'world/forest/objects.png');
+  for(const [name,h] of [['ground.png',56],['platform.png',16]]){
+    const first=await sharp(objects).extract({left:0,top:0,width:64,height:64}).png().toBuffer();
+    await sharp(first).trim({background:'#00000000'}).resize(64,h,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/forest',name));
+  }
+  await mkdir(path.join(root,'world/mine'),{recursive:true});
+  await sharp(path.join(root,'source/mine-backdrop-original.png')).resize(640,304,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/mine/backdrop.png'));
+  for(const [name,h] of [['ground.png',56],['platform.png',16]])await sharp(path.join(root,'source/mine-terrain-original.png')).resize(64,h,{fit:'fill',kernel:'nearest'}).png().toFile(path.join(root,'world/mine',name));
+}
+for(const stage of ['forest','mine'])await packAlignedArenaPlatformSheet(`${stage}-1`,
+  path.join(root,'source',`${stage}-arena-platforms-original.png`),path.join(root,'world',stage,'arena-platforms.png'));

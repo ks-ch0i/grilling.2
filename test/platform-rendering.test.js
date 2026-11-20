@@ -1,6 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../src/game/render/platforms.js';
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
+import {authoredPlatformPlacements,platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../src/game/render/platforms.js';
+
+test('authored terrain draws one aligned whole sprite per platform in all six presets',()=>{
+ for(const [stageId,presets] of Object.entries(ARENA_PLATFORM_PRESETS)){
+  const texture=`${stageId==='forest-1'?'forest':'mine'}-arena-platforms`;
+  for(const [presetIndex,preset] of presets.entries()){
+   const layout={mode:'authored',presetId:preset.id,platforms:preset.platforms};
+   const placements=authoredPlatformPlacements(stageId,layout);
+   assert.deepEqual(placements,preset.platforms.map((platform,index)=>({
+    x:platform.x-1,y:Math.min(...platform.topProfile)-1,texture,frame:presetIndex*3+index
+   })));
+  }
+ }
+ const preset=ARENA_PLATFORM_PRESETS['forest-1'][0];
+ const layout={mode:'authored',presetId:preset.id,platforms:preset.platforms};
+ assert.throws(()=>authoredPlatformPlacements('mine-1',layout),TypeError);
+ assert.throws(()=>authoredPlatformPlacements('constructor',layout),TypeError);
+ assert.throws(()=>authoredPlatformPlacements('forest-1',{...layout,mode:'random'}),TypeError);
+});
 
 test('profiled platforms render one module at each saved 16px surface sample',()=>{
  for(const w of [32,48,112]){
@@ -45,4 +64,7 @@ test('terrain cache signature includes layout mode, full profiles, and variants'
  assert.notEqual(terrainLayoutSignature({...layout,platforms:[{...platform,x:96}]},floor),signature);
  assert.notEqual(terrainLayoutSignature({...layout,platforms:[{...platform,topProfile:[256,256,256]}]},floor),signature);
  assert.notEqual(terrainLayoutSignature({...layout,platforms:[{...platform,variant:2}]},floor),signature);
+ const authored={...layout,mode:'authored',presetId:'forest-creek-v1'};
+ assert.equal(terrainLayoutSignature(authored,floor),terrainLayoutSignature(structuredClone(authored),floor));
+ assert.notEqual(terrainLayoutSignature(authored,floor),terrainLayoutSignature({...authored,presetId:'forest-terrace-v1'},floor));
 });

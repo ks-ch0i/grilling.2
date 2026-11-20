@@ -17,7 +17,7 @@ import {EVENT_SFX} from '../audio/eventSounds.js';
 import { mountMenu } from '../ui/menu.js';
 import {initializeEasyRun,isEasyRoundUnlocked,handleEasyDeath as handleEasyDeathFlow,handleEasyRoundClear as handleEasyRoundClearFlow,handleEasyStageClear as handleEasyStageClearFlow,showEasyChoice as showEasyChoiceFlow,showEasyRoundSelector as showEasyRoundSelectorFlow,startEasyRound as startEasyRoundFlow,leaveEasySession as leaveEasySessionFlow} from './easySession.js';
 import {createPracticeRun,isRoundSelectorEnabled} from '../dev/roundSelector.js';
-import {platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../render/platforms.js';
+import {authoredPlatformPlacements,platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../render/platforms.js';
 const STEP=1000/60;
 const noopCoordinator=()=>({tick(){},flush(){return {ok:true};},dispose(){},isFinished:()=>false});
 export class StageScene extends Phaser.Scene {
@@ -165,6 +165,13 @@ export class StageScene extends Phaser.Scene {
     this.terrainBase.fillStyle(0x392a29).fillRect(floor.x,floor.y,floor.w,floor.h);
     this.terrainBase.fillStyle(0x9aa36d).fillRect(floor.x,floor.y,floor.w,2);
     this.terrainViews=[this.add.tileSprite(floor.x,floor.y,floor.w,floor.h,mine?'mine-ground':'ground').setOrigin(0,0).setDepth(-5)];
+    if(layout.mode==='authored'){
+      for(const {x,y,texture,frame} of authoredPlatformPlacements(this.stage.id,layout)){
+        this.terrainViews.push(this.add.image(x,y,texture,frame).setOrigin(0,0).setDepth(-5));
+      }
+      this.terrainSignature=signature;
+      return;
+    }
     for(const platform of layout.platforms){
       if(Array.isArray(platform.topProfile)){
         const texture=mine?'mine-platform-modules':'forest-platform-modules';

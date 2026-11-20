@@ -1,5 +1,20 @@
+import {ARENA_PLATFORM_PRESETS} from '../content/arenaPlatformPresets.js';
+
 const FRAME_WIDTH=16;
 const VARIANT_COUNT=4;
+const AUTHORED_TEXTURES={'forest-1':'forest-arena-platforms','mine-1':'mine-arena-platforms'};
+
+export function authoredPlatformPlacements(stageId,layout){
+  const presets=Object.hasOwn(ARENA_PLATFORM_PRESETS,stageId)?ARENA_PLATFORM_PRESETS[stageId]:null;
+  const presetIndex=presets?.findIndex(preset=>preset.id===layout?.presetId)??-1;
+  if(layout?.mode!=='authored'||presetIndex<0)throw new TypeError('Unknown authored terrain preset');
+  return layout.platforms.map((platform,platformIndex)=>({
+    x:platform.x-1,
+    y:Math.min(...platform.topProfile)-1,
+    texture:AUTHORED_TEXTURES[stageId],
+    frame:presetIndex*3+platformIndex
+  }));
+}
 
 export function platformModulePlacements(platform){
   if(platform&&platform.topProfile===undefined){
@@ -21,7 +36,7 @@ export function platformModulePlacements(platform){
 }
 
 export function terrainLayoutSignature(layout,floor){
-  return JSON.stringify({mode:layout.mode,floor:[floor.x,floor.y,floor.w,floor.h],platforms:layout.platforms.map(platform=>
+  return JSON.stringify({mode:layout.mode,...(layout.mode==='authored'?{presetId:layout.presetId}:{}),floor:[floor.x,floor.y,floor.w,floor.h],platforms:layout.platforms.map(platform=>
     Array.isArray(platform.topProfile)?[platform.x,platform.w,platform.topProfile,platform.variant]:[platform.x,platform.y,platform.w,platform.h])});
 }
 

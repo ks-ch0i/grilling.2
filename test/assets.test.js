@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import sharp from 'sharp';
 import {ASSETS,validateAssets} from '../src/game/assets/manifest.js';
+import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
 async function inspect(bytes,asset){
  const {data,info}=await sharp(bytes,{failOn:'error'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  assert.equal(info.width%asset.frameWidth,0);assert.equal(info.height%asset.frameHeight,0);assert.equal(info.width*info.height/(asset.frameWidth*asset.frameHeight),asset.count);
@@ -19,6 +20,45 @@ test('themed platform module sheets register all 12 16x32 frames',async()=>{
   const info=await sharp(await readFile(`public${url}`)).metadata();assert.equal(info.width,48);assert.equal(info.height,128);
   const sourceName=key==='forest-platform-modules'?'forest-platform-modules-original.png':'mine-platform-modules-original.png';
   const sourceInfo=await sharp(await readFile(`public/assets/source/${sourceName}`)).metadata();assert.equal(sourceInfo.width,48);assert.equal(sourceInfo.height,128);
+ }
+});
+test('authored platform sheets preserve every surface pixel and contain nine distinct frames per stage',async()=>{
+ for(const stageName of ['forest','mine']){
+  const asset=ASSETS.find(item=>item.key===`${stageName}-arena-platforms`);
+  assert.ok(asset);
+  assert.equal(asset.url,`/assets/world/${stageName}/arena-platforms.png`);
+  assert.deepEqual([asset.frameWidth,asset.frameHeight,asset.count],[116,36,9]);
+  const decode=async filepath=>{
+   const {data,info}=await sharp(filepath).raw().toBuffer({resolveWithObject:true});
+   assert.deepEqual([info.width,info.height,info.channels],[348,108,4]);
+   return data;
+  };
+  const source=await decode(`public/assets/source/${stageName}-arena-platforms-original.png`);
+  const runtime=await decode(`public${asset.url}`);
+  assert.deepEqual(runtime,source);
+  const frames=new Set();
+  for(const [row,preset] of ARENA_PLATFORM_PRESETS[`${stageName}-1`].entries()){
+   for(const [col,platform] of preset.platforms.entries()){
+    const pixels=[];
+    const firstRow=Math.min(...platform.topProfile);
+    const maxDepth=row===1&&col===1?20:24;
+    for(let x=0;x<asset.frameWidth;x++){
+     let firstOpaque=-1,lastOpaque=-1;
+     for(let y=0;y<asset.frameHeight;y++){
+      const offset=((row*asset.frameHeight+y)*348+col*asset.frameWidth+x)*4;
+      const alpha=runtime[offset+3];
+      assert.ok(alpha===0||alpha===255,`${preset.id}/${col} (${x},${y})`);
+      pixels.push(runtime.subarray(offset,offset+4));
+      if(alpha===255){if(firstOpaque===-1)firstOpaque=y;lastOpaque=y;}
+     }
+     const expected= x>0&&x<=platform.w?1+platform.topProfile[Math.floor((x-1)/16)]-firstRow:-1;
+     assert.equal(firstOpaque,expected,`${preset.id}/${col} column ${x}`);
+     assert.ok(lastOpaque<asset.frameHeight-1&&lastOpaque<firstOpaque+maxDepth,`${preset.id}/${col} column ${x} depth`);
+    }
+    frames.add(Buffer.concat(pixels).toString('base64'));
+   }
+  }
+  assert.equal(frames.size,9);
  }
 });
 test('invalid real image fixture and missing runtime textures are rejected',async()=>{

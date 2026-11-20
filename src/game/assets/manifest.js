@@ -4,8 +4,10 @@ const entries=[
  ['objects','/assets/world/forest/objects.png',64,64,8],['effects','/assets/effects/effects.png',48,48,8],['sword','/assets/characters/hero/sword.png',32,12,1],
  ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1],
  ['forest-platform-modules','/assets/world/forest/platform-modules.png',16,32,12],
+ ['forest-arena-platforms','/assets/world/forest/arena-platforms.png',116,36,9],
  ['mine-backdrop','/assets/world/mine/backdrop.png',640,304,1],['mine-ground','/assets/world/mine/ground.png',64,56,1],['mine-platform','/assets/world/mine/platform.png',64,16,1],
  ['mine-platform-modules','/assets/world/mine/platform-modules.png',16,32,12],
+ ['mine-arena-platforms','/assets/world/mine/arena-platforms.png',116,36,9],
  ['golem','/assets/characters/golem/poses.png',48,48,16],['insect','/assets/characters/insect/poses.png',40,40,16],['bat','/assets/characters/bat/poses.png',40,40,16],
  ['machine','/assets/characters/machine/poses.png',112,112,24],['worm','/assets/characters/worm/poses.png',128,112,24],['mine-cart','/assets/world/mine/cart.png',48,32,1],['mine-mineral','/assets/world/mine/mineral.png',16,16,1],
  ['boss-forest-fx','/assets/effects/boss/forest.png',128,128,16],['boss-machine-fx','/assets/effects/boss/machine.png',128,128,16],['boss-worm-fx','/assets/effects/boss/worm.png',128,128,16],['worm-entrance-fx','/assets/effects/boss/worm-entrance.png',256,192,8]
