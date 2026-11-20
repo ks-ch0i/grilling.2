@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import {getAppStore} from '../storage/appStore.js';
-import {mountMenu,mountStorageNotice,createNewRun,menuState,formatTicks} from '../ui/menu.js';
+import {mountMenu,mountStorageNotice,createNewRun,menuState} from '../ui/menu.js';
 import {preloadAssets,validateAssets} from '../assets/manifest.js';
 import {getAudioManager} from '../audio/AudioManager.js';
 import {isRoundSelectorEnabled,ROUND_TARGETS} from '../dev/roundSelector.js';
 import {mountEasyRoundSelector} from '../ui/easyRoundSelector.js';
+import {mountRecordsPopup} from '../ui/recordsPopup.js';
 export class TitleScene extends Phaser.Scene {
   constructor(){super('title');}
   preload(){this.assetErrors=[];this.onAssetError=file=>this.assetErrors.push(file.key);this.load.on('loaderror',this.onAssetError);preloadAssets(this.load,this.textures);}
@@ -40,18 +41,8 @@ export class TitleScene extends Phaser.Scene {
     this.startAudio(run.stageId);this.scene.start('stage',{mode:'hard',run});
   }
   showRecords(){
-    this.menu?.remove();this.menu=mountMenu('기록','',{variant:'title',layout:'submenu'});const save=this.store.getSave();
-    const formatRecord=value=>value?`${formatTicks(value.elapsedTicks)} / 사망 ${value.deaths}회`:'없음';
-    for(const [stageId,label] of [['forest-1','숲'],['mine-1','광산']]){
-      const hard=save.records[stageId];this.menu.text(`하드 · ${label}`);
-      this.menu.text(`최고: ${formatRecord(hard.best)}`);this.menu.text(`최근: ${formatRecord(hard.recent)}`);
-      this.menu.text(`이지 · ${label}`);
-      for(let round=1;round<=8;round++){
-        const easy=save.easy.roundRecords[stageId][String(round)];
-        this.menu.text(`${round}라운드 최고: ${formatRecord(easy.best)}`);this.menu.text(`${round}라운드 최근: ${formatRecord(easy.recent)}`);
-      }
-    }
-    this.menu.button('뒤로',()=>this.showMain());this.menu.focus();
+    this.menu?.remove();
+    this.menu=mountRecordsPopup({save:this.store.getSave(),onBack:()=>this.showMain()});
   }
   openSettings(){this.menu.hide();this.scene.launch('settings',{onClose:()=>{this.menu.show();}});}
 }

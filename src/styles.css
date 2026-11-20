@@ -286,3 +286,77 @@ canvas { display: block; image-rendering: pixelated; }
   margin-left: auto;
   border-color: var(--challenge-line);
 }
+
+.challenge-records .challenge-tabs + .challenge-tabs { margin-top: -4px; }
+.challenge-record-content { margin-top: 14px; }
+.challenge-record-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: left;
+}
+.challenge-record-table th,
+.challenge-record-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--challenge-line);
+  overflow-wrap: anywhere;
+}
+.challenge-record-table th:first-child { width: 24%; }
+.challenge-record-table thead {
+  color: var(--challenge-muted);
+  font-size: 12px;
+}
+.challenge-record-table tbody tr:last-child > * { border-bottom: 0; }
+.challenge-record-round {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.challenge-record-boss {
+  display: inline-block;
+  margin-left: 5px;
+  color: #edbb91;
+  font-size: 10px;
+}
+.challenge-record-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  overflow-wrap: anywhere;
+}
+.challenge-record-time {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.challenge-record-best .challenge-record-time { color: var(--challenge-accent); }
+.challenge-record-deaths,
+.challenge-record-empty {
+  color: var(--challenge-muted);
+  font-size: 12px;
+}
+.challenge-record-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.challenge-record-card {
+  min-width: 0;
+  min-height: 90px;
+  padding: 12px;
+  border: 1px solid var(--challenge-line);
+  border-radius: 8px;
+  background: var(--challenge-surface);
+}
+.challenge-record-card h3 {
+  margin: 0 0 6px;
+  color: var(--challenge-muted);
+  font-size: 13px;
+}
+.challenge-record-card .challenge-record-value { display: grid; }
+.challenge-record-card .challenge-record-time { font-size: clamp(20px, 5vw, 26px); }
+@media (max-width: 420px) {
+  .challenge-record-table th,
+  .challenge-record-table td { padding: 5px; }
+  .challenge-record-table .challenge-record-value { display: grid; }
+  .challenge-record-cards { grid-template-columns: 1fr; }
+}
