@@ -105,7 +105,7 @@ export function showEasyChoice(scene,kind){
 
 export function showEasyRoundSelector(scene,returnToKind){
   scene.pauseEasyDecision();scene.easyDecisionMenu?.remove();
-  scene.easyDecisionMenu=mountEasyRoundSelector({save:scene.store.getSave(),onSelect:(stageId,round)=>startEasyRound(scene,stageId,round),onBack:()=>showEasyChoice(scene,returnToKind)});
+  scene.easyDecisionMenu=mountEasyRoundSelector({save:scene.store.getSave(),initialStageId:scene.stage.id,onSelect:(stageId,round)=>startEasyRound(scene,stageId,round),onBack:()=>showEasyChoice(scene,returnToKind)});
 }
 
 export function startEasyRound(scene,stageId,round){

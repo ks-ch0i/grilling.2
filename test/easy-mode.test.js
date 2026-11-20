@@ -14,6 +14,7 @@ class FakeElement {
   set className(value){this._className=value;}
   get className(){return this._className;}
   append(...nodes){for(const node of nodes){node.parent=this;this.children.push(node);}}
+  replaceChildren(...nodes){for(const child of this.children)child.parent=null;this.children=[];this.append(...nodes);}
   setAttribute(name,value){this.attributes.set(name,String(value));}
   addEventListener(type,listener){this.listeners.set(type,listener);}
   focus(){this.focused=true;}
@@ -118,6 +119,18 @@ test('Mine Round 8 overall clear has no Next Stage action',()=>withFakeDocument(
   handleEasyStageClear(scene);
   assert.deepEqual(buttons(scene.easyDecisionMenu).map(button=>button.textContent),['라운드 선택','홈']);
   assert.equal(scene.easyDecisionMenu.panel.children[0].textContent,'전체 클리어');
+  click(scene.easyDecisionMenu,'라운드 선택');
+  const selector=scene.easyDecisionMenu;
+  const stageSwitch=selector.panel.children.find(child=>child.className==='challenge-tabs');
+  const mine=stageSwitch.children.find(child=>child.attributes.get('data-choice')==='mine-1');
+  assert.equal(mine.attributes.get('aria-pressed'),'true');
+  assert.equal(selector.panel.attributes.get('data-stage-id'),'mine-1');
+  assert.equal(scene.paused,true);
+  click(selector,'뒤로');
+  assert.equal(selector.root.parent,null);
+  assert.equal(scene.easyDecisionMenu.panel.children[0].textContent,'전체 클리어');
+  assert.equal(scene.easyDecisionOpen,true);assert.equal(scene.paused,true);
+  assert.equal(scene.run.elapsedTicks,1200);assert.equal(scene.store.persistCalls,1);
 }));
 
 test('Hard scenes keep restoring their saved snapshot even if a startRound option is present',()=>{
