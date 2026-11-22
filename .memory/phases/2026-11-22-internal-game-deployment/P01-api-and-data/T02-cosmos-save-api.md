@@ -1,6 +1,6 @@
 # Task: T02 Cosmos Save API
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -63,20 +63,22 @@ Store each authenticated user's hard continuation state, stage unlocks, Easy rou
 - Both methods call T01 `requireEntraPrincipal` before Cosmos access.
 - `GET /api/save` queries only `id=principal.userId` in that user's partition. Return `{ exists:false, save:null, revision:0 }` if absent; otherwise return the version 6 progress without server metadata or settings.
 - `PUT /api/save` accepts exactly `{ save: CloudSaveV6 }`. It does not accept a user ID or leaderboard row. Validate the version 6 shape, merge with the current document, and upsert in the authenticated user's partition. Return `{ saved:true, revision, updatedAt }`.
+- Use the Cosmos item ETag for conditional upserts. If another write wins between the read and upsert, re-read and re-merge before retrying so concurrent saves do not discard monotonic unlocks, deaths, or best records.
 - Success and error responses set `Cache-Control: no-store`. Map invalid payload to 400, auth errors to T01 statuses, and Cosmos outage to 503 without returning SDK details or credentials.
 - Build the Cosmos SDK client once per Function worker. Do not return connection strings, keys, or full Cosmos documents.
 
 ## Acceptance Criteria
 
-- [ ] A signed-in member can read only their own save and create/update it without providing an identity key.
-- [ ] `settings`, caller identity fields, unknown stage IDs, malformed records, and oversized payloads are rejected or omitted as specified.
-- [ ] Progress merge follows the declared run, unlock, round-death, and best-record rules.
-- [ ] A missing Cosmos item returns the explicit empty-cloud result required for the import prompt.
+- [x] A signed-in member can read only their own save and create/update it without providing an identity key.
+- [x] `settings`, caller identity fields, unknown stage IDs, malformed records, and oversized payloads are rejected or omitted as specified.
+- [x] Progress merge follows the declared run, unlock, round-death, and best-record rules.
+- [x] A missing Cosmos item returns the explicit empty-cloud result required for the import prompt.
 
 ## Validation
 
 - Run `npm --prefix api run check` after implementation.
-- Review the deployed database/container names, `/userId` partition key, 400 RU/s database throughput, and one member-scoped save document in Cosmos Data Explorer. Do not print the account key.
+- Local smoke checks cover config fail-closed behavior, both stage run snapshots, schema rejection, identity derivation, merge rules, the empty-cloud response, request size limits, and conditional-write retry behavior.
+- Review the deployed database/container names, `/userId` partition key, 400 RU/s database throughput, and one member-scoped save document in Cosmos Data Explorer during P03 provisioning. The database/container is provisioned there, so this live check is deferred. Do not print the account key.
 
 ## Commit Message
 
@@ -93,6 +95,7 @@ Task: T02-cosmos-save-api
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation complete
+- [x] Implementation complete
+- [x] Local validation complete
+- [ ] Live Cosmos resource/document review deferred to P03 provisioning
 - commit: pending
