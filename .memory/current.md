@@ -4,15 +4,16 @@
 [Internal Azure Deployment for Grill-Me](./plans/2026-11-22-internal-game-deployment.md)
 
 ## Active Phase
-[P02 Browser Sign-In and Cloud Sync](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/phase.md)
+[P03 Azure Resources and Production Release](./phases/2026-11-22-internal-game-deployment/P03-azure-release/phase.md)
 
 ## Active Task
-[T02 Records and Account UI](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/T02-records-and-account-ui.md)
+[T01 Provision Azure and Entra](./phases/2026-11-22-internal-game-deployment/P03-azure-release/T01-provision-azure-and-entra.md)
 
 ## Status
-- T01 MSAL sign-in and account-scoped cloud save store is implemented and committed as `3b128cf`.
-- `npm run build` passed. Production browser validation is deferred until P03 because this workspace has no Entra production settings or deployed `/api`.
+- P02 T01 MSAL sign-in and account-scoped cloud save store is committed as `3b128cf`.
+- P02 T02 company leaderboards, personal-best tie-breaks, account controls, and sign-out are committed as `a274d5a`.
+- `npm run build` passed. Live member-session checks are deferred until Entra settings and the deployed `/api` are available in P03.
 - P01 API identity and cloud data is complete.
 
 ## Next Step (IMPORTANT)
-Read P02 T02 and connect result/save flows, company leaderboards, and account controls.
+Read P03 T01 and provision the Free Static Web App, Cosmos database, and Entra app registrations for production.

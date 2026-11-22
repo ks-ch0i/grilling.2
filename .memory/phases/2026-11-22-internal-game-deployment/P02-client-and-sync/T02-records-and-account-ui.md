@@ -79,4 +79,4 @@ Task: T02-records-and-account-ui
 
 - [x] Implementation complete
 - [x] Local build validation complete; live member-session validation is deferred until P03 provisioning.
-- commit: pending
+- commit: `a274d5a327dfff2d8fa95eb5d89eed153a524218`
