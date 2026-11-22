@@ -2,6 +2,11 @@ import {ANIMATIONS} from './manifest.js';
 import {ATTACK_STARTUP,ATTACK_ACTIVE} from '../sim/constants.js';
 import {ROOT_DELAY_TICKS} from '../sim/boss.js';
 export function playerAnimation(player){
+ if(player.defenseMode==='shield')return ANIMATIONS[`hero.shield.${player.facing}`]??ANIMATIONS['hero.shield.0'];
+ if(player.defenseMode==='parry'){
+  const aimX=player.aim?.x,facesLeft=aimX===0||!Number.isFinite(aimX)?player.horizontalFacing<0:aimX<0;
+  return ANIMATIONS[`hero.parry.${facesLeft?'left':'right'}`];
+ }
  if(player.mode==='attack')return ANIMATIONS[`hero.attack.${player.facing}`];
  if(player.mode==='idle')return ANIMATIONS[`hero.idle.${player.facing}`];
  if(player.mode==='run')return ANIMATIONS[`hero.run.${player.facing}`];

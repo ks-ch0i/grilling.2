@@ -9,6 +9,12 @@ test('hero has all 8 directions for idle, walking and attack',()=>{
  const p=createPlayer();for(let direction=0;direction<8;direction++){p.facing=direction;p.mode='idle';assert.equal(playerAnimation(p).frames[0],direction);p.mode='run';assert.equal(playerAnimation(p).direction,direction);assert.deepEqual(playerAnimation(p).frames,[direction,direction+8]);p.mode='attack';assert.equal(playerAnimation(p).frames[0],direction);}
  for(const mode of ['run','jump','fall','roll','dive','hurt','dead']){p.mode=mode;p.facing=0;assert.equal(playerAnimation(p).state,mode);}
 });
+test('shield uses eight facing clips and parry selects the left or right pose',()=>{
+ const p=createPlayer();p.mode='run';p.defenseMode='shield';
+ for(let direction=0;direction<8;direction++){p.facing=direction;assert.equal(playerAnimation(p).key,`hero.shield.${direction}`);assert.equal(playerAnimation(p).texture,'hero-shield');}
+ p.defenseMode='parry';p.aim.x=1;assert.equal(playerAnimation(p).key,'hero.parry.right');p.aim.x=-1;assert.equal(playerAnimation(p).key,'hero.parry.left');
+ p.aim.x=0;p.horizontalFacing=-1;assert.equal(playerAnimation(p).key,'hero.parry.left');p.horizontalFacing=1;assert.equal(playerAnimation(p).key,'hero.parry.right');
+});
 test('mine enemies and each boss resolve their own poses',()=>{
  for(const kind of ['golem','insect','bat']){const e=createEnemy({id:'x',kind,x:0,y:0});for(const state of ['idle','chase','windup','attack','return','recovery','hurt','dead']){e.state=state;assert.equal(enemyAnimation(e).state,state);}}
  for(const kind of ['machine','worm']){const b=createMineBoss(kind,{x:0,y:0});for(const state of ['intro','windup','attack','transition']){b.state=state;if(kind==='worm'&&['windup','attack'].includes(state))b.attackKind='spit';assert.equal(bossAnimation(b).owner,kind);const expected=kind==='worm'&&['windup','attack'].includes(state)?`spit${state==='windup'?'Windup':'Attack'}`:state;assert.equal(bossAnimation(b).state,expected);}}

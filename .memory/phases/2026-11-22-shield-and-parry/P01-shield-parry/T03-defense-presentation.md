@@ -1,6 +1,6 @@
 # Task: T03 Defense Presentation
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -74,17 +74,22 @@ Connect the separately created defense pose sheets to the player renderer, show 
 
 ### Acceptance Criteria
 
-- [ ] Shield uses eight directional frames; parry uses the left/right frames and existing diagonal sword.
-- [ ] Three heart icons visibly represent full, half, and empty health without changing maximum HP or pickup value.
-- [ ] Successful shield/parry events produce distinct character-level visual and synthesized audio effects.
-- [ ] No defense cooldown HUD, ready cue, or failed-input cue appears.
-- [ ] Settings and README accurately explain the controls and timing.
+- [x] Shield uses eight directional frames; parry uses the left/right frames and existing diagonal sword.
+- [x] Three heart icons visibly represent full, half, and empty health without changing maximum HP or pickup value.
+- [x] Successful shield/parry events produce distinct character-level visual and synthesized audio effects.
+- [x] No defense cooldown HUD, ready cue, or failed-input cue appears.
+- [x] Settings and README accurately explain the controls and timing.
 
 ### Validation
 
-- node --test test/assets.test.js test/animation-contract.test.js test/audio-manager.test.js test/defense.test.js — asset registry, animation, feedback, and defense regressions.
-- npm.cmd test — full existing regression suite.
-- npm.cmd run build — production bundle compiles with both sprite sheets present.
+- `node --test test/assets.test.js test/animation-contract.test.js test/audio-manager.test.js test/defense.test.js test/health-hearts.test.js` — pass (29 tests).
+- `npm.cmd test` — pass (216 tests).
+- `npm.cmd run build` — pass; production bundle includes both sprite sheets. Vite reports the existing large-bundle advisory.
+
+## Adjacent Regression Fixes
+
+- Updated the Easy round selector's save-version guard from v4 to v5. Fresh v5 saves were rejected, which made its round-choice UI fail to open.
+- Updated the projectile collision expectation to include impact coordinates already emitted by the simulation for directional defense.
 
 ## Commit Message
 
@@ -101,6 +106,6 @@ Task: T03-defense-presentation
 
 ## Progress
 
-- [ ] 구현 완료
-- [ ] 검증 통과
+- [x] 구현 완료
+- [x] 검증 통과
 - commit: pending

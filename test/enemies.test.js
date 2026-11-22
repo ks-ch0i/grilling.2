@@ -28,7 +28,7 @@ test('ranged geometry omits platforms but retains world and arena-lock walls',()
  assert.ok(locked.some(rect=>rect.x===FOREST_STAGE.arena.right&&rect.w===16));
  const projectile={id:'crossing-shot',ownerId:'wisp',x:40,y:204,w:8,h:8,vx:1200,vy:0,life:60,alive:true};
  let current=projectile,events=[];for(let i=0;i<10&&current.alive;i++){const hit=stepProjectile(current,ranged,{x:140,y:200,w:16,h:28,mode:'idle'});current=hit.projectile;events.push(...hit.events);}
- assert.equal(current.alive,false);assert.deepEqual(events,[{type:'projectile:hit',ownerId:'wisp'}]);
+ assert.equal(current.alive,false);assert.deepEqual(events,[{type:'projectile:hit',ownerId:'wisp',originX:138,originY:208}]);
  const wall=stepProjectile({...projectile,id:'wall-shot',x:632},ranged,{...p,mode:'dead'});
  assert.equal(wall.projectile.alive,false);assert.equal(wall.events.length,0);
 });

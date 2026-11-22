@@ -4,6 +4,7 @@ import { InputController } from '../input/InputController.js';
 import { createStageRun, stepStage, snapshotStageRun } from '../sim/stage.js';
 import { diveImpactRect } from '../sim/combat.js';
 import { PlayerView } from '../render/PlayerView.js';
+import {healthHeartState} from '../render/healthHearts.js';
 import { EnemyView } from '../render/EnemyView.js';
 import { MineHazardView } from '../render/MineHazardView.js';
 import {WormIntroView} from '../render/WormIntroView.js';
@@ -39,6 +40,7 @@ export class StageScene extends Phaser.Scene {
     this.roundHud=this.add.text(12,30,'',{fontFamily:'monospace',fontSize:'10px',color:'#ffe4a2'}).setStroke('#17131c',2).setScrollFactor(0).setDepth(10);
     this.bossHud=this.add.text(190,10,'',{fontFamily:'monospace',fontSize:'11px',color:'#fff1d1'}).setScrollFactor(0).setDepth(10);
     this.hearts=[0,1,2].map(i=>this.add.sprite(105+i*25,32,'objects',7).setOrigin(.5,1).setScale(.5).setScrollFactor(0).setDepth(10));
+    this.halfHeart=this.add.sprite(0,0,'objects',7).setOrigin(.5,1).setScale(.5).setScrollFactor(0).setDepth(10.5).setVisible(false);
     this.hudGraphics=this.add.graphics().setScrollFactor(0).setDepth(10);
     this.bossDirectionGraphics=this.add.graphics().setScrollFactor(0).setDepth(11);
     this.message=this.add.text(320,120,'',{fontFamily:'monospace',fontSize:'20px',color:'#ffffff',stroke:'#17131c',strokeThickness:4}).setOrigin(.5).setScrollFactor(0).setDepth(10);
@@ -105,7 +107,7 @@ export class StageScene extends Phaser.Scene {
     const initialTarget=cameraScrollTarget({player:this.run.player,boss:this.run.boss,worldWidth:this.stage.world.width,worldHeight:this.stage.world.height});
     this.worldCamera.setScroll(initialTarget.scrollX,initialTarget.scrollY);
     this.hudCamera=this.cameras.add(0,0,640,360,false,'hud').setZoom(1).setScroll(0,0).setRoundPixels(true);
-    this.screenSpaceObjects=new Set([this.hud,this.roundHud,this.bossHud,...this.hearts,this.hudGraphics,this.bossDirectionGraphics,this.message,this.bossBlackout,this.wormIntroView?.dim,this.wormIntroView?.blackout].filter(Boolean));
+    this.screenSpaceObjects=new Set([this.hud,this.roundHud,this.bossHud,...this.hearts,this.halfHeart,this.hudGraphics,this.bossDirectionGraphics,this.message,this.bossBlackout,this.wormIntroView?.dim,this.wormIntroView?.blackout].filter(Boolean));
     this.worldCamera.ignore([...this.screenSpaceObjects]);
     this.hudCamera.ignore(this.children.list.filter(object=>!this.screenSpaceObjects.has(object)));
     this.routeWorldObject=object=>{if(!this.screenSpaceObjects.has(object))this.hudCamera?.ignore(object);};
@@ -116,6 +118,7 @@ export class StageScene extends Phaser.Scene {
     if(id)this.audio.playSfx(id);
     const player=this.run.player;
     if(event.type==='enemy:hurt'){const enemy=this.run.enemies.find(e=>e.id===event.id);if(enemy)this.showEffect(1,enemy.x+enemy.w/2,enemy.y+enemy.h/2);}
+    if(event.type==='shield:blocked'||event.type==='parry:blocked')this.showDefenseSpark(event,player);
     if(event.type==='roll')this.showEffect(2,player.x+player.w/2,player.y+player.h);
     if(event.type==='dive-impact'){this.showEffect(3,event.x,event.y);this.showImpactWave(event.x,event.y,event.canDamage);}
     if(event.type==='stage:pickup')this.showEffect(4,player.x+player.w/2,player.y+player.h/2);
@@ -125,6 +128,19 @@ export class StageScene extends Phaser.Scene {
     if(['enemy:hurt','boss:death','hurt'].includes(event.type)&&this.store.getSave().settings.screenShake)this.cameras.main.shake(70,.0015);
   }
   showEffect(frame,x,y){const sprite=this.add.sprite(Math.round(x),Math.round(y),'effects',frame).setDepth(7).setScale(.7);this.visualEffects.push({sprite,until:this.run.elapsedTicks+20});}
+  showDefenseSpark(event,player){
+    const px=player.x+player.w/2,py=player.y+player.h/2,aim=player.aim??{x:player.horizontalFacing,y:0};
+    const x=Phaser.Math.Clamp(Number.isFinite(event.originX)?event.originX:px+aim.x*10,player.x-4,player.x+player.w+4);
+    const y=Phaser.Math.Clamp(Number.isFinite(event.originY)?event.originY:py,player.y+3,player.y+player.h-3);
+    const isShield=event.type==='shield:blocked',duration=12,sprite=this.add.graphics().setDepth(7);
+    const core=isShield?0xfff0b0:0xe7ffff,accent=isShield?0xffa94f:0x77d8df,shadow=isShield?0x7b4338:0x315e78;
+    const draw=elapsed=>{const progress=Math.min(1,elapsed/duration),alpha=1-progress*.8,distance=3+progress*10;sprite.clear();
+      sprite.fillStyle(shadow,alpha).fillRect(Math.round(x-4),Math.round(y-4),8,8);
+      sprite.fillStyle(core,alpha).fillRect(Math.round(x-2),Math.round(y-2),4,4);
+      for(let i=0;i<6;i++){const angle=i*Math.PI/3+(isShield?0:Math.PI/6),fx=Math.round(x+Math.cos(angle)*distance),fy=Math.round(y+Math.sin(angle)*distance);sprite.fillStyle(i%2?accent:core,alpha).fillRect(fx-1,fy-1,2,2);}
+    };
+    draw(0);this.visualEffects.push({sprite,start:this.run.elapsedTicks,until:this.run.elapsedTicks+duration,fade:duration,draw});
+  }
   showMineralBurst(event){
     const sprite=this.add.graphics().setDepth(7),duration=12,base=(event.id?.length??0)*.17;
     const pieces=Array.from({length:7},(_,i)=>{const angle=base+i*Math.PI*2/7,speed=5+(i%3)*2;return {angle,speed,size:2+i%2};});
@@ -210,7 +226,10 @@ export class StageScene extends Phaser.Scene {
     this.hud.setText(this.stage.id==='mine-1'?'MINE 2':'FOREST 1');
     this.roundHud.setText(`ROUND ${this.run.round} / 8`);
     this.bossHud.setText(showBoss?label:'').setVisible(showBoss);
-    this.hearts.forEach((heart,i)=>heart.setFrame(i<p.hp?7:6));
+    let halfIndex=-1;
+    this.hearts.forEach((heart,i)=>{const state=healthHeartState(p.hp,i);heart.setFrame(state==='full'?7:6);if(state==='half')halfIndex=i;});
+    if(halfIndex>=0){const heart=this.hearts[halfIndex];this.halfHeart.setPosition(heart.x,heart.y).setFrame(7).setCrop(0,0,32,64).setVisible(true);}
+    else this.halfHeart.setCrop().setVisible(false);
     this.hudGraphics.clear();if(showBoss){this.hudGraphics.fillStyle(0x312c2d);this.hudGraphics.fillRect(190,29,430,8);this.hudGraphics.fillStyle(0xe99166);this.hudGraphics.fillRect(190,29,Math.round(430*boss.hp/boss.maxHp),8);}
     const direction=this.run.outcome||intro&&!intro.showBossHud?null:bossDirection(boss,bounds),arrow=this.bossDirectionGraphics;
     arrow.clear();if(direction){const x=direction==='right'?626:14,y=Phaser.Math.Clamp(Math.round((boss.y+boss.h/2-bounds.top)*cam.zoom),72,280),tip=direction==='right'?x+5:x-5,base=direction==='right'?x-5:x+5;

@@ -14,6 +14,10 @@ async function inspect(bytes,asset){
  }
 }
 test('real PNG files decode with valid alpha, cells and frame gutters',async()=>{for(const asset of ASSETS)await inspect(await readFile(`public${asset.url}`),asset);});
+test('hero defense sheets register eight shield directions and two parry sides',()=>{
+ assert.deepEqual(ASSETS.filter(asset=>asset.key==='hero-shield').map(({url,frameWidth,frameHeight,count})=>({url,frameWidth,frameHeight,count})),[{url:'/assets/characters/hero/shield.png',frameWidth:32,frameHeight:32,count:8}]);
+ assert.deepEqual(ASSETS.filter(asset=>asset.key==='hero-parry').map(({url,frameWidth,frameHeight,count})=>({url,frameWidth,frameHeight,count})),[{url:'/assets/characters/hero/parry.png',frameWidth:32,frameHeight:32,count:2}]);
+});
 test('themed platform module sheets register all 12 16x32 frames',async()=>{
  for(const [key,url] of [['forest-platform-modules','/assets/world/forest/platform-modules.png'],['mine-platform-modules','/assets/world/mine/platform-modules.png']]){
   const asset=ASSETS.find(item=>item.key===key);assert.ok(asset,`${key} is registered`);assert.equal(asset.url,url);assert.equal(asset.frameWidth,16);assert.equal(asset.frameHeight,32);assert.equal(asset.count,12);

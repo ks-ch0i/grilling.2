@@ -1,5 +1,5 @@
 const entries=[
- ['hero-actions','/assets/characters/hero/actions.png',32,32,16],['hero-dive','/assets/characters/hero/dive.png',32,32,4],['hero-walk','/assets/characters/hero/walk.png',32,32,16],['hero-directions','/assets/characters/hero/directions.png',32,32,8],['hero-attacks','/assets/characters/hero/attacks.png',32,32,24],
+ ['hero-actions','/assets/characters/hero/actions.png',32,32,16],['hero-dive','/assets/characters/hero/dive.png',32,32,4],['hero-walk','/assets/characters/hero/walk.png',32,32,16],['hero-directions','/assets/characters/hero/directions.png',32,32,8],['hero-shield','/assets/characters/hero/shield.png',32,32,8],['hero-parry','/assets/characters/hero/parry.png',32,32,2],['hero-attacks','/assets/characters/hero/attacks.png',32,32,24],
  ['soldier','/assets/characters/soldier/poses.png',40,40,16],['wisp','/assets/characters/wisp/poses.png',32,32,16],['boar','/assets/characters/boar/poses.png',48,32,16],['boss','/assets/characters/boss/poses.png',112,112,24],
  ['objects','/assets/world/forest/objects.png',64,64,8],['effects','/assets/effects/effects.png',48,48,8],['sword','/assets/characters/hero/sword.png',32,12,1],
  ['forest','/assets/world/forest/backdrop.png',640,304,1],['ground','/assets/world/forest/ground.png',64,56,1],['platform','/assets/world/forest/platform.png',64,16,1],
@@ -19,7 +19,10 @@ for(let direction=0;direction<8;direction++){
  clip(`hero.idle.${direction}`,'hero','idle','hero-directions',[direction],{direction});
  clip(`hero.run.${direction}`,'hero','run','hero-walk',[direction,direction+8],{direction,fps:9,loop:true});
  clip(`hero.attack.${direction}`,'hero','attack','hero-attacks',[direction,direction+8,direction+16],{direction});
+ clip(`hero.shield.${direction}`,'hero','shield','hero-shield',[direction],{direction});
 }
+clip('hero.parry.right','hero','parry','hero-parry',[0]);
+clip('hero.parry.left','hero','parry','hero-parry',[1]);
 for(const [state,frames] of Object.entries({jump:[4],fall:[5],roll:[6,7,6],hurt:[9],dead:[10,11]}))clip(`hero.${state}`,'hero',state,'hero-actions',frames,{fps:10});
 clip('hero.dive','hero','dive','hero-dive',[1],{fps:10});
 for(const owner of ['soldier','wisp','boar'])for(const [state,frames] of Object.entries({idle:[0,1],chase:[4,5,6,7],windup:[8,9],attack:[10,11,12],recovery:[0],hurt:[13],dead:[14,15]}))clip(`${owner}.${state}`,owner,state,owner,frames,{fps:7,loop:['idle','chase'].includes(state)});

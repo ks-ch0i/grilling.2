@@ -26,8 +26,9 @@ export class PlayerView {
     const x=Math.round(player.x+player.w/2),y=Math.round(player.y+player.h),aim=player.mode==='dive'?{x:0,y:1}:player.aim;
     this.outline.setPosition(x,y).setFlipX(clip.texture==='hero-actions'&&player.horizontalFacing<0);
     this.body.setPosition(x,y).setFlipX(clip.texture==='hero-actions'&&player.horizontalFacing<0).setAlpha(player.invulnerableTicks&&player.invulnerableTicks%4<2?.55:1);
-    const dead=player.mode==='dead',aimAngle=Math.atan2(aim.y,aim.x),swordOffset=player.mode==='attack'?attackSwordOffset(player.attackTick):0,swordAngle=aimAngle+swordOffset;
-    this.sword.setVisible(!dead).setPosition(x,Math.round(player.y+player.h/2)).setRotation(swordAngle);
+    const dead=player.mode==='dead',aimAngle=Math.atan2(aim.y,aim.x),swordOffset=player.mode==='attack'?attackSwordOffset(player.attackTick):0,parrying=player.defenseMode==='parry',parryFacing=player.aim?.x===0?player.horizontalFacing:Math.sign(player.aim?.x||player.horizontalFacing),swordAngle=parrying?(parryFacing<0?Math.PI*5/4:-Math.PI/4):aimAngle+swordOffset;
+    const swordX=parrying?x+parryFacing*2:x,swordY=Math.round(player.y+player.h/2-(parrying?3:0));
+    this.sword.setVisible(!dead).setPosition(swordX,swordY).setRotation(swordAngle);
     const active=!scene.paused&&!scene.run.outcome&&!dead&&!['dying','dead'].includes(scene.run.boss.state);
     const indicator=attackIndicatorState(player,tick,active,this.indicatorMemory);this.indicatorMemory=indicator.memory;
     this.attackIndicator.clear();if(indicator.visible){const gx=Math.round(player.x+player.w/2-8),gy=Math.round(player.y-8);
