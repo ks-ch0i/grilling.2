@@ -4,16 +4,17 @@
 [Internal Azure Deployment for Grill-Me](./plans/2026-11-22-internal-game-deployment.md)
 
 ## Active Phase
-[P01 API Identity and Cloud Data](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/phase.md)
+[P02 Browser Sign-In and Cloud Sync](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/phase.md)
 
 ## Active Task
-[T03 Company Leaderboards](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/T03-company-leaderboards.md)
+[T01 MSAL Cloud Store](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/T01-msal-cloud-store.md)
 
 ## Status
 - T01 Entra API Authentication is implemented and committed as `d8f0f54`.
 - T02 Cosmos Save API is implemented and committed as `56735c4`.
-- Local checks and smoke validations passed. Live Entra token and Cosmos resource/document reviews are deferred until P03 provisioning.
-- T03 is active; implementation has not started.
+- T03 Company Leaderboards is implemented and committed as `e3d157c`.
+- Local API checks and in-memory smoke validation passed. Live Entra token and Cosmos resource/document reviews remain deferred until P03 provisioning.
+- P01 API identity and cloud data is complete.
 
 ## Next Step (IMPORTANT)
-Read T03 and implement per-user Easy/Hard leaderboard records and queries on the shared company database.
+Read P02 T01 and implement MSAL member sign-in with account-scoped cloud save storage and offline sync.

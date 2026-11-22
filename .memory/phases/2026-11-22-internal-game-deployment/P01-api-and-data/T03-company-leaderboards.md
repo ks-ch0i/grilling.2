@@ -88,4 +88,4 @@ Task: T03-company-leaderboards
 - [x] Implementation complete
 - [x] Validation complete (`npm --prefix api run check`; in-memory smoke checks for request validation, save-to-board refresh, competition ties, top ten, and own rank).
 - Azure Cosmos requests remain deferred until P03 provisioning, as specified above.
-- commit: pending
+- commit: `e3d157c`
