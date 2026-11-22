@@ -5,6 +5,7 @@ import { ATTACK_STARTUP,ATTACK_ACTIVE,ATTACK_RECOVERY } from '../sim/constants.j
 import { playerAttackRangePoints } from './playerAttackRange.js';
 import { attackIndicatorState } from './attackIndicator.js';
 import { attackSwordOffset } from './attackMotion.js';
+import { parryBladeAngle, drawParryGlint } from './defenseEffects.js';
 export class PlayerView {
   constructor(scene){
     this.outline=scene.add.sprite(0,0,'hero-directions',0).setOrigin(.5,1).setDepth(4.5).setTint(0xffe0ab).setTintMode(Phaser.TintModes.FILL).setAlpha(.65).setScale(1.15);
@@ -12,6 +13,7 @@ export class PlayerView {
     this.sword=scene.add.image(0,0,'sword').setOrigin(.16,.5).setDepth(6);
     this.slash=scene.add.sprite(0,0,'effects',0).setOrigin(.5,.5).setDepth(4).setScale(.8);
     this.attackRange=scene.add.graphics().setDepth(5.5);
+    this.defenseEffect=scene.add.graphics().setDepth(6.25);
     this.attackIndicator=scene.add.graphics().setDepth(7);
     this.resetAttackIndicator();
     this.clipKey='';this.clipStart=0;
@@ -26,9 +28,17 @@ export class PlayerView {
     const x=Math.round(player.x+player.w/2),y=Math.round(player.y+player.h),aim=player.mode==='dive'?{x:0,y:1}:player.aim;
     this.outline.setPosition(x,y).setFlipX(clip.texture==='hero-actions'&&player.horizontalFacing<0);
     this.body.setPosition(x,y).setFlipX(clip.texture==='hero-actions'&&player.horizontalFacing<0).setAlpha(player.invulnerableTicks&&player.invulnerableTicks%4<2?.55:1);
-    const dead=player.mode==='dead',aimAngle=Math.atan2(aim.y,aim.x),swordOffset=player.mode==='attack'?attackSwordOffset(player.attackTick):0,parrying=player.defenseMode==='parry',parryFacing=player.aim?.x===0?player.horizontalFacing:Math.sign(player.aim?.x||player.horizontalFacing),swordAngle=parrying?(parryFacing<0?Math.PI*5/4:-Math.PI/4):aimAngle+swordOffset;
-    const swordX=parrying?x+parryFacing*2:x,swordY=Math.round(player.y+player.h/2-(parrying?3:0));
-    this.sword.setVisible(!dead).setPosition(swordX,swordY).setRotation(swordAngle);
+    const dead=player.mode==='dead';
+    const shielding=!dead&&player.defenseMode==='shield',parrying=!dead&&player.defenseMode==='parry';
+    const aimAngle=Math.atan2(aim.y,aim.x);
+    const swordOffset=player.mode==='attack'?attackSwordOffset(player.attackTick):0;
+    const parryFacing=clip.key==='hero.parry.left'?-1:1;
+    const swordAngle=parrying?parryBladeAngle(parryFacing,player.defenseTicksRemaining):aimAngle+swordOffset;
+    const chestY=Math.round(player.y+player.h/2);
+    const swordX=parrying?x+parryFacing*2:x,swordY=parrying?chestY+6:chestY;
+    this.sword.setVisible(!dead&&!shielding).setPosition(swordX,swordY).setRotation(swordAngle);
+    this.defenseEffect.clear();
+    if(parrying)drawParryGlint(this.defenseEffect,swordX,swordY,swordAngle,player.defenseTicksRemaining);
     const active=!scene.paused&&!scene.run.outcome&&!dead&&!['dying','dead'].includes(scene.run.boss.state);
     const indicator=attackIndicatorState(player,tick,active,this.indicatorMemory);this.indicatorMemory=indicator.memory;
     this.attackIndicator.clear();if(indicator.visible){const gx=Math.round(player.x+player.w/2-8),gy=Math.round(player.y-8);
@@ -51,5 +61,5 @@ export class PlayerView {
       g.lineStyle(1,0xe8ad7e,.75*glow);arc(.75,.08,.48);arc(.70,.57,.93);
     }
   }
-  destroy(){this.outline.destroy();this.body.destroy();this.sword.destroy();this.slash.destroy();this.attackRange.destroy();this.attackIndicator.destroy();}
+  destroy(){this.outline.destroy();this.body.destroy();this.sword.destroy();this.slash.destroy();this.attackRange.destroy();this.defenseEffect.destroy();this.attackIndicator.destroy();}
 }
