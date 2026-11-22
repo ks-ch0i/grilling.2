@@ -99,18 +99,29 @@ function oldV2Save(value){
   return shape(value,['version','run','unlockedStageIds','records','settings'])&&value.version===2&&legacyV2Run(value.run)&&unlocked(value.unlockedStageIds)&&
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&settings(value.settings);
 }
-const currentSnapshot=value=>{try{return value.outcome===null&&Boolean(restoreStageRun(getStage(value.stageId),value));}catch{return false;}};
+const currentSnapshot=(value,legacyDefense=false)=>{try{return value.outcome===null&&Boolean(restoreStageRun(getStage(value.stageId),value,{legacyDefense}));}catch{return false;}};
 function currentV3Save(value){
   return shape(value,['version','run','unlockedStageIds','records','settings'])&&value.version===3&&
-    (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
+    (value.run===null||currentSnapshot(value.run,true))&&unlocked(value.unlockedStageIds)&&
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&settings(value.settings);
 }
 function currentV4Save(value){
   return shape(value,['version','run','unlockedStageIds','records','easy','settings'])&&value.version===4&&
+    (value.run===null||currentSnapshot(value.run,true))&&unlocked(value.unlockedStageIds)&&
+    shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
+    easyProgress(value.easy)&&settings(value.settings);
+}
+function currentV5Save(value){
+  return shape(value,['version','run','unlockedStageIds','records','easy','settings'])&&value.version===5&&
     (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
     easyProgress(value.easy)&&settings(value.settings);
 }
+function migrateLegacyRun(run){
+  if(run===null)return null;
+  return snapshotStageRun(restoreStageRun(getStage(run.stageId),run,{legacyDefense:true}));
+}
+function migrateV4Save(value){return {...value,version:5,run:migrateLegacyRun(value.run)};}
 function freshEasyProgress(){
   const emptyRecord=()=>({best:null,recent:null});
   const stageRoundRecords=()=>Object.fromEntries(ROUND_KEYS.map(round=>[round,emptyRecord()]));
@@ -122,16 +133,17 @@ function freshEasyProgress(){
 }
 
 export function freshSave(){
-  return {version:4,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},easy:freshEasyProgress(),settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
+  return {version:5,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},easy:freshEasyProgress(),settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
 }
 export function parseSave(raw){
   if(raw===null)return {ok:true,save:freshSave()};
   if(typeof raw!=='string')return {ok:false,reason:'invalid'};
   let value;try{value=JSON.parse(raw);}catch{return {ok:false,reason:'invalid'};}
-  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>4)return {ok:false,reason:'unsupported-version'};
+  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>5)return {ok:false,reason:'unsupported-version'};
   if(oldV1Save(value)||oldV2Save(value))return {ok:true,save:freshSave(),migrated:true};
-  if(currentV3Save(value))return {ok:true,save:{...value,version:4,easy:freshEasyProgress()},migrated:true};
-  if(!currentV4Save(value))return {ok:false,reason:'invalid'};
+  if(currentV3Save(value))return {ok:true,save:migrateV4Save({...value,version:4,easy:freshEasyProgress()}),migrated:true};
+  if(currentV4Save(value))return {ok:true,save:migrateV4Save(value),migrated:true};
+  if(!currentV5Save(value))return {ok:false,reason:'invalid'};
   return {ok:true,save:value};
 }
 export function loadSave(storage){try{return parseSave(storage.getItem(SAVE_KEY));}catch{return {ok:false,reason:'unavailable'};}}
@@ -149,13 +161,13 @@ export function recordCompletion(save,stageId,result){
 }
 
 export function recordEasyDeath(save){
-  if(!currentV4Save(save))throw new TypeError('Invalid save');
+  if(!currentV5Save(save))throw new TypeError('Invalid save');
   if(save.easy.totalDeaths===Number.MAX_SAFE_INTEGER)throw new RangeError('Easy death count is full');
   return {...save,easy:{...save.easy,totalDeaths:save.easy.totalDeaths+1}};
 }
 
 export function recordEasyRoundCompletion(save,stageId,round,result){
-  if(!currentV4Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||!record(result))throw new TypeError('Invalid Easy round record');
+  if(!currentV5Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||!record(result))throw new TypeError('Invalid Easy round record');
   if(round>save.easy.unlockedRoundByStage[stageId])throw new TypeError('Easy round is locked');
   const roundKey=String(round),previous=save.easy.roundRecords[stageId][roundKey];
   const best=!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best};

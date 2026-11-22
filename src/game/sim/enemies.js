@@ -89,7 +89,7 @@ export function stepProjectile(state,terrain,player) {
   for (let i=0;i<steps;i++) {
     projectile.x+=dx/steps; projectile.y+=dy/steps;
     if (terrain.some(r=>intersects(projectile,r))) {projectile.alive=false;break;}
-    if (player.mode!=='dead' && intersects(projectile,player)) {projectile.alive=false;events.push({type:'projectile:hit',ownerId:projectile.ownerId});break;}
+    if (player.mode!=='dead' && intersects(projectile,player)) {projectile.alive=false;events.push({type:'projectile:hit',ownerId:projectile.ownerId,originX:projectile.x+projectile.w/2,originY:projectile.y+projectile.h/2});break;}
   }
   if (--projectile.life<=0) projectile.alive=false;
   return {projectile,events};

@@ -131,9 +131,13 @@ export function snapshotStageRun(run){
   return copy;
 }
 
-export function restoreStageRun(stage,snapshot){
+export function restoreStageRun(stage,snapshot,{legacyDefense=false}={}){
   validateStage(stage);
   const s=structuredClone(snapshot);
+  if(legacyDefense&&object(s.player)){
+    s.player.defenseMode='none';s.player.defenseTicksRemaining=0;
+    s.player.shieldCooldownTicks=0;s.player.parryCooldownTicks=0;
+  }
   if(!Object.hasOwn(s,'terrainLayout'))s.terrainLayout={mode:'legacy-fixed',platforms:structuredClone(stage.solids.slice(1))};
   else validatePlatformLayout(stage,s.terrainLayout);
   const fresh=createRunState(stage,s.terrainLayout,0);
@@ -146,8 +150,9 @@ export function restoreStageRun(stage,snapshot){
   if(s.outcome==='clear'&&s.round!==ROUND_COUNT)throw new TypeError('Only round 8 can clear a stage');
 
   const p=s.player,pt={...fresh.player,hitIds:[]};
-  if(!keys(p,Object.keys(pt))||!sameTypes(p,pt)||!strings(p.hitIds)||!keys(p.aim,['x','y'])||!Number.isFinite(p.aim.x)||!Number.isFinite(p.aim.y)||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(p.mode)||!Number.isInteger(p.hp)||p.hp<0||p.hp>3||p.w!==16||p.h!==28)throw new TypeError('Invalid player snapshot');
-  for(const k of ['invulnerableTicks','rollCooldown','rollTicks','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks'])if(!count(p[k]))throw new RangeError('Invalid player timer');
+  if(!keys(p,Object.keys(pt))||!sameTypes(p,pt)||!strings(p.hitIds)||!keys(p.aim,['x','y'])||!Number.isFinite(p.aim.x)||!Number.isFinite(p.aim.y)||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(p.mode)||!Number.isFinite(p.hp)||p.hp<0||p.hp>3||!Number.isInteger(p.hp*2)||p.w!==16||p.h!==28||!['none','shield','parry'].includes(p.defenseMode))throw new TypeError('Invalid player snapshot');
+  for(const k of ['invulnerableTicks','rollCooldown','rollTicks','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks','defenseTicksRemaining'])if(!count(p[k]))throw new RangeError('Invalid player timer');
+  if(!count(p.shieldCooldownTicks)||p.shieldCooldownTicks>180||!count(p.parryCooldownTicks)||p.parryCooldownTicks>180||p.defenseMode==='none'&&p.defenseTicksRemaining!==0||p.defenseMode==='shield'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>60)||p.defenseMode==='parry'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>15))throw new RangeError('Invalid defense timer');
   if((p.mode==='dead')!==(p.hp===0)||p.mode==='dead'&&s.deathTicks===0)throw new TypeError('Invalid death snapshot');
   if(!strings(s.consumedPickupIds)||s.consumedPickupIds.some(id=>!stage.pickups.some(pickup=>pickup.id===id)))throw new TypeError('Invalid pickup snapshot');
 
@@ -186,11 +191,16 @@ export function restoreStageRun(stage,snapshot){
   if(s.outcome==='clear'&&(s.enemies.some(enemy=>enemy.state!=='dead')||b.state!=='dead'))throw new TypeError('Only a defeated round 8 can clear a stage');
 
   p.hitIds=new Set(p.hitIds);for(const enemy of s.enemies)enemy.hitIds=new Set(enemy.hitIds);
+  if(p.defenseMode==='shield'){
+    p.defenseMode='none';p.defenseTicksRemaining=0;p.shieldCooldownTicks=180;
+  }else if(p.defenseMode==='parry'){
+    p.defenseMode='none';p.defenseTicksRemaining=0;
+  }
   return s;
 }
 
-function hurt(run,events,source,originX){
-  const result=applyPlayerDamage(run.player,source,{originX});run.player=result.player;events.push(...result.events);
+function hurt(run,events,source,originX,originY,defenseCategory='none'){
+  const result=applyPlayerDamage(run.player,source,{originX,originY},defenseCategory);run.player=result.player;events.push(...result.events);
 }
 
 export function separateOverlappingTargets(player,direction,targets,terrain){
@@ -288,19 +298,26 @@ export function stepStage(previous,input,stage){
       run.enemies[i]=result.enemy;events.push(...result.events);run.projectiles.push(...result.projectiles);
       if(run.hazards)run.hazards.push(...result.hazards);
       const enemy=result.enemy;if(enemy.state==='dead')continue;
-      if(intersects(enemy,run.player))hurt(run,events,'contact',enemy.x+enemy.w/2);
       const hitbox=enemyAttackRect(enemy);
-      if(hitbox&&!enemy.hitIds.has('player')&&intersects(hitbox,run.player)){enemy.hitIds.add('player');hurt(run,events,'enemy-attack',enemy.x+enemy.w/2);}
+      const enemyImpact={x:enemy.x+enemy.w/2,y:enemy.y+enemy.h/2};
+      if(hitbox&&!enemy.hitIds.has('player')&&intersects(hitbox,run.player)){
+        enemy.hitIds.add('player');hurt(run,events,'enemy-attack',enemyImpact.x,enemyImpact.y,'melee');
+      }else if(enemy.kind==='bat'&&enemy.state==='attack'&&intersects(enemy,run.player)){
+        hurt(run,events,'enemy-attack',enemyImpact.x,enemyImpact.y,'melee');
+      }else if(intersects(enemy,run.player))hurt(run,events,'contact',enemyImpact.x,enemyImpact.y);
     }
     run.projectiles=run.projectiles.map(projectile=>{
       const result=stepProjectile(projectile,rangedTerrain,run.player);
-      for(const event of result.events){events.push(event);hurt(run,events,'projectile',result.projectile.x+result.projectile.w/2);}
+      for(const event of result.events){events.push(event);hurt(run,events,'projectile',event.originX,event.originY,'ranged');}
       return result.projectile;
     }).filter(projectile=>projectile.alive);
     if(run.hazards){
       const carts=stepCartZones(run.cartZones,run.hazards,stage);run.cartZones=carts.zones;run.hazards=carts.hazards;events.push(...carts.events);
       const stepped=stepHazards(run.hazards,run.player,rangedTerrain,solids);run.hazards=stepped.hazards;
-      for(const event of stepped.events){events.push(event);if(event.type==='hazard:hit')hurt(run,events,'hazard',event.originX);}
+      for(const event of stepped.events){events.push(event);if(event.type==='hazard:hit'){
+        const ranged=['wave','acid-shot','rock','mineral'].includes(event.kind);
+        hurt(run,events,'hazard',event.originX,event.originY,ranged?'ranged':'none');
+      }}
     }
   }
 
@@ -308,8 +325,12 @@ export function stepStage(previous,input,stage){
   run.boss=bossResult.boss;events.push(...bossResult.events);
   if(run.stageId==='mine-1'){run.rngState=bossResult.rng;run.hazards.push(...bossResult.hazards);}
   if(!interactionLocked&&!['dormant','intro','dying','dead'].includes(run.boss.state)){
-    if(intersects(run.player,run.boss))hurt(run,events,'contact',run.boss.x+run.boss.w/2);
-    for(const box of run.boss.hitboxes)if(intersects(run.player,box))hurt(run,events,'boss-attack',box.x+box.w/2);
+    const meleeBossBoxes=run.stageId==='forest-1'||['tail','burrow'].includes(run.boss.attackKind);
+    for(const box of run.boss.hitboxes)if(intersects(run.player,box))hurt(run,events,'boss-attack',box.x+box.w/2,box.y+box.h/2,meleeBossBoxes?'melee':'none');
+    if(intersects(run.player,run.boss)){
+      const charge=run.stageId==='mine-1'&&run.boss.attackKind==='charge'&&run.boss.state==='attack';
+      hurt(run,events,charge?'boss-attack':'contact',run.boss.x+run.boss.w/2,run.boss.y+run.boss.h/2,charge?'melee':'none');
+    }
   }
   if(run.player.mode==='dead')return death(run,events);
   if(pushCompleted!==undefined&&!interactionLocked){

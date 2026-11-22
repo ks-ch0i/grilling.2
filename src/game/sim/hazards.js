@@ -15,12 +15,12 @@ export function stepHazards(input,player,collisionTerrain,supportTerrain=collisi
      }
      if(h.kind==='mineral'){
       const x=h.x+h.w/2,y=solid.y;
-      if(dy>0&&previousBottom<=solid.y){events.push({type:'hazard:impact',id:h.id,x,y});const impact={x:x-12,y:solid.y-16,w:24,h:16};if(player.mode!=='dead'&&intersects(impact,player))events.push({type:'hazard:hit',id:h.id,originX:x});}
+      if(dy>0&&previousBottom<=solid.y){events.push({type:'hazard:impact',id:h.id,x,y});const impact={x:x-12,y:solid.y-16,w:24,h:16};if(player.mode!=='dead'&&intersects(impact,player))events.push({type:'hazard:hit',id:h.id,kind:h.kind,originX:x,originY:solid.y});}
       else events.push({type:'hazard:shatter',id:h.id,x,y:h.y+h.h/2});
      }
      break;
     }
-    if(player.mode!=='dead'&&intersects(h,player)){h.alive=false;if(h.kind==='mineral')events.push({type:'hazard:shatter',id:h.id,x:h.x+h.w/2,y:h.y+h.h/2});events.push({type:'hazard:hit',id:h.id,originX:h.x+h.w/2});}
+    if(player.mode!=='dead'&&intersects(h,player)){h.alive=false;if(h.kind==='mineral')events.push({type:'hazard:shatter',id:h.id,x:h.x+h.w/2,y:h.y+h.h/2});events.push({type:'hazard:hit',id:h.id,kind:h.kind,originX:h.x+h.w/2,originY:h.y+h.h/2});}
    }
   }else if(h.kind==='wave'){
    const distance=Math.min(Math.abs(h.vx/60),h.remaining),direction=Math.sign(h.vx);
@@ -29,7 +29,7 @@ export function stepHazards(input,player,collisionTerrain,supportTerrain=collisi
    if(blocked||!supportTerrain.some(r=>intersects(probe,r)))h.alive=false;
    else {h.x=nextX;h.remaining-=distance;if(h.remaining<=0)h.alive=false;}
   }
-  if(h.alive&&!['acid-shot','rock','mineral'].includes(h.kind)&&player.mode!=='dead'&&intersects(h,player))events.push({type:'hazard:hit',id:h.id,originX:h.x+h.w/2});
+  if(h.alive&&!['acid-shot','rock','mineral'].includes(h.kind)&&player.mode!=='dead'&&intersects(h,player))events.push({type:'hazard:hit',id:h.id,kind:h.kind,originX:h.x+h.w/2,originY:h.y+h.h/2});
   if(h.kind!=='cart'&&--h.life<=0)h.alive=false;
   if(h.alive)hazards.push(h);
  }

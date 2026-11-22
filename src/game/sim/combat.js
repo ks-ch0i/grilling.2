@@ -70,16 +70,28 @@ export function registerAttackHit(player, target, terrain = []) {
   player.hitIds.add(target.id);
   return true;
 }
-export function applyPlayerDamage(state, source = 'contact', impact = undefined) {
+export function applyPlayerDamage(state, source = 'contact', impact = undefined, defenseCategory = 'none') {
   const player = { ...state, hitIds: new Set(state.hitIds) }, events = [];
   if (player.mode === 'dead') return { player, events };
   if (source !== 'pit' && (player.mode === 'roll' || player.mode === 'dive' || player.diveGraceActive || player.rollInvulnerable || player.damageInvulnerable || player.invulnerableTicks > 0)) return { player, events };
-  player.hp = source === 'pit' ? 0 : Math.max(0, player.hp - 1);
+  const px = player.x + player.w / 2, py = player.y + player.h / 2;
+  const ix = impact?.originX, iy = impact?.originY;
+  const dx = Number.isFinite(ix) ? ix - px : NaN, dy = Number.isFinite(iy) ? iy - py : NaN;
+  const distance = Math.hypot(dx, dy), aim = player.aim || { x: 1, y: 0 };
+  const aimLength = Math.hypot(aim.x, aim.y);
+  const inFront = distance > 1e-9 && aimLength > 1e-9 && (aim.x * dx + aim.y * dy) / (aimLength * distance) >= Math.cos(Math.PI / 3);
+  const defense = player.defenseMode === 'shield' && defenseCategory === 'ranged' || player.defenseMode === 'parry' && defenseCategory === 'melee';
+  const blocked = source !== 'pit' && defense && inFront;
+  player.hp = source === 'pit' ? 0 : Math.max(0, player.hp - (blocked ? 0.5 : 1));
   player.attackTick = 0; player.hitIds.clear();
   if (player.hp === 0) { player.mode = 'dead'; player.vx = 0; player.vy = 0; player.hurtPushTicks = 0; events.push({ type: 'death', source }); }
+  else if (blocked) {
+    player.invulnerableTicks = HURT_INVULNERABLE_TICKS;
+    events.push({ type: `${player.defenseMode}:blocked`, defense: player.defenseMode, source, originX: ix, originY: iy });
+  }
   else {
-    const dx = player.x + player.w / 2 - impact?.originX;
-    player.hurtPushDirection = Number.isFinite(dx) && dx !== 0 ? Math.sign(dx) : (player.horizontalFacing === -1 ? 1 : -1);
+    const pushX = px - ix;
+    player.hurtPushDirection = Number.isFinite(pushX) && pushX !== 0 ? Math.sign(pushX) : (player.horizontalFacing === -1 ? 1 : -1);
     player.hurtPushTicks = HURT_TICKS;
     player.mode = 'hurt'; player.hurtTicks = HURT_TICKS; player.invulnerableTicks = HURT_INVULNERABLE_TICKS; events.push({ type: 'hurt', source });
   }

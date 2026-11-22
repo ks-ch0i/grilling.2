@@ -15,3 +15,11 @@ test('interactive controls do not feed gameplay keys and disabling clears queued
  const target=new Target(),input=new InputController(target);target.fire('keydown',{code:'Space',target:{closest:()=>({})}});assert.equal(input.sample(scene).jumpPressed,false);
  target.fire('keydown',{code:'Space'});input.setEnabled(false);target.fire('keydown',{code:'KeyD'});let f=input.sample(scene);assert.equal(f.jumpHeld,false);assert.equal(f.jumpPressed,false);assert.equal(f.move,0);input.setEnabled(true);target.fire('keydown',{code:'KeyD'});assert.equal(input.sample(scene).move,1);input.destroy();
 });
+
+test('right mouse shield and Q parry are edge input that disabling clears',()=>{
+ const target=new Target(),canvas={getBoundingClientRect:()=>({left:0,top:0,right:640,bottom:360,width:640,height:360})},input=new InputController(target,canvas);
+ target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});target.fire('keydown',{code:'KeyQ'});
+ input.setEnabled(false);let frame=input.sample(scene);assert.equal(frame.shieldPressed,false);assert.equal(frame.shieldHeld,false);assert.equal(frame.parryPressed,false);
+ input.setEnabled(true);target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});target.fire('keydown',{code:'KeyQ'});
+ frame=input.sample(scene);assert.equal(frame.shieldPressed,true);assert.equal(frame.shieldHeld,true);assert.equal(frame.parryPressed,true);input.destroy();
+});
