@@ -1,17 +1,17 @@
 # Current Context
 
 ## Active Plan
-[Platform Drop-Through](./plans/2026-11-22-platform-drop-through.md)
+[Internal Azure Deployment for Grill-Me](./plans/2026-11-22-internal-game-deployment.md)
 
 ## Active Phase
-[P01 Platform Drop-Through — complete](./phases/2026-11-22-platform-drop-through/P01-platform-drop-through/phase.md)
+[P01 API Identity and Cloud Data](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/phase.md)
 
 ## Active Task
-None — the Platform Drop-Through plan is complete.
+[T01 Entra API Authentication](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/T01-entra-api-auth.md)
 
 ## Status
-- Plan completed in commit `d7f657b3b73ec91de347251d3327326a271d82b5`.
-- All implementation and validation work for T01 is complete.
+- Plan and seven task blueprints are complete; implementation has not started.
+- T01 is pending and ready for execution.
 
 ## Next Step (IMPORTANT)
-Create a new plan when the next task is selected.
+Read T01 and implement the Node 22 managed Functions API identity validator in `api/src/auth/entraPrincipal.js`, followed by the authenticated `/api/account` endpoint.
