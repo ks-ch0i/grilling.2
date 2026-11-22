@@ -3,6 +3,7 @@ export const DT = 1 / TICK_RATE;
 export const MOVE_SPEED = 105;
 export const GRAVITY = 650;
 export const JUMP_SPEED = -300;
+export const PLATFORM_DROP_SPEED = 80;
 export const MAX_FALL_SPEED = 400;
 export const JUMP_CUT = 0.45;
 export const ROLL_SPEED = 230;

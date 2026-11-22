@@ -66,6 +66,11 @@ test('v5 round-trips authored, older profile and older rectangular runs with rec
  const mismatched=structuredClone(authored);mismatched.terrainLayout.platforms[1].topProfile[0]++;
  assert.equal(parseSave(JSON.stringify({...freshSave(),run:mismatched})).ok,false);
 });
+test('v5 stores and restores an in-progress platform drop without a schema upgrade',()=>{
+ const run=validRun();assert.ok(run.terrainLayout.platforms.length>0);run.player.dropPlatforms=[0];
+ const storage=memory(),save={...freshSave(),run};assert.deepEqual(writeSave(storage,save),{ok:true});
+ const loaded=loadSave(storage);assert.equal(loaded.ok,true);assert.equal(loaded.save.version,5);assert.deepEqual(loaded.save.run.player.dropPlatforms,[0]);
+});
 test('fresh save starts at v5 with only Easy Forest Round 1 unlocked',()=>{
  const save=freshSave();
  assert.equal(save.version,5);assert.equal(save.run,null);

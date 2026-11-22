@@ -34,6 +34,27 @@ test('profile tops catch falling actors but let actors pass upward and through s
  for(let i=0;i<8;i++)p=profileTick(p,{move:1},[flat]);
  assert.ok(p.x>96);assert.ok(p.y>232);assert.equal(p.grounded,false);
 });
+test('down+jump drops through only the supporting authored platform and lands on the next one',()=>{
+ const upper={x:96,w:64,topProfile:[220,220,220,220],variant:0},lower={x:96,w:64,topProfile:[275,275,275,275],variant:1};
+ let p=createPlayer(100,192);p.grounded=true;const startX=p.x;
+ let result=stepPlayer(p,frame({jumpPressed:true,jumpHeld:true,dropPressed:true}),floor,344,[upper,lower],[upper,lower]);p=result.player;
+ assert.equal(p.grounded,false);assert.ok(p.vy>0);assert.deepEqual(p.dropPlatforms,[0]);assert.equal(result.events.some(event=>event.type==='jump'),false);
+ for(let i=0;i<40&&!p.grounded;i++)p=stepPlayer(p,frame({jumpHeld:true,move:1}),floor,344,[upper,lower],[upper,lower]).player;
+ assert.equal(p.grounded,true);assert.equal(p.y+p.h,275);assert.equal(p.dropPlatforms,undefined);assert.ok(p.x>startX);
+ const airborne=stepPlayer({...createPlayer(100,192),vy:20},frame({jumpPressed:true,jumpHeld:true,dropPressed:true}),floor,344,[upper,lower],[upper,lower]);
+ assert.equal(airborne.player.dropPlatforms,undefined);assert.equal(airborne.events.some(event=>event.type==='jump'),false);
+});
+test('down+jump drops through a legacy rectangle, but on the floor it remains a normal jump',()=>{
+ const rectangle={x:96,y:220,w:64,h:16},lower={x:96,w:64,topProfile:[275,275,275,275],variant:0},all=[rectangle,lower],terrain=[...floor,rectangle];
+ let p=createPlayer(100,192);p.grounded=true;
+ let result=stepPlayer(p,frame({jumpPressed:true,jumpHeld:true,dropPressed:true}),terrain,344,[lower],all);p=result.player;
+ assert.equal(p.grounded,false);assert.deepEqual(p.dropPlatforms,[0]);assert.ok(p.vy>0);
+ for(let i=0;i<40&&!p.grounded;i++)p=stepPlayer(p,frame({jumpHeld:true}),terrain,344,[lower],all).player;
+ assert.equal(p.grounded,true);assert.equal(p.y+p.h,275);
+
+ p=grounded();result=stepPlayer(p,frame({jumpPressed:true,jumpHeld:true,dropPressed:true}),floor);
+ assert.equal(result.player.mode,'jump');assert.ok(result.player.vy<0);assert.deepEqual(result.events.map(event=>event.type),['jump']);
+});
 test('grounded player follows four-pixel profile steps and falls from its edge',()=>{
  const profile={x:96,w:64,topProfile:[260,264,260,256],variant:0};
  let p=createPlayer(96,232);p.grounded=true;

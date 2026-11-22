@@ -1,7 +1,7 @@
 import * as C from './constants.js';
 import { moveAxis, normalizeAim } from './geometry.js';
 import { applyPlayerDamage, angleToFacing8 } from './combat.js';
-import { crossedPlatformSurface, followPlatformTop } from './platforms.js';
+import { crossedPlatformSurface, followPlatformTop, isProfiledPlatform, platformTopY } from './platforms.js';
 export function createPlayer(x = 120, y = 276) {
   return { x, y, vx: 0, vy: 0, w: 16, h: 28, grounded: false, hp: 3, mode: 'idle', facing: 0,
     horizontalFacing: 1, aim: { x: 1, y: 0 }, invulnerableTicks: 0,
@@ -16,7 +16,20 @@ function startAttack(p, events) {
 export function canStartAttack(player) {
   return ['idle', 'run', 'jump', 'fall'].includes(player.mode);
 }
-export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformProfiles = []) {
+function isStandingOn(player, platform, feet, center) {
+  if (isProfiledPlatform(platform)) {
+    const top = platformTopY(platform, center);
+    return top !== null && Math.abs(top - feet) <= 1e-6;
+  }
+  return Math.abs(platform.y - feet) <= 1e-6 && player.x < platform.x + platform.w && player.x + player.w > platform.x;
+}
+
+function isClearingPlatform(player, platform, feet) {
+  if (isProfiledPlatform(platform)) return feet <= Math.max(...platform.topProfile) + 1e-6;
+  return player.y < platform.y + platform.h && !(player.vy < 0 && feet <= platform.y);
+}
+
+export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformProfiles = [], floatingPlatforms = platformProfiles) {
   let p = { ...state, hitIds: new Set(state.hitIds), aim: { ...state.aim } };
   const startedGrounded = p.grounded;
   const modeAtStart = p.mode;
@@ -25,6 +38,12 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
   const events = [];
   if (p.mode === 'dead') return { player: p, events };
   if (p.y >= pitDeathY) return applyPlayerDamage(p, 'pit');
+  let drops = p.dropPlatforms?.filter(index => {
+    const platform = floatingPlatforms[index];
+    return platform && isClearingPlatform(p, platform, startingFeet);
+  });
+  let ignored = drops?.length ? new Set(drops.map(index => floatingPlatforms[index])) : null;
+  let activeTerrain = ignored ? terrain.filter(platform => !ignored.has(platform)) : terrain;
   const pushing = p.mode === 'hurt' && p.hurtPushTicks > 0;
   let pushCompleted;
   const startingDefense = p.defenseMode;
@@ -52,7 +71,7 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
   p.facing = angleToFacing8(p.aim);
   if (input.move) p.horizontalFacing = input.move;
   if (pushing) {
-    moveAxis(p, terrain, 'x', p.hurtPushDirection * C.HURT_PUSH_DISTANCE / C.HURT_TICKS);
+    moveAxis(p, activeTerrain, 'x', p.hurtPushDirection * C.HURT_PUSH_DISTANCE / C.HURT_TICKS);
     if (--p.hurtPushTicks === 0) pushCompleted = p.hurtPushDirection;
   }
   if (p.mode === 'hurt') { if (--p.hurtTicks <= 0) p.mode = p.grounded ? 'idle' : 'fall'; }
@@ -65,7 +84,6 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
     } else if (p.defenseMode === 'none' && input.divePressed && !p.grounded && !p.diveUsed && canDive) {
       p.mode = 'dive'; p.diveUsed = true; p.attackTick = 0; p.hitIds.clear();
     } else {
-      if (input.jumpPressed && p.grounded) { p.vy = C.JUMP_SPEED; p.grounded = false; p.jumpCut = false; events.push({ type: 'jump' }); }
       const canStartDefense = p.defenseMode === 'none' && !['roll','dive','hurt','dead'].includes(modeAtStart);
       const startShield = canStartDefense && input.shieldPressed && shieldReadyAtStart;
       const startParry = canStartDefense && input.parryPressed && parryReadyAtStart;
@@ -80,6 +98,20 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
         p.parryCooldownTicks = C.DEFENSE_COOLDOWN_TICKS;
         p.attackTick = 0; p.hitIds.clear();
         if (p.mode === 'attack') p.mode = p.grounded ? (input.move ? 'run' : 'idle') : (p.vy < 0 ? 'jump' : 'fall');
+      }
+      if (input.jumpPressed && p.grounded) {
+        const index = input.dropPressed
+          ? floatingPlatforms.findIndex(platform => !ignored?.has(platform) && isStandingOn(p, platform, startingFeet, startingCenter))
+          : -1;
+        if (index >= 0) {
+          (drops ??= []).push(index);
+          (ignored ??= new Set()).add(floatingPlatforms[index]);
+          activeTerrain = terrain.filter(platform => !ignored.has(platform));
+          p.vy = C.PLATFORM_DROP_SPEED;
+          p.grounded = false;
+        } else {
+          p.vy = C.JUMP_SPEED; p.grounded = false; p.jumpCut = false; events.push({ type: 'jump' });
+        }
       }
       if (p.defenseMode === 'none' && input.attackPressed && canStartAttack(p)) startAttack(p, events);
     }
@@ -96,9 +128,12 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
     p.vy = Math.min(C.MAX_FALL_SPEED, p.vy + C.GRAVITY * C.DT);
     verticalDistance = (previousVy + p.vy) * 0.5 * C.DT;
   }
-  moveAxis(p, terrain, 'x', p.vx * C.DT);
+  const activeProfiles = ignored ? platformProfiles.filter(platform => !ignored.has(platform)) : platformProfiles;
+  if (drops?.length) p.dropPlatforms = drops;
+  else if (p.dropPlatforms) delete p.dropPlatforms;
+  moveAxis(p, activeTerrain, 'x', p.vx * C.DT);
   const downward = p.vy > 0;
-  const carriedProfile = startedGrounded && p.grounded && followPlatformTop(p, platformProfiles, startingFeet, startingCenter);
+  const carriedProfile = startedGrounded && p.grounded && followPlatformTop(p, activeProfiles, startingFeet, startingCenter);
   let landed = false;
   if (carriedProfile) {
     p.grounded = true;
@@ -106,8 +141,8 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
     landed = true;
   } else {
     const previousFeet = p.y + p.h;
-    const rectLanded = moveAxis(p, terrain, 'y', verticalDistance) && downward;
-    const crossed = downward ? crossedPlatformSurface(p, platformProfiles, previousFeet, p.y + p.h) : null;
+    const rectLanded = moveAxis(p, activeTerrain, 'y', verticalDistance) && downward;
+    const crossed = downward ? crossedPlatformSurface(p, activeProfiles, previousFeet, p.y + p.h) : null;
     if (crossed && (!rectLanded || crossed.y < p.y + p.h)) {
       p.y = crossed.y - p.h;
       p.vy = 0;

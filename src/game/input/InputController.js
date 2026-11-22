@@ -1,14 +1,17 @@
 // DOM events capture edges independently of rendering; sample consumes one edge per tick.
 export class InputController {
   constructor(target = window, canvas = null) {
-    this.target = target; this.canvas = canvas; this.enabled = true; this.held = new Set(); this.queue = { jump: 0, attack: 0, roll: 0, dive: 0, shield: 0, parry: 0 };
+    this.target = target; this.canvas = canvas; this.enabled = true; this.held = new Set(); this.jumps = []; this.queue = { attack: 0, roll: 0, dive: 0, shield: 0, parry: 0 };
     this.pointer = null; this.pointerInside = false; this.listeners = [];
     const on = (type, fn, source = target) => { source.addEventListener(type, fn); this.listeners.push([source, type, fn]); };
-    const keys = { Space: 'jump', ShiftLeft: 'roll', ShiftRight: 'roll', KeyE: 'dive', KeyQ: 'parry' };
+    const keys = { ShiftLeft: 'roll', ShiftRight: 'roll', KeyE: 'dive', KeyQ: 'parry' };
     on('keydown', e => {
       if (!this.enabled || e.target?.closest?.('button,input,select,textarea,[contenteditable]')) return;
-      if (['KeyA','KeyD','Space','ShiftLeft','ShiftRight','KeyE','KeyQ'].includes(e.code)) e.preventDefault();
-      if (!e.repeat && !this.held.has(e.code) && keys[e.code]) this.queue[keys[e.code]]++;
+      if (['KeyA','KeyD','KeyS','ArrowDown','Space','ShiftLeft','ShiftRight','KeyE','KeyQ'].includes(e.code)) e.preventDefault();
+      if (!e.repeat && !this.held.has(e.code)) {
+        if (e.code === 'Space') this.jumps.push(this.held.has('KeyS') || this.held.has('ArrowDown'));
+        else if (keys[e.code]) this.queue[keys[e.code]]++;
+      }
       this.held.add(e.code);
     });
     on('keyup', e => this.held.delete(e.code));
@@ -38,13 +41,14 @@ export class InputController {
   }
   sample(scene) {
     const take = key => { if (this.queue[key] > 0) { this.queue[key]--; return true; } return false; };
+    const drop = this.jumps.shift();
     const world = this.pointer && (!this.canvas || this.pointerInside) ? scene.cameras.main.getWorldPoint(this.pointer.x, this.pointer.y) : null;
-    return { move: Number(this.held.has('KeyD'))-Number(this.held.has('KeyA')), jumpPressed: take('jump'),
+    return { move: Number(this.held.has('KeyD'))-Number(this.held.has('KeyA')), jumpPressed: drop !== undefined, dropPressed: drop === true,
       jumpHeld: this.held.has('Space'), attackPressed: take('attack'), rollPressed: take('roll'), divePressed: take('dive'),
       shieldPressed: take('shield'), shieldHeld: this.held.has('Mouse2'), parryPressed: take('parry'),
       aimX: world?.x ?? NaN, aimY: world?.y ?? NaN };
   }
   setEnabled(enabled) { this.enabled = enabled; if (!enabled) this.reset(); }
-  reset() { this.held.clear(); for (const key of Object.keys(this.queue)) this.queue[key] = 0; }
+  reset() { this.held.clear(); this.jumps.length = 0; for (const key of Object.keys(this.queue)) this.queue[key] = 0; }
   destroy() { for (const [source, type, fn] of this.listeners) source.removeEventListener(type, fn); this.listeners = []; this.reset(); }
 }

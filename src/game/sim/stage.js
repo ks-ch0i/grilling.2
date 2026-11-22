@@ -150,7 +150,11 @@ export function restoreStageRun(stage,snapshot,{legacyDefense=false}={}){
   if(s.outcome==='clear'&&s.round!==ROUND_COUNT)throw new TypeError('Only round 8 can clear a stage');
 
   const p=s.player,pt={...fresh.player,hitIds:[]};
-  if(!keys(p,Object.keys(pt))||!sameTypes(p,pt)||!strings(p.hitIds)||!keys(p.aim,['x','y'])||!Number.isFinite(p.aim.x)||!Number.isFinite(p.aim.y)||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(p.mode)||!Number.isFinite(p.hp)||p.hp<0||p.hp>3||!Number.isInteger(p.hp*2)||p.w!==16||p.h!==28||!['none','shield','parry'].includes(p.defenseMode))throw new TypeError('Invalid player snapshot');
+  if(!keys(p,Object.keys(pt),['dropPlatforms'])||!sameTypes(p,pt)||!strings(p.hitIds)||!keys(p.aim,['x','y'])||!Number.isFinite(p.aim.x)||!Number.isFinite(p.aim.y)||!['idle','run','jump','fall','attack','roll','dive','hurt','dead'].includes(p.mode)||!Number.isFinite(p.hp)||p.hp<0||p.hp>3||!Number.isInteger(p.hp*2)||p.w!==16||p.h!==28||!['none','shield','parry'].includes(p.defenseMode))throw new TypeError('Invalid player snapshot');
+  if(Object.hasOwn(p,'dropPlatforms')){
+    const drops=p.dropPlatforms;
+    if(!Array.isArray(drops)||new Set(drops).size!==drops.length||[...drops].some(index=>!count(index)||index>=s.terrainLayout.platforms.length))throw new TypeError('Invalid player drop platforms');
+  }
   for(const k of ['invulnerableTicks','rollCooldown','rollTicks','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks','defenseTicksRemaining'])if(!count(p[k]))throw new RangeError('Invalid player timer');
   if(!count(p.shieldCooldownTicks)||p.shieldCooldownTicks>180||!count(p.parryCooldownTicks)||p.parryCooldownTicks>180||p.defenseMode==='none'&&p.defenseTicksRemaining!==0||p.defenseMode==='shield'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>60)||p.defenseMode==='parry'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>15))throw new RangeError('Invalid defense timer');
   if((p.mode==='dead')!==(p.hp===0)||p.mode==='dead'&&s.deathTicks===0)throw new TypeError('Invalid death snapshot');
@@ -280,7 +284,7 @@ export function stepStage(previous,input,stage){
     platformProfiles=run.terrainLayout.platforms.filter(isProfiledPlatform),
     meleeTerrain=[...terrain,...platformOcclusionRects(platformProfiles)],
     rangedTerrain=stageRangedTerrain(stage,run.arenaLocked);let pushCompleted;
-  const playerStep=stepPlayer(run.player,input,terrain,stage.pitDeathY,platformProfiles);
+  const playerStep=stepPlayer(run.player,input,terrain,stage.pitDeathY,platformProfiles,run.terrainLayout.platforms);
   run.player=playerStep.player;pushCompleted=playerStep.pushCompleted;events.push(...playerStep.events);
   if(run.player.mode==='dead')return death(run,events);
 

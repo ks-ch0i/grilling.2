@@ -119,6 +119,16 @@ test('JSON snapshot restore preserves the encounter, round timer, and future ran
   }
 });
 
+test('in-progress platform drops round-trip, while malformed drop indexes are rejected',()=>{
+ const run=createStageRun(FOREST_STAGE,{}, {seed:251});assert.ok(run.terrainLayout.platforms.length>0);run.player.dropPlatforms=[0];
+ const snapshot=JSON.parse(JSON.stringify(snapshotStageRun(run))),restored=restoreStageRun(FOREST_STAGE,snapshot);
+ assert.deepEqual(restored.player.dropPlatforms,[0]);assert.deepEqual(snapshotStageRun(restored),snapshot);
+ const older=structuredClone(snapshot);delete older.player.dropPlatforms;assert.equal(restoreStageRun(FOREST_STAGE,older).player.dropPlatforms,undefined);
+ for(const indexes of [null,[-1],[1.5],[snapshot.terrainLayout.platforms.length],[0,0]]){
+  const invalid=structuredClone(snapshot);invalid.player.dropPlatforms=indexes;assert.throws(()=>restoreStageRun(FOREST_STAGE,invalid),TypeError);
+ }
+});
+
 test('fresh runs save their deterministic terrain and legacy snapshots keep fixed terrain',()=>{
   for(const stage of [FOREST_STAGE,MINE_STAGE]){
     const first=createStageRun(stage,{}, {seed:251});
