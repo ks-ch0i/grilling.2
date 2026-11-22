@@ -8,7 +8,7 @@ Allow the player to descend through a raised arena platform with `S` or `ArrowDo
 
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Finish the platform-drop input, simulation, snapshot compatibility, tests, and controls text. | [P01](../phases/2026-11-22-platform-drop-through/P01-platform-drop-through/phase.md) |
+| P01 | `complete` | Finish the platform-drop input, simulation, snapshot compatibility, tests, and controls text. | [P01](../phases/2026-11-22-platform-drop-through/P01-platform-drop-through/phase.md) |
 
 ## Confirmed Decisions
 
@@ -29,3 +29,8 @@ Allow the player to descend through a raised arena platform with `S` or `ArrowDo
 ## Task Order
 
 1. T01 completes and validates the input chord, drop-through collision behavior, save/restore state, and control descriptions as one cohesive change.
+
+## Completion
+
+- P01 completed with T01 in commit `d7f657b3b73ec91de347251d3327326a271d82b5`.
+- Focused tests, full test suite, and production build passed.

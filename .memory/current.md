@@ -1,18 +1,17 @@
 # Current Context
 
 ## Active Plan
-[Shield and Parry](./plans/2026-11-22-shield-and-parry.md)
+[Platform Drop-Through](./plans/2026-11-22-platform-drop-through.md)
 
 ## Active Phase
-[P01 Shield and Parry — complete](./phases/2026-11-22-shield-and-parry/P01-shield-parry/phase.md)
+[P01 Platform Drop-Through](./phases/2026-11-22-platform-drop-through/P01-platform-drop-through/phase.md)
 
 ## Active Task
-None — all tasks in the Shield and Parry plan are complete.
+None — the Platform Drop-Through plan is complete.
 
 ## Status
-- T01 is complete; the focused simulation/save tests and production build pass.
-- T02 is complete; both transparent pose sheets pass size, alignment, and visual checks.
-- T03 is complete; 216 tests pass and the production build succeeds.
+- Plan completed in commit `d7f657b3b73ec91de347251d3327326a271d82b5`.
+- All implementation and validation work for T01 is complete.
 
-## Next Step
-The Shield and Parry plan is complete. Set a new active plan when the next task is selected.
+## Next Step (IMPORTANT)
+Create a new plan when the next task is selected.
