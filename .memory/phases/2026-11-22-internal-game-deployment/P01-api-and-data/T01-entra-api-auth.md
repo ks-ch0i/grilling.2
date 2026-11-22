@@ -1,6 +1,6 @@
 # Task: T01 Entra API Authentication
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -67,15 +67,16 @@ Create the Node 22 managed Functions API foundation and a single reusable verifi
 
 ## Acceptance Criteria
 
-- [ ] API startup fails closed if any required Entra setting is missing.
-- [ ] Only a valid v2 access token for the configured API, SPA, scope, and tenant with `acct=0` returns an account identity.
-- [ ] Guest, wrong-tenant, anonymous, wrong-audience, wrong-client, and expired-token requests receive 401/403 and no account data.
-- [ ] The handler derives its identity exclusively from verified JWT claims.
+- [x] API startup fails closed if any required Entra setting is missing.
+- [x] Only a valid v2 access token for the configured API, SPA, scope, and tenant with `acct=0` returns an account identity.
+- [x] Guest, wrong-tenant, anonymous, wrong-audience, wrong-client, and expired-token requests receive 401/403 and no account data.
+- [x] The handler derives its identity exclusively from verified JWT claims.
 
 ## Validation
 
 - Run `npm --prefix api run check` after implementation.
-- Review the API registration and one member access token to confirm the emitted `tid`, `oid`, `acct`, `name`, `aud`, `azp`, `iss`, and `scp` values match the verifier contract. Do not log or commit the token.
+- A local synthetic RS256 token smoke check covers the configured member claims and denial cases without storing a token or adding a test file.
+- Review the actual API registration and one member access token to confirm the emitted `tid`, `oid`, `acct`, `name`, `aud`, `azp`, `iss`, and `scp` values during P03 Azure/Entra provisioning. Those registrations do not exist yet, so this live integration check is deferred and must not be represented as already verified. Do not log or commit the token.
 
 ## Commit Message
 
@@ -92,6 +93,7 @@ Task: T01-entra-api-auth
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation complete
+- [x] Implementation complete
+- [x] Local validation complete
+- [ ] Live Entra registration/token claim review deferred to P03 provisioning
 - commit: pending
