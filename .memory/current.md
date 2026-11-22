@@ -4,7 +4,7 @@
 [Platform Drop-Through](./plans/2026-11-22-platform-drop-through.md)
 
 ## Active Phase
-[P01 Platform Drop-Through](./phases/2026-11-22-platform-drop-through/P01-platform-drop-through/phase.md)
+[P01 Platform Drop-Through — complete](./phases/2026-11-22-platform-drop-through/P01-platform-drop-through/phase.md)
 
 ## Active Task
 None — the Platform Drop-Through plan is complete.
