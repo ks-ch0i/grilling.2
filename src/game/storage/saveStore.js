@@ -2,6 +2,8 @@ import {getStage} from '../content/stages.js';
 import {createStageRun,restoreStageRun,snapshotStageRun} from '../sim/stage.js';
 
 export const SAVE_KEY='pixel-action.save.v1';
+export const SETTINGS_KEY='pixel-action.settings.v1';
+export const DEFAULT_SETTINGS=Object.freeze({musicVolume:.5,sfxVolume:.7,screenShake:true});
 const LEGACY_PICKUP_IDS=new Set(['heal-1','heal-2','heal-3']);
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const shape=(value,keys)=>object(value)&&Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
@@ -129,6 +131,62 @@ function currentV6Save(value){
     (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
     easyProgress(value.easy)&&settings(value.settings);
+}
+
+const CLOUD_SAVE_KEYS=['version','run','unlockedStageIds','records','easy'];
+export function isValidCloudSave(value){
+  return shape(value,CLOUD_SAVE_KEYS)&&currentV6Save({...value,settings:DEFAULT_SETTINGS});
+}
+export function toCloudSave(save){
+  if(!currentV6Save(save))throw new TypeError('Invalid save');
+  return structuredClone({version:save.version,run:save.run,unlockedStageIds:save.unlockedStageIds,records:save.records,easy:save.easy});
+}
+export function fromCloudSave(save,localSettings=DEFAULT_SETTINGS){
+  if(!isValidCloudSave(save)||!settings(localSettings))throw new TypeError('Invalid cloud save');
+  return {...structuredClone(save),settings:{...localSettings}};
+}
+export function hasSaveProgress(save){
+  if(!currentV6Save(save))return false;
+  if(save.run!==null||save.unlockedStageIds.some(stageId=>stageId!=='forest-1'))return true;
+  if(Object.values(save.records).some(value=>value.best!==null||value.recent!==null))return true;
+  if(save.easy.unlockedRoundByStage['forest-1']>1||save.easy.unlockedRoundByStage['mine-1']>0)return true;
+  return ['forest-1','mine-1'].some(stageId=>Object.values(save.easy.roundDeaths[stageId]).some(value=>value>0)||
+    Object.values(save.easy.roundRecords[stageId]).some(value=>value.best!==null||value.recent!==null));
+}
+export function readLocalSnapshot(storage){
+  try{
+    const raw=storage.getItem(SAVE_KEY),parsed=parseSave(raw);
+    let savedSettings=null;
+    let embeddedSettings=null;
+    try{savedSettings=JSON.parse(storage.getItem(SETTINGS_KEY));}catch{}
+    if(raw!==null){try{embeddedSettings=JSON.parse(raw)?.settings;}catch{}}
+    const localSettings=settings(savedSettings)?savedSettings:settings(embeddedSettings)?embeddedSettings:parsed.ok?parsed.save.settings:DEFAULT_SETTINGS;
+    return {
+      ok:true,
+      settings:{...localSettings},
+      legacySave:parsed.ok?toCloudSave(parsed.save):null,
+      hasLegacyProgress:parsed.ok&&hasSaveProgress(parsed.save),
+      legacyWarning:raw!==null&&!parsed.ok?parsed.reason:null
+    };
+  }catch{
+    return {ok:false,settings:{...DEFAULT_SETTINGS},legacySave:null,hasLegacyProgress:false,legacyWarning:'unavailable'};
+  }
+}
+export function writeLocalSettings(storage,value){
+  if(!settings(value))return {ok:false,reason:'invalid'};
+  try{
+    const serialized=JSON.stringify(value);
+    storage.setItem(SETTINGS_KEY,serialized);
+    const raw=storage.getItem(SAVE_KEY);
+    if(raw!==null){
+      const parsed=parseSave(raw);
+      if(parsed.ok){
+        const original=JSON.parse(raw);
+        if(object(original)&&Object.hasOwn(original,'settings'))storage.setItem(SAVE_KEY,JSON.stringify({...original,settings:value}));
+      }
+    }
+    return {ok:true};
+  }catch{return {ok:false,reason:'unavailable'};}
 }
 function migrateLegacyRun(run){
   if(run===null)return null;

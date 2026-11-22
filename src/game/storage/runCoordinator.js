@@ -1,20 +1,25 @@
 import {recordCompletion} from './saveStore.js';
 export function createRunCoordinator({store,onStorageError=()=>{}}){
   let scene=null,finished=false,ticksSinceAttempt=0,listeners=[];
-  function persist(){const result=store.persist();if(!result.ok)onStorageError(result.reason);return result;}
-  function flush(){
+  function persist(options){const result=store.persist(options);if(!result.ok)onStorageError(result.reason);return result;}
+  function flush({immediate=false}={}){
     if(!scene||finished)return {ok:true};
     const run=scene.exportStageSnapshot();ticksSinceAttempt=0;
-    store.setSave({...store.getSave(),run});return persist();
+    store.setSave({...store.getSave(),run});return persist({immediate});
   }
   function onClear(){
     if(finished||!scene)return;finished=true;
     const data=scene.exportStageSnapshot();
-    store.setSave(recordCompletion(store.getSave(),data.stageId,{elapsedTicks:data.elapsedTicks,deaths:data.deaths}));persist();
+    store.setSave(recordCompletion(store.getSave(),data.stageId,{elapsedTicks:data.elapsedTicks,deaths:data.deaths}));persist({immediate:true});
   }
   function bind(target){
     if(scene)throw new Error('Coordinator already attached');scene=target;ticksSinceAttempt=0;
-    for(const name of ['stage:pickup','stage:death','round:clear','round:start']){const handler=()=>flush();target.events.on(name,handler);listeners.push([name,handler]);}
+    for(const [name,handler] of [
+      ['stage:pickup',()=>flush()],
+      ['stage:death',()=>flush({immediate:true})],
+      ['round:clear',()=>flush({immediate:true})],
+      ['round:start',()=>flush()]
+    ]){target.events.on(name,handler);listeners.push([name,handler]);}
     target.events.on('stage:clear',onClear);listeners.push(['stage:clear',onClear]);return api;
   }
   function tick(){if(scene&&!finished&&++ticksSinceAttempt>=60)flush();}

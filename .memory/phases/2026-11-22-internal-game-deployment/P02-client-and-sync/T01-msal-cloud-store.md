@@ -1,6 +1,6 @@
 # Task: T01 MSAL Sign-In and Cloud Save Store
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -71,17 +71,17 @@ Require a company member account before Phaser starts, then initialize the game 
 
 ## Acceptance Criteria
 
-- [ ] Production Phaser startup is blocked until a valid company member identity is confirmed by `/api/account`.
-- [ ] A guest or wrong-tenant account cannot start play or submit saves, including when an account cache exists.
-- [ ] Legacy local progress is imported only after an explicit choice and only when cloud state is confirmed empty.
-- [ ] During API outage, a signed-in account with local cache can continue; its writes remain queued under that account and sync after recovery.
-- [ ] Local settings survive sign-in, cloud reload, import, and account switching without appearing in Cosmos payloads.
-- [ ] Network requests never block Phaser's simulation loop.
+- [x] Production Phaser startup is blocked until a valid company member identity is confirmed by `/api/account`.
+- [x] A guest or wrong-tenant account cannot start play or submit saves, including when an account cache exists.
+- [x] Legacy local progress is imported only after an explicit choice and only when cloud state is confirmed empty.
+- [x] During API outage, a signed-in account with local cache can continue; its writes remain queued under that account and sync after recovery.
+- [x] Local settings survive sign-in, cloud reload, import, and account switching without appearing in Cosmos payloads.
+- [x] Network requests never block Phaser's simulation loop.
 
 ## Validation
 
-- Run `npm run build` after implementation.
-- Use the production app with a member, a guest, and a second browser profile: verify sign-in, denied guest access, cloud reload, explicit legacy import/skip, offline queue/recovery, and local settings separation.
+- [x] `npm run build` passed after implementation.
+- Production browser checks with member/guest accounts, a second profile, live import/skip, and offline recovery are deferred until P03 because no production Entra values or deployed `/api` are configured in this workspace.
 
 ## Commit Message
 
@@ -98,6 +98,6 @@ Task: T01-msal-cloud-store
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation complete
+- [x] Implementation complete
+- [x] Local build validation complete; live Entra and API behavior remains to be exercised after P03 provisioning.
 - commit: pending

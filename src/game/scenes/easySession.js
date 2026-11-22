@@ -48,7 +48,7 @@ function easyRoundDeaths(scene){
 export function handleEasyDeath(scene){
   if(scene.mode!=='easy'||scene.easyDeathHandled)return;
   scene.easyDeathHandled=true;scene.pauseEasyDecision();
-  scene.store.setSave(recordEasyDeath(scene.store.getSave(),scene.stage.id,scene.run.round));scene.store.persist();
+  scene.store.setSave(recordEasyDeath(scene.store.getSave(),scene.stage.id,scene.run.round));scene.store.persist({immediate:true});
   scene.easyCurrentRecord={elapsedTicks:scene.run.elapsedTicks,deaths:easyRoundDeaths(scene)};
   showEasyChoice(scene,'death');
 }
@@ -56,7 +56,7 @@ export function handleEasyDeath(scene){
 function recordEasyClear(scene){
   const result={elapsedTicks:scene.run.elapsedTicks,deaths:easyRoundDeaths(scene)};
   const save=recordEasyRoundCompletion(scene.store.getSave(),scene.stage.id,scene.run.round,result);
-  scene.store.setSave(save);scene.store.persist();scene.easyCurrentRecord=result;
+  scene.store.setSave(save);scene.store.persist({immediate:true});scene.easyCurrentRecord=result;
   scene.easyBestRecord=save.easy.roundRecords[scene.stage.id][String(scene.run.round)].best;
 }
 

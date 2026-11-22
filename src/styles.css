@@ -44,6 +44,63 @@ canvas { display: block; image-rendering: pixelated; }
   .result-panel { padding:16px; }
 }
 
+.auth-screen {
+  position:absolute;
+  z-index:100;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  overflow:auto;
+  background:radial-gradient(ellipse at 50% 20%, #24352f 0%, #121a1d 58%, #0b1115 100%);
+}
+.auth-panel {
+  width:min(460px,100%);
+  padding:clamp(22px,5vw,36px);
+  border:1px solid #657b65;
+  background:linear-gradient(145deg,#182522f5,#11191cf7);
+  box-shadow:0 20px 60px #0009;
+}
+.auth-panel h2 {
+  margin:0 0 12px;
+  color:#e4d19b;
+  font-size:clamp(24px,5vw,34px);
+  text-align:center;
+}
+.auth-message {
+  margin:0 0 20px;
+  color:#d0d5c9;
+  line-height:1.55;
+  text-align:center;
+}
+.auth-button {
+  display:block;
+  width:100%;
+  min-height:44px;
+  margin:10px 0 0;
+  padding:10px 14px;
+  border:1px solid #819179;
+  background:#283b34;
+  color:#f7f2df;
+  font:650 15px/1.3 system-ui,sans-serif;
+  text-align:center;
+  cursor:pointer;
+}
+.auth-button:hover,.auth-button:focus-visible {
+  outline:2px solid #f1d48d;
+  outline-offset:2px;
+  background:#3b5748;
+}
+.auth-button-primary {
+  border-color:#f0d89b;
+  background:#a47d3c;
+  color:#1b1912;
+}
+.auth-button-primary:hover,.auth-button-primary:focus-visible { background:#c59d56; }
+.auth-account-list { display:grid; gap:6px; margin-bottom:12px; }
+.auth-account-list .auth-button { margin:0; overflow-wrap:anywhere; }
+.import-panel { border-color:#b59b63; }
+
 .game-overlay--title {
   display: block;
   padding: 0;
