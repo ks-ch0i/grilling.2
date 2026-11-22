@@ -73,17 +73,17 @@ test('locked Easy scene payloads return to title instead of starting a round',()
   assert.equal(scene.scene.started,'title');
 });
 
-test('Easy death persists one lifetime death and Retry starts the same round without changing Hard data',()=>withFakeDocument(()=>{
+test('Easy death increments that round only and Retry starts the same round without changing Hard data',()=>withFakeDocument(()=>{
   const {scene,hardRun}=makeScene();handleEasyDeath(scene);const menu=scene.easyDecisionMenu;
   handleEasyDeath(scene);
-  assert.equal(scene.store.getSave().easy.totalDeaths,1);assert.equal(scene.store.persistCalls,1);
+  assert.equal(scene.store.getSave().easy.roundDeaths['forest-1']['1'],1);assert.equal(scene.store.getSave().easy.roundDeaths['forest-1']['2'],0);assert.equal(scene.store.persistCalls,1);
   assert.deepEqual(scene.store.getSave().run,hardRun);assert.equal(scene.easyDecisionOpen,true);assert.equal(scene.paused,true);
   assert.deepEqual(buttons(menu).map(button=>button.textContent),['다시 시도','라운드 선택','홈']);
   click(menu,'라운드 선택');click(scene.easyDecisionMenu,'뒤로');
   assert.equal(scene.easyDecisionMenu.panel.children[0].textContent,'사망');assert.equal(scene.easyDecisionOpen,true);
   click(scene.easyDecisionMenu,'다시 시도');
   assert.deepEqual(scene.restarted,{mode:'easy',stageId:'forest-1',round:1});assert.equal(scene.easyDecisionOpen,false);
-  assert.equal(scene.store.getSave().easy.totalDeaths,1);assert.deepEqual(scene.store.getSave().run,hardRun);
+  assert.equal(scene.store.getSave().easy.roundDeaths['forest-1']['1'],1);assert.deepEqual(scene.store.getSave().run,hardRun);
 }));
 
 test('Easy round clear saves its timer and unlock before showing choices; selector Back restores the clear popup',()=>withFakeDocument(()=>{

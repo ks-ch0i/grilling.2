@@ -16,11 +16,18 @@ const unlocked=value=>Array.isArray(value)&&value.includes('forest-1')&&new Set(
 const ROUND_KEYS=Array.from({length:8},(_,index)=>String(index+1));
 const easyRoundRecords=value=>shape(value,['forest-1','mine-1'])&&['forest-1','mine-1'].every(stageId=>
   shape(value[stageId],ROUND_KEYS)&&ROUND_KEYS.every(round=>records(value[stageId][round])));
-const easyProgress=value=>shape(value,['unlockedRoundByStage','totalDeaths','roundRecords'])&&
+const easyRoundDeaths=value=>shape(value,['forest-1','mine-1'])&&['forest-1','mine-1'].every(stageId=>
+  shape(value[stageId],ROUND_KEYS)&&ROUND_KEYS.every(round=>count(value[stageId][round])));
+const legacyEasyProgress=value=>shape(value,['unlockedRoundByStage','totalDeaths','roundRecords'])&&
   shape(value.unlockedRoundByStage,['forest-1','mine-1'])&&
   Number.isInteger(value.unlockedRoundByStage['forest-1'])&&value.unlockedRoundByStage['forest-1']>=1&&value.unlockedRoundByStage['forest-1']<=8&&
   Number.isInteger(value.unlockedRoundByStage['mine-1'])&&value.unlockedRoundByStage['mine-1']>=0&&value.unlockedRoundByStage['mine-1']<=8&&
   count(value.totalDeaths)&&easyRoundRecords(value.roundRecords);
+const easyProgress=value=>shape(value,['unlockedRoundByStage','roundDeaths','roundRecords'])&&
+  shape(value.unlockedRoundByStage,['forest-1','mine-1'])&&
+  Number.isInteger(value.unlockedRoundByStage['forest-1'])&&value.unlockedRoundByStage['forest-1']>=1&&value.unlockedRoundByStage['forest-1']<=8&&
+  Number.isInteger(value.unlockedRoundByStage['mine-1'])&&value.unlockedRoundByStage['mine-1']>=0&&value.unlockedRoundByStage['mine-1']<=8&&
+  easyRoundDeaths(value.roundDeaths)&&easyRoundRecords(value.roundRecords);
 const oldV1Run=value=>shape(value,['stageId','checkpoint','consumedPickupIds','elapsedTicks','deaths'])&&value.stageId==='forest-1'&&['start','mid'].includes(value.checkpoint)&&Array.isArray(value.consumedPickupIds)&&new Set(value.consumedPickupIds).size===value.consumedPickupIds.length&&value.consumedPickupIds.every(id=>typeof id==='string'&&LEGACY_PICKUP_IDS.has(id))&&count(value.elapsedTicks)&&count(value.deaths);
 
 function legacyRect(value,ticks=false){
@@ -109,10 +116,16 @@ function currentV4Save(value){
   return shape(value,['version','run','unlockedStageIds','records','easy','settings'])&&value.version===4&&
     (value.run===null||currentSnapshot(value.run,true))&&unlocked(value.unlockedStageIds)&&
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
-    easyProgress(value.easy)&&settings(value.settings);
+    legacyEasyProgress(value.easy)&&settings(value.settings);
 }
 function currentV5Save(value){
   return shape(value,['version','run','unlockedStageIds','records','easy','settings'])&&value.version===5&&
+    (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
+    shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
+    legacyEasyProgress(value.easy)&&settings(value.settings);
+}
+function currentV6Save(value){
+  return shape(value,['version','run','unlockedStageIds','records','easy','settings'])&&value.version===6&&
     (value.run===null||currentSnapshot(value.run))&&unlocked(value.unlockedStageIds)&&
     shape(value.records,['forest-1','mine-1'])&&records(value.records['forest-1'])&&records(value.records['mine-1'])&&
     easyProgress(value.easy)&&settings(value.settings);
@@ -122,7 +135,17 @@ function migrateLegacyRun(run){
   return snapshotStageRun(restoreStageRun(getStage(run.stageId),run,{legacyDefense:true}));
 }
 function migrateV4Save(value){return {...value,version:5,run:migrateLegacyRun(value.run)};}
-function freshEasyProgress(){
+function emptyRoundCounts(){return Object.fromEntries(['forest-1','mine-1'].map(stageId=>[
+  stageId,Object.fromEntries(ROUND_KEYS.map(round=>[round,0]))
+]));}
+function migrateV5Save(value){
+  return {...value,version:6,easy:{
+    unlockedRoundByStage:value.easy.unlockedRoundByStage,
+    roundDeaths:emptyRoundCounts(),
+    roundRecords:value.easy.roundRecords
+  }};
+}
+function legacyFreshEasyProgress(){
   const emptyRecord=()=>({best:null,recent:null});
   const stageRoundRecords=()=>Object.fromEntries(ROUND_KEYS.map(round=>[round,emptyRecord()]));
   return {
@@ -131,20 +154,30 @@ function freshEasyProgress(){
     roundRecords:{'forest-1':stageRoundRecords(),'mine-1':stageRoundRecords()}
   };
 }
+function freshEasyProgress(){
+  const emptyRecord=()=>({best:null,recent:null});
+  const stageRoundRecords=()=>Object.fromEntries(ROUND_KEYS.map(round=>[round,emptyRecord()]));
+  return {
+    unlockedRoundByStage:{'forest-1':1,'mine-1':0},
+    roundDeaths:emptyRoundCounts(),
+    roundRecords:{'forest-1':stageRoundRecords(),'mine-1':stageRoundRecords()}
+  };
+}
 
 export function freshSave(){
-  return {version:5,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},easy:freshEasyProgress(),settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
+  return {version:6,run:null,unlockedStageIds:['forest-1'],records:{'forest-1':{best:null,recent:null},'mine-1':{best:null,recent:null}},easy:freshEasyProgress(),settings:{musicVolume:.5,sfxVolume:.7,screenShake:true}};
 }
 export function parseSave(raw){
   if(raw===null)return {ok:true,save:freshSave()};
   if(typeof raw!=='string')return {ok:false,reason:'invalid'};
   let value;try{value=JSON.parse(raw);}catch{return {ok:false,reason:'invalid'};}
-  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>5)return {ok:false,reason:'unsupported-version'};
+  if(object(value)&&Number.isSafeInteger(value.version)&&value.version>6)return {ok:false,reason:'unsupported-version'};
   if(oldV1Save(value)||oldV2Save(value))return {ok:true,save:freshSave(),migrated:true};
-  if(currentV3Save(value))return {ok:true,save:migrateV4Save({...value,version:4,easy:freshEasyProgress()}),migrated:true};
-  if(currentV4Save(value))return {ok:true,save:migrateV4Save(value),migrated:true};
-  if(!currentV5Save(value))return {ok:false,reason:'invalid'};
-  return {ok:true,save:value};
+  if(currentV3Save(value))return {ok:true,save:migrateV5Save(migrateV4Save({...value,version:4,easy:legacyFreshEasyProgress()})),migrated:true};
+  if(currentV4Save(value))return {ok:true,save:migrateV5Save(migrateV4Save(value)),migrated:true};
+  if(currentV5Save(value))return {ok:true,save:migrateV5Save(value),migrated:true};
+  if(currentV6Save(value))return {ok:true,save:value};
+  return {ok:false,reason:'invalid'};
 }
 export function loadSave(storage){try{return parseSave(storage.getItem(SAVE_KEY));}catch{return {ok:false,reason:'unavailable'};}}
 export function writeSave(storage,save){
@@ -160,14 +193,15 @@ export function recordCompletion(save,stageId,result){
   return {...save,run,unlockedStageIds,records:{...save.records,[stageId]:{recent:{...result},best:!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best}}}};
 }
 
-export function recordEasyDeath(save){
-  if(!currentV5Save(save))throw new TypeError('Invalid save');
-  if(save.easy.totalDeaths===Number.MAX_SAFE_INTEGER)throw new RangeError('Easy death count is full');
-  return {...save,easy:{...save.easy,totalDeaths:save.easy.totalDeaths+1}};
+export function recordEasyDeath(save,stageId,round){
+  if(!currentV6Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||round>save.easy.unlockedRoundByStage[stageId])throw new TypeError('Invalid Easy round death');
+  const roundKey=String(round),current=save.easy.roundDeaths[stageId][roundKey];
+  if(current===Number.MAX_SAFE_INTEGER)throw new RangeError('Easy round death count is full');
+  return {...save,easy:{...save.easy,roundDeaths:{...save.easy.roundDeaths,[stageId]:{...save.easy.roundDeaths[stageId],[roundKey]:current+1}}}};
 }
 
 export function recordEasyRoundCompletion(save,stageId,round,result){
-  if(!currentV5Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||!record(result))throw new TypeError('Invalid Easy round record');
+  if(!currentV6Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||!record(result))throw new TypeError('Invalid Easy round record');
   if(round>save.easy.unlockedRoundByStage[stageId])throw new TypeError('Easy round is locked');
   const roundKey=String(round),previous=save.easy.roundRecords[stageId][roundKey];
   const best=!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best};

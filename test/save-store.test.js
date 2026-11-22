@@ -36,20 +36,21 @@ function validV3Save(){
  for(const key of ['defenseMode','defenseTicksRemaining','shieldCooldownTicks','parryCooldownTicks'])delete run.player[key];
  return {...legacy,version:3,run,unlockedStageIds:['forest-1','mine-1'],records:{'forest-1':{best:{elapsedTicks:420,deaths:4},recent:{elapsedTicks:500,deaths:5}},'mine-1':{best:{elapsedTicks:350,deaths:2},recent:{elapsedTicks:390,deaths:3}},},settings:{musicVolume:.2,sfxVolume:.4,screenShake:false}};
 }
-function validV4Save(){const v3=validV3Save();return {...v3,version:4,easy:structuredClone(freshSave().easy)};}
-test('v5 validates complete snapshots, records, Easy progress and settings',()=>{
+function legacyEasyProgress(){const easy=freshSave().easy;return {unlockedRoundByStage:easy.unlockedRoundByStage,totalDeaths:0,roundRecords:easy.roundRecords};}
+function validV4Save(){const v3=validV3Save();return {...v3,version:4,easy:legacyEasyProgress()};}
+test('v6 validates complete snapshots, records, Easy progress and settings',()=>{
  const save={...freshSave(),run:validRun()};assert.deepEqual(parseSave(JSON.stringify(save)),{ok:true,save});
- const bad=[undefined,'{',JSON.stringify({...save,extra:true}),JSON.stringify({...save,version:0}),JSON.stringify({...save,run:{...save.run,consumedPickupIds:['heal-1','heal-1']}}),JSON.stringify({...save,run:{...save.run,consumedPickupIds:['bad']}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,hp:4}}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,hp:2.25}}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,shieldCooldownTicks:181}}}),JSON.stringify({...save,unlockedStageIds:['forest-1','forest-1']}),JSON.stringify({...save,settings:{...save.settings,musicVolume:2}}),JSON.stringify({...save,easy:{...save.easy,totalDeaths:-1}})];
- for(const raw of bad)assert.equal(parseSave(raw).ok,false,String(raw));assert.equal(parseSave('{"version":6}').reason,'unsupported-version');
+ const bad=[undefined,'{',JSON.stringify({...save,extra:true}),JSON.stringify({...save,version:0}),JSON.stringify({...save,run:{...save.run,consumedPickupIds:['heal-1','heal-1']}}),JSON.stringify({...save,run:{...save.run,consumedPickupIds:['bad']}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,hp:4}}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,hp:2.25}}}),JSON.stringify({...save,run:{...save.run,player:{...save.run.player,shieldCooldownTicks:181}}}),JSON.stringify({...save,unlockedStageIds:['forest-1','forest-1']}),JSON.stringify({...save,settings:{...save.settings,musicVolume:2}}),JSON.stringify({...save,easy:{...save.easy,roundDeaths:{...save.easy.roundDeaths,'forest-1':{...save.easy.roundDeaths['forest-1'],'1':-1}}}})];
+ for(const raw of bad)assert.equal(parseSave(raw).ok,false,String(raw));assert.equal(parseSave('{"version":7}').reason,'unsupported-version');
 });
 
-test('v5 accepts a legacy terrain layout but rejects an invalid present layout',()=>{
+test('v6 accepts a legacy terrain layout but rejects an invalid present layout',()=>{
  const save={...freshSave(),run:validRun()};delete save.run.terrainLayout;
  assert.equal(parseSave(JSON.stringify(save)).ok,true);
  const invalid={...freshSave(),run:validRun()};invalid.run.terrainLayout={mode:'random',platforms:[]};
  assert.equal(parseSave(JSON.stringify(invalid)).ok,false);
 });
-test('v5 round-trips authored, older profile and older rectangular runs with records intact',()=>{
+test('v6 round-trips authored, older profile and older rectangular runs with records intact',()=>{
  const authored=snapshotStageRun(createStageRun(FOREST_STAGE,{}, {seed:251}));
  assert.equal(authored.terrainLayout.presetId,'forest-terrace-v1');
  const oldRectangles={mode:'random',platforms:[
@@ -59,28 +60,29 @@ test('v5 round-trips authored, older profile and older rectangular runs with rec
  for(const terrainLayout of [authored.terrainLayout,oldProfileLayout(),oldRectangles]){
   const save={...freshSave(),run:{...authored,elapsedTicks:721,deaths:2,terrainLayout}};
   save.records['forest-1'].best={elapsedTicks:900,deaths:1};
-  save.easy.totalDeaths=3;
+  save.easy.roundDeaths['forest-1']['1']=3;
   const storage=memory();assert.deepEqual(writeSave(storage,save),{ok:true});
   assert.deepEqual(loadSave(storage),{ok:true,save});
  }
  const mismatched=structuredClone(authored);mismatched.terrainLayout.platforms[1].topProfile[0]++;
  assert.equal(parseSave(JSON.stringify({...freshSave(),run:mismatched})).ok,false);
 });
-test('v5 stores and restores an in-progress platform drop without a schema upgrade',()=>{
+test('v6 stores and restores an in-progress platform drop',()=>{
  const run=validRun();assert.ok(run.terrainLayout.platforms.length>0);run.player.dropPlatforms=[0];
  const storage=memory(),save={...freshSave(),run};assert.deepEqual(writeSave(storage,save),{ok:true});
- const loaded=loadSave(storage);assert.equal(loaded.ok,true);assert.equal(loaded.save.version,5);assert.deepEqual(loaded.save.run.player.dropPlatforms,[0]);
+ const loaded=loadSave(storage);assert.equal(loaded.ok,true);assert.equal(loaded.save.version,6);assert.deepEqual(loaded.save.run.player.dropPlatforms,[0]);
 });
-test('fresh save starts at v5 with only Easy Forest Round 1 unlocked',()=>{
+test('fresh save starts at v6 with only Easy Forest Round 1 unlocked',()=>{
  const save=freshSave();
- assert.equal(save.version,5);assert.equal(save.run,null);
- assert.deepEqual(save.easy.unlockedRoundByStage,{'forest-1':1,'mine-1':0});assert.equal(save.easy.totalDeaths,0);
+ assert.equal(save.version,6);assert.equal(save.run,null);
+ assert.deepEqual(save.easy.unlockedRoundByStage,{'forest-1':1,'mine-1':0});
+ assert.equal(save.easy.roundDeaths['forest-1']['1'],0);assert.equal(save.easy.roundDeaths['forest-1']['2'],0);assert.equal(save.easy.roundDeaths['mine-1']['1'],0);
  for(const stageId of ['forest-1','mine-1'])for(let round=1;round<=8;round++)assert.deepEqual(save.easy.roundRecords[stageId][String(round)],{best:null,recent:null});
  assert.equal(parseSave(JSON.stringify(save)).ok,true);
 });
 test('valid v3 migrates Hard data unchanged and persists the new Easy defaults once',()=>{
  const legacy=validV3Save(),parsed=parseSave(JSON.stringify(legacy));
- assert.equal(parsed.ok,true);assert.equal(parsed.migrated,true);assert.equal(parsed.save.version,5);
+ assert.equal(parsed.ok,true);assert.equal(parsed.migrated,true);assert.equal(parsed.save.version,6);
  assert.equal(parsed.save.run.stageId,legacy.run.stageId);
  const migratedPlayer={...parsed.save.run.player};for(const key of ['defenseMode','defenseTicksRemaining','shieldCooldownTicks','parryCooldownTicks'])delete migratedPlayer[key];
  assert.deepEqual(migratedPlayer,legacy.run.player);assert.equal(parsed.save.run.player.defenseMode,'none');
@@ -89,15 +91,17 @@ test('valid v3 migrates Hard data unchanged and persists the new Easy defaults o
  const storage=memory(JSON.stringify(legacy)),app=createAppStore(()=>storage);
  assert.equal(storage.writes,1);assert.deepEqual(app.getSave(),parsed.save);assert.deepEqual(loadSave(storage).save,parsed.save);
 });
-test('valid v4 migrates to v5 without changing the active run, records, unlocks, Easy progress or settings',()=>{
+test('valid v4 migrates to v6 and initializes independent Easy round death counters',()=>{
  const legacy=validV4Save();legacy.easy.totalDeaths=17;legacy.easy.unlockedRoundByStage['forest-1']=4;
- const parsed=parseSave(JSON.stringify(legacy));assert.equal(parsed.ok,true);assert.equal(parsed.migrated,true);assert.equal(parsed.save.version,5);
+ const parsed=parseSave(JSON.stringify(legacy));assert.equal(parsed.ok,true);assert.equal(parsed.migrated,true);assert.equal(parsed.save.version,6);
  assert.equal(parsed.save.run.player.defenseMode,'none');assert.equal(parsed.save.run.player.defenseTicksRemaining,0);
  assert.equal(parsed.save.run.player.shieldCooldownTicks,0);assert.equal(parsed.save.run.player.parryCooldownTicks,0);
  const migratedRun={...parsed.save.run,player:{...parsed.save.run.player}};
  for(const key of ['defenseMode','defenseTicksRemaining','shieldCooldownTicks','parryCooldownTicks'])delete migratedRun.player[key];
  assert.deepEqual(migratedRun,legacy.run);assert.deepEqual(parsed.save.records,legacy.records);assert.deepEqual(parsed.save.unlockedStageIds,legacy.unlockedStageIds);
- assert.deepEqual(parsed.save.easy,legacy.easy);assert.deepEqual(parsed.save.settings,legacy.settings);
+ assert.deepEqual(parsed.save.easy.unlockedRoundByStage,legacy.easy.unlockedRoundByStage);assert.deepEqual(parsed.save.easy.roundRecords,legacy.easy.roundRecords);
+ assert.equal(parsed.save.easy.roundDeaths['forest-1']['1'],0);assert.equal(parsed.save.easy.roundDeaths['mine-1']['8'],0);
+ assert.deepEqual(parsed.save.settings,legacy.settings);
 });
 test('malformed v3 is rejected rather than migrated',()=>{
  const legacy=validV3Save();assert.equal(parseSave(JSON.stringify({...legacy,extra:true})).reason,'invalid');
@@ -112,9 +116,9 @@ test('v1 reset write failure is visible and can retry',()=>{
  const storage=memory(JSON.stringify(v1));const write=storage.setItem;let fail=true;storage.setItem=function(k,v){if(fail)throw Error('quota');write.call(this,k,v);};
  const app=createAppStore(()=>storage);assert.equal(app.getWarning(),'unavailable');assert.equal(storage.getItem(SAVE_KEY),JSON.stringify(v1));fail=false;assert.equal(app.retry().ok,true);assert.deepEqual(loadSave(storage).save,freshSave());
 });
-test('a structurally valid v2 save with progress is reset and persisted as a fresh v5 save',()=>{
+test('a structurally valid v2 save with progress is reset and persisted as a fresh v6 save',()=>{
  const storage=memory(JSON.stringify(validV2Save()));const app=createAppStore(()=>storage);
- assert.deepEqual(app.getSave(),freshSave());assert.equal(app.getSave().version,5);assert.equal(storage.writes,1);assert.deepEqual(loadSave(storage).save,freshSave());
+ assert.deepEqual(app.getSave(),freshSave());assert.equal(app.getSave().version,6);assert.equal(storage.writes,1);assert.deepEqual(loadSave(storage).save,freshSave());
  const mine=parseSave(JSON.stringify({...validV2Save(),run:legacyV2MineRun()}));assert.equal(mine.ok,true);assert.equal(mine.migrated,true);assert.deepEqual(mine.save,freshSave());
 });
 test('storage errors are returned and writes validate before touching storage',()=>{
@@ -127,11 +131,13 @@ test('records are stage-specific and ties retain the earlier paired deaths',()=>
  assert.equal(s.run.terrainLayout.mode,'authored');assert.ok(ARENA_PLATFORM_PRESETS['mine-1'].some(preset=>preset.id===s.run.terrainLayout.presetId));
  s=recordCompletion(s,'mine-1',{elapsedTicks:400,deaths:3});assert.equal(s.records['forest-1'].best.elapsedTicks,500);assert.equal(s.records['mine-1'].best.elapsedTicks,400);assert.equal(s.run,null);
 });
-test('Easy deaths persist independently from Hard state and reject overflow',()=>{
- const save=freshSave(),after=recordEasyDeath(save);
- assert.equal(save.easy.totalDeaths,0);assert.equal(after.easy.totalDeaths,1);
+test('Easy deaths persist independently per round and reject overflow',()=>{
+ const save=freshSave(),after=recordEasyDeath(save,'forest-1',1);
+ assert.equal(save.easy.roundDeaths['forest-1']['1'],0);assert.equal(after.easy.roundDeaths['forest-1']['1'],1);
+ assert.equal(after.easy.roundDeaths['forest-1']['2'],0);assert.equal(after.easy.roundDeaths['mine-1']['1'],0);
  assert.deepEqual(after.run,save.run);assert.deepEqual(after.records,save.records);assert.deepEqual(after.unlockedStageIds,save.unlockedStageIds);assert.deepEqual(after.settings,save.settings);
- assert.throws(()=>recordEasyDeath({...save,easy:{...save.easy,totalDeaths:Number.MAX_SAFE_INTEGER}}),RangeError);
+ const full={...save,easy:{...save.easy,roundDeaths:{...save.easy.roundDeaths,'forest-1':{...save.easy.roundDeaths['forest-1'],'1':Number.MAX_SAFE_INTEGER}}}};
+ assert.throws(()=>recordEasyDeath(full,'forest-1',1),RangeError);
 });
 test('Easy round records use fastest time, retain tied best deaths, and unlock progression',()=>{
  const save=freshSave();let next=recordEasyRoundCompletion(save,'forest-1',1,{elapsedTicks:500,deaths:4});

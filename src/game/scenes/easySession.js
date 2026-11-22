@@ -41,16 +41,20 @@ export function initializeEasyRun(scene,data={}){
   scene.stage=getStage(scene.run.stageId);return true;
 }
 
+function easyRoundDeaths(scene){
+  return scene.store.getSave().easy.roundDeaths[scene.stage.id][String(scene.run.round)];
+}
+
 export function handleEasyDeath(scene){
   if(scene.mode!=='easy'||scene.easyDeathHandled)return;
   scene.easyDeathHandled=true;scene.pauseEasyDecision();
-  scene.store.setSave(recordEasyDeath(scene.store.getSave()));scene.store.persist();
-  scene.easyCurrentRecord={elapsedTicks:scene.run.elapsedTicks,deaths:scene.store.getSave().easy.totalDeaths};
+  scene.store.setSave(recordEasyDeath(scene.store.getSave(),scene.stage.id,scene.run.round));scene.store.persist();
+  scene.easyCurrentRecord={elapsedTicks:scene.run.elapsedTicks,deaths:easyRoundDeaths(scene)};
   showEasyChoice(scene,'death');
 }
 
 function recordEasyClear(scene){
-  const result={elapsedTicks:scene.run.elapsedTicks,deaths:scene.store.getSave().easy.totalDeaths};
+  const result={elapsedTicks:scene.run.elapsedTicks,deaths:easyRoundDeaths(scene)};
   const save=recordEasyRoundCompletion(scene.store.getSave(),scene.stage.id,scene.run.round,result);
   scene.store.setSave(save);scene.store.persist();scene.easyCurrentRecord=result;
   scene.easyBestRecord=save.easy.roundRecords[scene.stage.id][String(scene.run.round)].best;
@@ -78,7 +82,7 @@ export function showEasyChoice(scene,kind){
   menu.panel.querySelector(':scope > p')?.classList.add('result-subtitle');
   const intro=menu.text(isDeath?'이번 도전이 끝났습니다':isStageClear?'스테이지의 모든 라운드를 돌파했습니다':'다음 선택을 기다리는 동안 시간은 멈춥니다');intro.className='result-eyebrow';
   const summary=document.createElement('div');summary.className=`result-summary${isDeath?' result-summary-single':''}`;
-  const current=scene.easyCurrentRecord??{elapsedTicks:scene.run.elapsedTicks,deaths:scene.store.getSave().easy.totalDeaths};
+  const current=scene.easyCurrentRecord??{elapsedTicks:scene.run.elapsedTicks,deaths:easyRoundDeaths(scene)};
   summary.append(resultCard(isDeath?'이번 도전':'이번 라운드',current,'result-record-current'));
   if(!isDeath){
     const best=scene.easyBestRecord??scene.store.getSave().easy.roundRecords[stageId][String(round)].best;

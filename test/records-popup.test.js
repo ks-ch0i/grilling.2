@@ -59,7 +59,6 @@ test('fresh records show an empty eight-row Easy table and two empty Hard cards'
 
 test('mode and stage switches keep time and deaths paired without changing the save',()=>withDocument(()=>{
   const save=freshSave();
-  save.easy.totalDeaths=50;
   save.easy.roundRecords['forest-1']['1']={best:{elapsedTicks:0,deaths:0},recent:{elapsedTicks:120,deaths:2}};
   save.easy.roundRecords['mine-1']['1']={best:{elapsedTicks:60,deaths:6},recent:{elapsedTicks:180,deaths:9}};
   save.records['forest-1']={best:{elapsedTicks:3000,deaths:1},recent:null};
