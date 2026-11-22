@@ -7,14 +7,12 @@
 [P02 Browser Sign-In and Cloud Sync](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/phase.md)
 
 ## Active Task
-[T01 MSAL Cloud Store](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/T01-msal-cloud-store.md)
+[T02 Records and Account UI](./phases/2026-11-22-internal-game-deployment/P02-client-and-sync/T02-records-and-account-ui.md)
 
 ## Status
-- T01 Entra API Authentication is implemented and committed as `d8f0f54`.
-- T02 Cosmos Save API is implemented and committed as `56735c4`.
-- T03 Company Leaderboards is implemented and committed as `e3d157c`.
-- Local API checks and in-memory smoke validation passed. Live Entra token and Cosmos resource/document reviews remain deferred until P03 provisioning.
+- T01 MSAL sign-in and account-scoped cloud save store is implemented and committed as `3b128cf`.
+- `npm run build` passed. Production browser validation is deferred until P03 because this workspace has no Entra production settings or deployed `/api`.
 - P01 API identity and cloud data is complete.
 
 ## Next Step (IMPORTANT)
-Read P02 T01 and implement MSAL member sign-in with account-scoped cloud save storage and offline sync.
+Read P02 T02 and connect result/save flows, company leaderboards, and account controls.

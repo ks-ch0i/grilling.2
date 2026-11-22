@@ -100,4 +100,4 @@ Task: T01-msal-cloud-store
 
 - [x] Implementation complete
 - [x] Local build validation complete; live Entra and API behavior remains to be exercised after P03 provisioning.
-- commit: pending
+- commit: `3b128cf9d88d5f5612093318d0be72b0c51d2b9e`
