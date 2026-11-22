@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { requireEntraPrincipal } from '../auth/entraPrincipal.js';
 import { createSaveRepository } from '../save/repository.js';
+import { createLeaderboardService } from '../leaderboard/service.js';
 import { fromSaveDocument, MAX_SAVE_BODY_BYTES, validateCloudSave } from '../save/schema.js';
 import { mergeCloudSave } from '../save/merge.js';
 import { ApiError, errorResponse, jsonResponse } from '../shared/http.js';
@@ -58,7 +59,7 @@ async function getSave(request, repositoryFactory) {
   });
 }
 
-async function putSave(request, repositoryFactory) {
+async function putSave(request, repositoryFactory, getLeaderboardService) {
   const principal = await requireEntraPrincipal(request, config);
   const body = await readJsonBody(request);
   if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || !Object.hasOwn(body, 'save') ||
@@ -69,13 +70,23 @@ async function putSave(request, repositoryFactory) {
     const current = await repository.get(principal.userId);
     const document = mergeCloudSave(current?.document ?? null, body.save, principal, new Date().toISOString());
     if (await repository.upsert(document, current?.etag ?? null)) {
+      await getLeaderboardService().refreshFromSave(document, principal);
       return jsonResponse(200, { saved: true, revision: document.revision, updatedAt: document.updatedAt });
     }
   }
   throw new ApiError(503, 'service_unavailable');
 }
 
-export function registerSaveFunction(functionApp, { repositoryFactory = createSaveRepository } = {}) {
+export function registerSaveFunction(functionApp, {
+  repositoryFactory = createSaveRepository,
+  leaderboardServiceFactory = createLeaderboardService
+} = {}) {
+  let leaderboardService;
+  const getLeaderboardService = () => {
+    leaderboardService ??= leaderboardServiceFactory(config);
+    return leaderboardService;
+  };
+
   functionApp.http('save', {
     route: 'save',
     methods: ['GET', 'PUT'],
@@ -83,7 +94,7 @@ export function registerSaveFunction(functionApp, { repositoryFactory = createSa
     handler: async (request) => {
       try {
         if (request.method === 'GET') return await getSave(request, repositoryFactory);
-        if (request.method === 'PUT') return await putSave(request, repositoryFactory);
+        if (request.method === 'PUT') return await putSave(request, repositoryFactory, getLeaderboardService);
         return jsonResponse(405, { error: 'method_not_allowed' });
       } catch (error) {
         return errorResponse(error);

@@ -3,8 +3,8 @@ import { ApiError } from '../shared/http.js';
 
 let cosmosClient;
 
-export function getSaveContainer(config) {
-  if (!config?.cosmosEndpoint || !config.cosmosKey || !config.cosmosDatabaseId || !config.cosmosSaveContainerId) {
+function getDatabase(config) {
+  if (!config?.cosmosEndpoint || !config.cosmosKey || !config.cosmosDatabaseId) {
     throw new ApiError(503, 'service_unavailable');
   }
 
@@ -12,5 +12,15 @@ export function getSaveContainer(config) {
     cosmosClient = new CosmosClient({ endpoint: config.cosmosEndpoint, key: config.cosmosKey });
   }
 
-  return cosmosClient.database(config.cosmosDatabaseId).container(config.cosmosSaveContainerId);
+  return cosmosClient.database(config.cosmosDatabaseId);
+}
+
+export function getSaveContainer(config) {
+  if (!config?.cosmosSaveContainerId) throw new ApiError(503, 'service_unavailable');
+  return getDatabase(config).container(config.cosmosSaveContainerId);
+}
+
+export function getLeaderboardContainer(config) {
+  if (!config?.cosmosLeaderboardContainerId) throw new ApiError(503, 'service_unavailable');
+  return getDatabase(config).container(config.cosmosLeaderboardContainerId);
 }

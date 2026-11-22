@@ -1,6 +1,6 @@
 # Task: T03 Company Leaderboards
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -18,8 +18,8 @@ Maintain one best result per authenticated member and challenge in Cosmos, and r
 
 - Related Files:
   - `api/src/leaderboard/boardId.js` :: `parseBoardRequest` and canonical board IDs; new.
-  - `api/src/leaderboard/repository.js` :: leaderboard upsert, top-ten query, own-rank query; new.
-  - `api/src/leaderboard/service.js` :: derive and merge bests from save documents; new.
+  - `api/src/leaderboard/repository.js` :: ETag-safe personal-best upsert and projected board-partition query; new.
+  - `api/src/leaderboard/service.js` :: refresh bests from save documents and compute ranks; new.
   - `api/src/cosmos/client.js` :: fixed `leaderboards` container; modify.
   - `api/src/config.js` :: `COSMOS_LEADERBOARD_CONTAINER_ID`; modify.
 
@@ -39,6 +39,7 @@ Maintain one best result per authenticated member and challenge in Cosmos, and r
 - Validate `mode` as `hard|easy`, `stageId` as `forest-1|mine-1`, and Easy `round` as integer 1..8. Hard requests must not supply a round. Never accept a raw `boardId` or partition key from the client.
 - Upsert a user's board item from their personal best after every successful `PUT /api/save`; derive Hard values from `records[stageId].best` and Easy values from `easy.roundRecords[stageId][round].best`. This also publishes imported local bests. A poorer new result never replaces the stored best.
 - Rank by the tuple `(elapsedTicks ASC, deaths ASC)`. For exact ties, return the same competition rank; use `displayName ASC, userId ASC` only to make display ordering stable. Never expose `userId`, `tenantId`, or `objectId` in the response.
+- Read only the requested board partition and project the fields needed for ranking. Sort and rank those rows in the API so the container does not need a composite index. This is suitable for the internal board size; if boards grow substantially, add the composite index and move top-ten/rank work into Cosmos.
 
 ### I02. Leaderboard HTTP endpoint
 
@@ -59,10 +60,10 @@ Maintain one best result per authenticated member and challenge in Cosmos, and r
 
 ## Acceptance Criteria
 
-- [ ] Every save upsert refreshes all personal-best boards without exposing a client-selected user identity.
-- [ ] The board response is limited to the top ten plus the caller's own entry and rank.
-- [ ] Invalid mode, stage, round, result shape, and unauthenticated requests are rejected.
-- [ ] Equal time is ranked by fewer deaths; exact ties share a rank and display in deterministic order.
+- [x] Every save upsert refreshes all personal-best boards without exposing a client-selected user identity.
+- [x] The board response is limited to the top ten plus the caller's own entry and rank.
+- [x] Invalid mode, stage, round, result shape, and unauthenticated requests are rejected.
+- [x] Equal time is ranked by fewer deaths; exact ties share a rank and display in deterministic order.
 
 ## Validation
 
@@ -84,6 +85,7 @@ Task: T03-company-leaderboards
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation complete
+- [x] Implementation complete
+- [x] Validation complete (`npm --prefix api run check`; in-memory smoke checks for request validation, save-to-board refresh, competition ties, top ten, and own rank).
+- Azure Cosmos requests remain deferred until P03 provisioning, as specified above.
 - commit: pending

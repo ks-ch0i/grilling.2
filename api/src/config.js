@@ -2,6 +2,7 @@ const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const REQUIRED_SCOPE = 'game.access';
 const DATABASE_ID = 'grill-me-game';
 const SAVE_CONTAINER_ID = 'player-saves';
+const LEADERBOARD_CONTAINER_ID = 'leaderboards';
 
 function readGuid(env, name) {
   const value = env[name];
@@ -47,8 +48,10 @@ export function loadConfig(env = process.env) {
   const cosmosKey = readCosmosKey(env);
   const cosmosDatabaseId = readCosmosId(env, 'COSMOS_DATABASE_ID', DATABASE_ID);
   const cosmosSaveContainerId = readCosmosId(env, 'COSMOS_SAVE_CONTAINER_ID', SAVE_CONTAINER_ID);
+  const cosmosLeaderboardContainerId = readCosmosId(env, 'COSMOS_LEADERBOARD_CONTAINER_ID', LEADERBOARD_CONTAINER_ID);
 
-  if (!tenantId || !spaClientId || !apiAudience || !requiredScope || !cosmosEndpoint || !cosmosKey || !cosmosDatabaseId || !cosmosSaveContainerId) return null;
+  if (!tenantId || !spaClientId || !apiAudience || !requiredScope || !cosmosEndpoint || !cosmosKey || !cosmosDatabaseId ||
+    !cosmosSaveContainerId || !cosmosLeaderboardContainerId) return null;
 
   return Object.freeze({
     tenantId,
@@ -58,7 +61,8 @@ export function loadConfig(env = process.env) {
     cosmosEndpoint,
     cosmosKey,
     cosmosDatabaseId,
-    cosmosSaveContainerId
+    cosmosSaveContainerId,
+    cosmosLeaderboardContainerId
   });
 }
 
