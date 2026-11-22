@@ -8,7 +8,7 @@ Add a shield and a timed parry to the existing stage combat. The player can redu
 
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Implement defense rules, save compatibility, sprite assets, and in-game presentation | [P01](../phases/2026-11-22-shield-and-parry/P01-shield-parry/phase.md) |
+| P01 | `complete ✅` | Implement defense rules, save compatibility, sprite assets, and in-game presentation | [P01](../phases/2026-11-22-shield-and-parry/P01-shield-parry/phase.md) |
 
 ## Task Order and Dependencies
 
@@ -21,3 +21,9 @@ Add a shield and a timed parry to the existing stage combat. The player can redu
 - Parry does not interrupt or stagger enemies or bosses.
 - No HUD cooldown indicator, cooldown-ready cue, or failed-cooldown-input cue is added.
 - Contact, acid pools, mine carts, and pit damage cannot be defended.
+
+## Completion
+
+- T01 simulation and save migration: complete; see phase dashboard and Git history.
+- T02 shield/parry pose sheets: `9e25aa3`.
+- T03 presentation and controls: `f5ddc02`; 216 tests and production build pass.
