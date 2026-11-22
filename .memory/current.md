@@ -7,11 +7,12 @@
 [P01 API Identity and Cloud Data](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/phase.md)
 
 ## Active Task
-[T01 Entra API Authentication](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/T01-entra-api-auth.md)
+[T02 Cosmos Save API](./phases/2026-11-22-internal-game-deployment/P01-api-and-data/T02-cosmos-save-api.md)
 
 ## Status
-- Plan and seven task blueprints are complete; implementation has not started.
-- T01 is pending and ready for execution.
+- T01 Entra API Authentication is implemented and committed as `d8f0f54`.
+- Local checks and synthetic signed-token validation passed. Live Entra registration/token claim review is deferred until P03 provisioning.
+- T02 is active; implementation has not started.
 
 ## Next Step (IMPORTANT)
-Read T01 and implement the Node 22 managed Functions API identity validator in `api/src/auth/entraPrincipal.js`, followed by the authenticated `/api/account` endpoint.
+Read T02 and implement authenticated Cosmos DB save/read endpoints for the version 6 game save, excluding local audio and screen-shake settings.

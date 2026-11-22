@@ -96,4 +96,4 @@ Task: T01-entra-api-auth
 - [x] Implementation complete
 - [x] Local validation complete
 - [ ] Live Entra registration/token claim review deferred to P03 provisioning
-- commit: pending
+- commit: d8f0f54
