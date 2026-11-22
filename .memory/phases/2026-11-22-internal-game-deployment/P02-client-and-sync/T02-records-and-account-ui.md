@@ -1,6 +1,6 @@
 # Task: T02 Records and Account UI
 
-## Status: pending
+## Status: done
 
 ## Goal
 
@@ -50,16 +50,17 @@ Connect existing Hard/Easy completion flows and the records popup to the company
 
 ## Acceptance Criteria
 
-- [ ] Personal and company records remain reachable through the existing mode/stage navigation.
-- [ ] Hard and Easy boards map to the correct challenge key and show top ten plus own rank.
-- [ ] Equal-time personal bests prefer fewer deaths in both local save data and the API board.
-- [ ] Network failure leaves personal records and queued game progress intact and visibly marks cached ranking data stale.
-- [ ] Sign-out clears the active game/account from memory without mixing or deleting another account's cached save.
+- [x] Personal and company records remain reachable through the existing mode/stage navigation.
+- [x] Hard and Easy boards map to the correct challenge key and show top ten plus own rank.
+- [x] Equal-time personal bests prefer fewer deaths in local save data; the API board already ranks equal-time results by deaths.
+- [x] Network failure leaves personal records and queued game progress intact and visibly marks cached ranking data stale.
+- [x] Sign-out clears the active game/account from memory without mixing or deleting another account's cached save.
 
 ## Validation
 
-- Run `npm run build` after implementation.
-- In a member session, clear one Hard stage and one Easy round; confirm the matching board updates, personal best tie-break behavior, own rank outside top ten, and sign-out/account-switch isolation.
+- [x] `npm run build` passed after implementation.
+- [ ] Member-session checks for Hard/Easy board updates, tie-breaks, rank outside the top ten, and sign-out/account-switch isolation are deferred until Entra values and the deployed `/api` are available. This workspace has no `.env.production`, Entra build variables, or deployed `/api`.
+- No tests were added or run; live UI and account behavior remain unverified until the member-session checks above.
 
 ## Commit Message
 
@@ -76,6 +77,6 @@ Task: T02-records-and-account-ui
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation complete
+- [x] Implementation complete
+- [x] Local build validation complete; live member-session validation is deferred until P03 provisioning.
 - commit: pending

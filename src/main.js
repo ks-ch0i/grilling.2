@@ -1,6 +1,6 @@
 import './styles.css';
 import { initializeEntraAuth } from './game/auth/entraAuth.js';
-import { createAppStore, createAccountAppStore, initializeAppStore, inspectLocalSave, readAccountSnapshot } from './game/storage/appStore.js';
+import { createAppStore, createAccountAppStore, initializeAppStore, clearAppStore, inspectLocalSave, readAccountSnapshot } from './game/storage/appStore.js';
 import { createCloudSaveClient, CloudRequestError } from './game/storage/cloudSaveClient.js';
 import { DEFAULT_SETTINGS, freshSave, fromCloudSave, toCloudSave } from './game/storage/saveStore.js';
 import { mountAuthScreen } from './game/ui/authScreen.js';
@@ -9,6 +9,7 @@ import { showSaveImportPrompt } from './game/ui/saveImportPrompt.js';
 let authScreen=null;
 let gameStarted=false;
 let gameStarting=false;
+let activeGame=null;
 const storageProvider=()=>window.localStorage;
 const localSnapshot=inspectLocalSave(storageProvider);
 
@@ -29,11 +30,28 @@ async function startGame(store){
     ]);
     authScreen?.remove();authScreen=null;
     const game=new Phaser.Game(createGameConfig('game'));
-    game.events.once(Phaser.Core.Events.DESTROY,disposeAudioManager);
+    activeGame=game;
+    game.events.once(Phaser.Core.Events.DESTROY,()=>{
+      disposeAudioManager();
+      if(activeGame===game){activeGame=null;gameStarted=false;}
+    });
     gameStarted=true;
   }catch{
     showScreen({title:'게임을 불러올 수 없습니다',message:'게임 파일을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'});
   }finally{gameStarting=false;}
+}
+
+async function signOutAccount(auth,store){
+  const game=activeGame;
+  activeGame=null;gameStarted=false;gameStarting=false;
+  if(game)game.destroy(true);
+  clearAppStore(store);
+  try{await auth.signOut();}
+  catch(error){initializeAppStore(store);await startGame(store);throw error;}
+  store.dispose?.();
+  showScreen({title:'로그아웃 완료',message:'다른 회사 계정으로 로그인할 수 있습니다.',actions:[
+    {label:'Microsoft 계정으로 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>showRetry(auth,'로그인 오류','로그인을 완료하지 못했습니다. 다시 시도해 주세요.'))}
+  ]});
 }
 
 function showLoading(message='회사 계정을 확인하고 있습니다…'){
@@ -70,7 +88,8 @@ async function offlineSave(userId,localSnapshot,client,reason,auth){
   const cloudSave=accountData.outbox?.save??accountData.cache?.save;
   if(!accountData.ok||!cloudSave)return null;
   const initialSave=fromCloudSave(cloudSave,localSnapshot.settings??DEFAULT_SETTINGS);
-  const store=createAccountAppStore({userId,signOut:()=>auth.signOut(),initialSave,cloudClient:client,storageProvider,initialWarning:reason});
+  let store;
+  store=createAccountAppStore({userId,signOut:()=>signOutAccount(auth,store),initialSave,cloudClient:client,storageProvider,initialWarning:reason});
   store.persist({force:!accountData.outbox,immediate:!accountData.outbox});
   await startGame(store);
   return store;
@@ -108,10 +127,11 @@ async function openAuthorizedGame(auth,identity,client,profile,remoteSave){
   }
 
   const initialSave=fromCloudSave(cloudProgress,localSnapshot.settings??DEFAULT_SETTINGS);
-  const store=createAccountAppStore({
+  let store;
+  store=createAccountAppStore({
     userId:identity.userId,
     account:profile,
-    signOut:()=>auth.signOut(),
+    signOut:()=>signOutAccount(auth,store),
     initialSave,
     cloudClient:client,
     storageProvider,

@@ -65,6 +65,7 @@ export function createAppStore(storageProvider=()=>window.localStorage){
     getSave:()=>save,
     setSave:value=>{save=value;dirty=true;},
     getAccount:()=>null,
+    hasAuthenticatedAccount:()=>false,
     signOut:async()=>{},
     persist,
     retry(){
@@ -190,6 +191,7 @@ export function createAccountAppStore({userId,account=null,signOut=async()=>{},i
     getSave:()=>save,
     setSave:value=>{save=value;saveVersion+=1;},
     getAccount:()=>verifiedAccount?{...verifiedAccount}:null,
+    hasAuthenticatedAccount:()=>true,
     signOut,
     persist,
     retry:syncNow,
@@ -206,6 +208,10 @@ let singleton;
 export function initializeAppStore(store){
   if(!store||typeof store.getSave!=='function'||typeof store.persist!=='function')throw new TypeError('Invalid app store');
   singleton=store;return singleton;
+}
+export function clearAppStore(expectedStore){
+  if(expectedStore&&singleton!==expectedStore)return false;
+  singleton=undefined;return true;
 }
 export function getAppStore(){
   if(!singleton)throw new Error('App store must be initialized before creating game scenes');

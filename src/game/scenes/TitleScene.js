@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {getAppStore} from '../storage/appStore.js';
-import {mountMenu,mountStorageNotice,createNewRun,menuState} from '../ui/menu.js';
+import {mountMenu,mountStorageNotice,mountAccountStatus,createNewRun,menuState} from '../ui/menu.js';
 import {preloadAssets,validateAssets} from '../assets/manifest.js';
 import {getAudioManager} from '../audio/AudioManager.js';
 import {isRoundSelectorEnabled,ROUND_TARGETS} from '../dev/roundSelector.js';
@@ -18,6 +18,7 @@ export class TitleScene extends Phaser.Scene {
   startAudio(stageId){const audio=getAudioManager();audio.setVolumes(this.store.getSave().settings);void audio.unlock();audio.resumeMusic();audio.playMusic(stageId==='mine-1'?'mine':'forest');}
   showMain(){
     this.menu?.remove();this.menu=mountMenu('Pixel Action','',{variant:'title',layout:'main'});
+    mountAccountStatus(this.menu,this.store,{showAccount:true,showSignOut:true});
     this.menu.button('시작',()=>this.showModes());
     this.menu.button('기록',()=>this.showRecords());
     if(isRoundSelectorEnabled({development:import.meta.env.DEV,enabled:import.meta.env.VITE_DEV_ROUND_SELECTOR!=='false'}))this.menu.button('라운드 선택 (개발용)',()=>this.showPracticeRounds());
@@ -42,7 +43,7 @@ export class TitleScene extends Phaser.Scene {
   }
   showRecords(){
     this.menu?.remove();
-    this.menu=mountRecordsPopup({save:this.store.getSave(),onBack:()=>this.showMain()});
+    this.menu=mountRecordsPopup({save:this.store.getSave(),store:this.store,onBack:()=>this.showMain()});
   }
   openSettings(){this.menu.hide();this.scene.launch('settings',{onClose:()=>{this.menu.show();}});}
 }

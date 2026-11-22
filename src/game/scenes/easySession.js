@@ -3,6 +3,7 @@ import {createStageRun} from '../sim/stage.js';
 import {recordEasyDeath,recordEasyRoundCompletion} from '../storage/saveStore.js';
 import {formatTicks,mountMenu} from '../ui/menu.js';
 import {mountEasyRoundSelector} from '../ui/easyRoundSelector.js';
+import {mountRecordsPopup} from '../ui/recordsPopup.js';
 
 const STAGE_NAMES={'forest-1':'숲','mine-1':'광산'};
 
@@ -91,6 +92,16 @@ export function showEasyChoice(scene,kind){
   menu.panel.append(summary);
   const button=(label,action,style='result-secondary')=>{const choice=menu.button(label,action);choice.classList.add(style);return choice;};
   const selector=()=>showEasyRoundSelector(scene,kind),home=()=>leaveEasySession(scene);
+  if(!isDeath&&typeof scene.store.getLeaderboard==='function'){
+    button('회사 순위 보기',()=>{
+      menu.hide();scene.easyBoardMenu?.remove();
+      scene.easyBoardMenu=mountRecordsPopup({
+        save:scene.store.getSave(),store:scene.store,titleScreen:false,
+        initialChallenge:{mode:'easy',stageId,round},
+        onBack:()=>{scene.easyBoardMenu=null;menu.show();}
+      });
+    });
+  }
   if(isDeath){
     button('다시 시도',()=>startEasyRound(scene,stageId,round),'result-primary');
     button('라운드 선택',selector);button('홈',home,'result-home');

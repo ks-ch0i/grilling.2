@@ -78,7 +78,10 @@ function createAuthContext({client,config,redirectUri,accounts,account,Interacti
       await client.loginRedirect({scopes:[config.scope],prompt:'select_account'});
     },
     async signOut(){
-      await client.logoutRedirect({account:activeAccount,postLogoutRedirectUri:redirectUri});
+      const selected=activeAccount;
+      activeAccount=null;this.account=null;this.identity={ok:false,reason:'signed-out'};
+      try{await client.logoutRedirect({account:selected,postLogoutRedirectUri:redirectUri});}
+      catch(error){activeAccount=selected;this.account=selected;this.identity=identity();throw error;}
     }
   };
 }

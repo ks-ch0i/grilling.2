@@ -417,3 +417,108 @@ canvas { display: block; image-rendering: pixelated; }
   .challenge-record-table .challenge-record-value { display: grid; }
   .challenge-record-cards { grid-template-columns: 1fr; }
 }
+
+.account-status {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:4px 10px;
+  margin:6px 0 12px;
+  color:var(--challenge-muted, #b9c1b8);
+  font-size:12px;
+}
+.account-status-name { overflow-wrap:anywhere; }
+.account-status-sync { color:var(--challenge-accent, #d7e8b9); }
+.account-status-sync[data-state="sync-unavailable"],
+.account-status-sync[data-state="unauthorized"],
+.account-status-sync[data-state="forbidden"],
+.account-status-sync[data-state="storage-unavailable"] { color:#edbb91; }
+.game-panel .account-sign-out {
+  width:auto;
+  min-height:30px;
+  padding:4px 8px;
+  border-color:var(--challenge-line, #526052);
+  color:var(--challenge-muted, #b9c1b8);
+  font-size:12px;
+}
+.game-panel.challenge-panel .challenge-record-table th:first-child { width:18%; }
+.challenge-record-table th:last-child:not(:first-child) { width:72px; }
+.challenge-record-board-action { text-align:center; }
+.game-panel.challenge-panel .challenge-company-board-button {
+  width:100%;
+  min-height:30px;
+  padding:4px 6px;
+  border:1px solid var(--challenge-line);
+  background:var(--challenge-surface);
+  color:var(--challenge-accent);
+  font-size:12px;
+}
+.game-panel.challenge-panel .challenge-record-cards > .challenge-company-board-button {
+  grid-column:1 / -1;
+  min-height:38px;
+  font-size:13px;
+}
+.company-board-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.company-board-heading h3 { margin:0; color:var(--challenge-text); font-size:15px; }
+.game-panel.challenge-panel .company-board-heading .challenge-back {
+  min-height:30px;
+  margin:0;
+  padding:4px 8px;
+}
+.company-board-view { min-height:100px; }
+.company-board-loading,
+.company-board-empty,
+.company-board-error,
+.company-board-stale,
+.company-board-own-note,
+.company-board-count {
+  margin:8px 0 !important;
+  color:var(--challenge-muted);
+  font-size:12px;
+}
+.company-board-error,
+.company-board-stale { color:#edbb91; }
+.game-panel.challenge-panel .company-board-retry {
+  width:auto;
+  min-height:32px;
+  margin:8px 0;
+  padding:5px 10px;
+  border:1px solid var(--challenge-line);
+  color:var(--challenge-accent);
+}
+.company-board-table {
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  text-align:left;
+}
+.company-board-table th,
+.company-board-table td {
+  padding:7px 6px;
+  border-bottom:1px solid var(--challenge-line);
+  overflow-wrap:anywhere;
+}
+.company-board-table thead { color:var(--challenge-muted); font-size:11px; }
+.company-board-table th:first-child { width:54px; }
+.company-board-table th:nth-child(3) { width:72px; }
+.company-board-table th:nth-child(4) { width:52px; }
+.company-board-table tbody th { color:var(--challenge-accent); font-variant-numeric:tabular-nums; }
+.company-board-table tbody td:nth-child(3),
+.company-board-table tbody td:nth-child(4) { font-variant-numeric:tabular-nums; }
+.company-board-own { background:rgba(215,232,185,.1); }
+.company-board-own-note { text-align:right; }
+@media (max-width: 420px) {
+  .challenge-record-table th:last-child:not(:first-child) { width:56px; }
+  .company-board-table th,
+  .company-board-table td { padding:6px 4px; }
+  .company-board-table th:first-child { width:45px; }
+  .company-board-table th:nth-child(3) { width:62px; }
+  .company-board-table th:nth-child(4) { width:44px; }
+}

@@ -246,9 +246,11 @@ export function writeSave(storage,save){
 export function recordCompletion(save,stageId,result){
   if(!['forest-1','mine-1'].includes(stageId)||!record(result))throw new TypeError('Invalid record');
   const previous=save.records[stageId];
+  const isBetter=!previous.best||result.elapsedTicks<previous.best.elapsedTicks||
+    (result.elapsedTicks===previous.best.elapsedTicks&&result.deaths<previous.best.deaths);
   const unlockedStageIds=stageId==='forest-1'&&!save.unlockedStageIds.includes('mine-1')?[...save.unlockedStageIds,'mine-1']:save.unlockedStageIds;
   const run=stageId==='forest-1'?snapshotStageRun(createStageRun(getStage('mine-1'))):null;
-  return {...save,run,unlockedStageIds,records:{...save.records,[stageId]:{recent:{...result},best:!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best}}}};
+  return {...save,run,unlockedStageIds,records:{...save.records,[stageId]:{recent:{...result},best:isBetter?{...result}:{...previous.best}}}};
 }
 
 export function recordEasyDeath(save,stageId,round){
@@ -262,7 +264,9 @@ export function recordEasyRoundCompletion(save,stageId,round,result){
   if(!currentV6Save(save)||!['forest-1','mine-1'].includes(stageId)||!Number.isInteger(round)||round<1||round>8||!record(result))throw new TypeError('Invalid Easy round record');
   if(round>save.easy.unlockedRoundByStage[stageId])throw new TypeError('Easy round is locked');
   const roundKey=String(round),previous=save.easy.roundRecords[stageId][roundKey];
-  const best=!previous.best||result.elapsedTicks<previous.best.elapsedTicks?{...result}:{...previous.best};
+  const isBetter=!previous.best||result.elapsedTicks<previous.best.elapsedTicks||
+    (result.elapsedTicks===previous.best.elapsedTicks&&result.deaths<previous.best.deaths);
+  const best=isBetter?{...result}:{...previous.best};
   const unlockedRoundByStage={...save.easy.unlockedRoundByStage};
   if(round<8)unlockedRoundByStage[stageId]=Math.max(unlockedRoundByStage[stageId],round+1);
   else if(stageId==='forest-1')unlockedRoundByStage['mine-1']=Math.max(unlockedRoundByStage['mine-1'],1);

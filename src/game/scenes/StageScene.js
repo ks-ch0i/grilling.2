@@ -57,7 +57,7 @@ export class StageScene extends Phaser.Scene {
       if(!this.coordinator.isFinished())this.coordinator.flush();this.coordinator.dispose();
       window.removeEventListener('keydown',this.onEscape);window.removeEventListener('blur',this.onBlur);window.removeEventListener('pagehide',this.onPageHide);document.removeEventListener('visibilitychange',this.onVisibility);
       this.events.off(Phaser.Scenes.Events.ADDED_TO_SCENE,this.routeWorldObject,this);if(this.hudCamera)this.cameras.remove(this.hudCamera);this.screenSpaceObjects?.clear();this.hudCamera=null;
-      this.easyDecisionOpen=false;this.easyDecisionMenu?.remove();this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
+      this.easyDecisionOpen=false;this.easyDecisionMenu?.remove();this.easyBoardMenu?.remove();this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
     });
     this.renderWorld();
     this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());
