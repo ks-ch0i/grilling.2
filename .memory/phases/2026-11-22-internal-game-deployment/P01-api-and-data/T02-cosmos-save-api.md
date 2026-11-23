@@ -8,7 +8,7 @@ Store each authenticated user's hard continuation state, stage unlocks, Easy rou
 
 ## Decision Summary
 
-- Database: `grill-me-game`, shared database throughput 400 RU/s, in the existing `REPLACE_WITH_EXISTING_COSMOS_ACCOUNT_NAME` account.
+- Database: `pixel-raid`, shared database throughput 400 RU/s, in the existing shared Cosmos account. Keep the account name and endpoint out of Git.
 - Save container: `player-saves`, partition key `/userId`, one item per user. API account key is read only from server environment settings.
 - Persist the current `saveStore.js` version 6 data except `settings`. Run state uses latest server-accepted write; unlocks and personal bests merge monotonically.
 
@@ -25,7 +25,7 @@ Store each authenticated user's hard continuation state, stage unlocks, Easy rou
 
 #### Details
 
-- Read `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE_ID`, and `COSMOS_SAVE_CONTAINER_ID` only from the Functions process environment. Use fixed default IDs `grill-me-game` and `player-saves`; clients cannot select database/container names.
+- Read `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE_ID`, and `COSMOS_SAVE_CONTAINER_ID` only from the Functions process environment. Use fixed default IDs `pixel-raid` and `player-saves`; clients cannot select database/container names.
 - Container partition key is `/userId`. Document fields:
 
   ```text

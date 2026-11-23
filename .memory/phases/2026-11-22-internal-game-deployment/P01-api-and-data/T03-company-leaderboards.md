@@ -25,7 +25,7 @@ Maintain one best result per authenticated member and challenge in Cosmos, and r
 
 #### Details
 
-- Use Cosmos container `leaderboards`, partition key `/boardId`, shared database throughput from `grill-me-game`. Each item has:
+- Use Cosmos container `leaderboards`, partition key `/boardId`, shared database throughput from `pixel-raid`. Each item has:
 
   ```text
   id: userId

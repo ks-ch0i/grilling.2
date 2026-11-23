@@ -1,5 +1,5 @@
 import './styles.css';
-import { initializeEntraAuth } from './game/auth/entraAuth.js';
+import { readSwaAccount, signIn, signOut } from './game/auth/swaAuth.js';
 import { createAppStore, createAccountAppStore, initializeAppStore, clearAppStore, inspectLocalSave, readAccountSnapshot } from './game/storage/appStore.js';
 import { createCloudSaveClient, CloudRequestError } from './game/storage/cloudSaveClient.js';
 import { DEFAULT_SETTINGS, freshSave, fromCloudSave, toCloudSave } from './game/storage/saveStore.js';
@@ -41,17 +41,14 @@ async function startGame(store){
   }finally{gameStarting=false;}
 }
 
-async function signOutAccount(auth,store){
+async function signOutAccount(store){
   const game=activeGame;
   activeGame=null;gameStarted=false;gameStarting=false;
   if(game)game.destroy(true);
   clearAppStore(store);
-  try{await auth.signOut();}
+  try{signOut();}
   catch(error){initializeAppStore(store);await startGame(store);throw error;}
   store.dispose?.();
-  showScreen({title:'로그아웃 완료',message:'다른 회사 계정으로 로그인할 수 있습니다.',actions:[
-    {label:'Microsoft 계정으로 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>showRetry(auth,'로그인 오류','로그인을 완료하지 못했습니다. 다시 시도해 주세요.'))}
-  ]});
 }
 
 function showLoading(message='회사 계정을 확인하고 있습니다…'){
@@ -62,46 +59,40 @@ function isOutage(error){
   return error instanceof CloudRequestError&&(error.status===0||error.status===503);
 }
 
-function showRetry(auth,title,message){
+function showRetry(title,message){
   showScreen({title,message,actions:[
-    {label:'다시 시도',primary:true,onClick:()=>void boot(auth)},
-    ...(auth? [{label:'다른 Microsoft 계정으로 로그인',onClick:()=>void auth.signIn().catch(()=>showRetry(auth,'로그인 오류','다시 로그인해 주세요.'))}]:[])
+    {label:'다시 시도',primary:true,onClick:()=>void boot()}
   ]});
 }
 
-function showAuthorizationError(auth,profileError){
-  if(profileError.status===403){
+function showAuthorizationError(status){
+  if(status===403){
     showScreen({title:'회사 구성원만 이용할 수 있습니다',message:'이 계정에는 게임 접근 권한이 없습니다.',actions:[
-      {label:'다른 계정으로 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>showAuthorizationError(auth,profileError))},
-      {label:'로그아웃',onClick:()=>void auth.signOut()}
+      {label:'로그아웃',primary:true,onClick:signOut}
     ]});
     return;
   }
   showScreen({title:'로그인이 필요합니다',message:'계정 세션을 새로 확인해 주세요. 저장된 오프라인 데이터는 인증이 확인될 때까지 열지 않습니다.',actions:[
-    {label:'다시 인증',primary:true,onClick:()=>void auth.signIn().catch(()=>showAuthorizationError(auth,profileError))},
-    {label:'로그아웃',onClick:()=>void auth.signOut()}
+    {label:'다시 인증',primary:true,onClick:signIn}
   ]});
 }
 
-async function offlineSave(userId,localSnapshot,client,reason,auth){
+async function offlineSave(account,client){
+  const {userId}=account;
   const accountData=readAccountSnapshot(userId,storageProvider);
   const cloudSave=accountData.outbox?.save??accountData.cache?.save;
   if(!accountData.ok||!cloudSave)return null;
   const initialSave=fromCloudSave(cloudSave,localSnapshot.settings??DEFAULT_SETTINGS);
   let store;
-  store=createAccountAppStore({userId,signOut:()=>signOutAccount(auth,store),initialSave,cloudClient:client,storageProvider,initialWarning:reason});
+  store=createAccountAppStore({userId,account,signOut:()=>signOutAccount(store),initialSave,cloudClient:client,storageProvider,initialWarning:'sync-unavailable'});
   store.persist({force:!accountData.outbox,immediate:!accountData.outbox});
   await startGame(store);
   return store;
 }
 
-function validProfile(profile,identity){
-  return profile&&profile.userId===identity.userId&&profile.tenantId===identity.tenantId&&profile.objectId===identity.objectId&&
-    typeof profile.displayName==='string'&&[...profile.displayName.trim()].length>0&&[...profile.displayName.trim()].length<=80;
-}
-
-async function openAuthorizedGame(auth,identity,client,profile,remoteSave){
-  const accountData=readAccountSnapshot(identity.userId,storageProvider);
+async function openAuthorizedGame(account,client,remoteSave){
+  const {userId}=account;
+  const accountData=readAccountSnapshot(userId,storageProvider);
   const localWarning=!localSnapshot.ok?'storage-unavailable':localSnapshot.legacyWarning;
   let cloudProgress;
   let shouldQueue=false;
@@ -129,9 +120,9 @@ async function openAuthorizedGame(auth,identity,client,profile,remoteSave){
   const initialSave=fromCloudSave(cloudProgress,localSnapshot.settings??DEFAULT_SETTINGS);
   let store;
   store=createAccountAppStore({
-    userId:identity.userId,
-    account:profile,
-    signOut:()=>signOutAccount(auth,store),
+    userId,
+    account,
+    signOut:()=>signOutAccount(store),
     initialSave,
     cloudClient:client,
     storageProvider,
@@ -144,76 +135,32 @@ async function openAuthorizedGame(auth,identity,client,profile,remoteSave){
   await startGame(store);
 }
 
-async function continueWithAccount(auth,localSnapshot){
-  const identity=auth.identity;
-  const client=createCloudSaveClient(auth);
-  showLoading();
-  let profile;
-  try{profile=await client.getAccount();}
-  catch(error){
-    if(isOutage(error)){
-      if(await offlineSave(identity.userId,localSnapshot,client,'sync-unavailable',auth))return;
-      showRetry(auth,'연결할 수 없습니다','서버에 연결할 수 없고 이 계정의 저장 기록도 없어 게임을 시작할 수 없습니다.');return;
-    }
-    if(error instanceof CloudRequestError&&(error.status===401||error.status===403)){showAuthorizationError(auth,error);return;}
-    showRetry(auth,'계정을 확인할 수 없습니다','회사 계정 확인에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해 주세요.');return;
-  }
-  if(!validProfile(profile,identity)){
-    showScreen({title:'계정 정보를 확인할 수 없습니다',message:'Microsoft 계정과 게임 서비스가 확인한 계정이 일치하지 않습니다. 다시 로그인해 주세요.',actions:[
-      {label:'다시 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>{})}
-    ]});return;
-  }
-
+async function continueWithAccount(account){
+  const client=createCloudSaveClient();
   let remoteSave;
   try{remoteSave=await client.getSave();}
   catch(error){
     if(isOutage(error)){
-      if(await offlineSave(identity.userId,localSnapshot,client,'sync-unavailable',auth))return;
-      showRetry(auth,'저장 데이터를 불러올 수 없습니다','서버에 연결할 수 없고 이 계정의 오프라인 저장 기록도 없습니다.');return;
+      if(await offlineSave(account,client))return;
+      showRetry('저장 데이터를 불러올 수 없습니다','서버에 연결할 수 없고 이 계정의 오프라인 저장 기록도 없습니다.');return;
     }
-    if(error instanceof CloudRequestError&&(error.status===401||error.status===403)){showAuthorizationError(auth,error);return;}
-    showRetry(auth,'저장 데이터를 불러올 수 없습니다','저장 데이터를 확인하지 못했습니다. 다시 시도해 주세요.');return;
+    if(error instanceof CloudRequestError&&(error.status===401||error.status===403)){showAuthorizationError(error.status);return;}
+    showRetry('저장 데이터를 불러올 수 없습니다','저장 데이터를 확인하지 못했습니다. 다시 시도해 주세요.');return;
   }
-  await openAuthorizedGame(auth,identity,client,profile,remoteSave);
+  await openAuthorizedGame(account,client,remoteSave);
 }
 
-async function continueWithAuth(auth){
-  if(auth.mode==='local'){
+async function boot(){
+  if(import.meta.env.DEV){
     await startGame(createAppStore(storageProvider));return;
   }
-  if(auth.mode==='blocked'){
-    showScreen({title:'게임 설정을 확인할 수 없습니다',message:'로그인 설정이 없거나 올바르지 않습니다. 배포 환경의 Entra 설정을 확인해 주세요.'});return;
-  }
-  if(!auth.account){
-    if(auth.accounts.length>1){
-      showScreen({title:'계정을 선택해 주세요',message:'기록을 연결할 Microsoft 계정을 고르세요.',accounts:auth.accounts,onSelectAccount:account=>{
-        const result=auth.selectAccount(account);
-        if(result.ok)void continueWithAuth(auth);else showBlockedAccount(auth,result.reason);
-      },actions:[{label:'다른 계정으로 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>showRetry(auth,'로그인 오류','다른 계정으로 로그인하지 못했습니다. 다시 시도해 주세요.'))}]});
-    }else showScreen({title:'회사 계정으로 시작',message:'Grill-Me 진행 기록을 계정에 안전하게 저장합니다.',actions:[
-      {label:'Microsoft 계정으로 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>showRetry(auth,'로그인 오류','로그인을 완료하지 못했습니다. 다시 시도해 주세요.'))}
-    ]});
-    return;
-  }
-  if(!auth.identity?.ok){showBlockedAccount(auth,auth.identity?.reason);return;}
-  await continueWithAccount(auth,localSnapshot);
-}
-
-function showBlockedAccount(auth,reason){
-  const message=reason==='guest'?'게스트 계정은 사용할 수 없습니다. 회사 구성원 계정으로 로그인해 주세요.':
-    reason==='wrong-tenant'?'다른 조직의 계정은 사용할 수 없습니다. 회사 계정으로 로그인해 주세요.':'회사 구성원 여부를 확인할 수 없습니다. 회사 계정으로 다시 로그인해 주세요.';
-  showScreen({title:reason==='invalid-account'?'계정 확인이 필요합니다':'회사 구성원만 이용할 수 있습니다',message,actions:[
-    {label:'다른 Microsoft 계정으로 로그인',primary:true,onClick:()=>void auth.signIn().catch(()=>{})},
-    {label:'로그아웃',onClick:()=>void auth.signOut()}
-  ]});
-}
-
-async function boot(existingAuth=null){
-  showLoading('로그인 상태를 확인하고 있습니다…');
-  let auth=existingAuth;
-  try{auth??=await initializeEntraAuth({environment:import.meta.env});}
-  catch{showRetry(auth,'로그인을 시작할 수 없습니다','인증 서비스를 초기화하지 못했습니다. 설정과 네트워크를 확인해 주세요.');return;}
-  await continueWithAuth(auth);
+  showLoading();
+  let session;
+  try{session=await readSwaAccount();}
+  catch{showRetry('계정을 확인할 수 없습니다','회사 계정 확인에 실패했습니다. 다시 시도해 주세요.');return;}
+  if(session.status==='forbidden'){showAuthorizationError(403);return;}
+  if(session.status==='signed-out'){showAuthorizationError(401);return;}
+  await continueWithAccount(session.account);
 }
 
 void boot();

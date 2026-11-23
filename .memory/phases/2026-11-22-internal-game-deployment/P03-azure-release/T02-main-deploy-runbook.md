@@ -1,6 +1,8 @@
 # Task: T02 Main Deployment and Operations Runbook
 
-## Status: pending
+## Status: in_progress
+
+The [production runbook](../../../../docs/azure-internal-deployment.md) contains the current single-app SWA authentication steps. Use it for release and verification. The SPA/API split, `game.access` grant, frontend auth variables, and `/api/account` described below belong to the earlier implementation.
 
 ## Goal
 
@@ -10,7 +12,7 @@ Deploy the approved frontend and managed API automatically from GitHub `main` af
 
 - Production trigger is a push to GitHub `main`; use the Azure-provided `azurestaticapps.net` hostname.
 - Use GitHub Actions and `Azure/static-web-apps-deploy`; keep the SWA API token in `AZURE_STATIC_WEB_APPS_API_TOKEN` repository secret.
-- Never push or commit the current dirty local worktree as part of this task. The user reviews which current local commits/edits should be published separately.
+- The user authorized publishing the reviewed deployment code and running the first production deployment on 2026-11-23.
 
 ## Implementation
 
@@ -24,8 +26,8 @@ Deploy the approved frontend and managed API automatically from GitHub `main` af
 #### Details
 
 - Trigger on `push` to `main` and `workflow_dispatch`. Use `actions/checkout`, setup Node 22 (compatible with the root `>=22.12.0` engine), then `npm ci`, `npm --prefix api ci`, `npm run build`, and `npm --prefix api run check`.
-- Build the frontend with GitHub variables `VITE_AUTH_MODE`, `VITE_ENTRA_TENANT_ID`, `VITE_ENTRA_SPA_CLIENT_ID`, and `VITE_ENTRA_API_SCOPE`. Fail the job if any required public auth variable is absent or if `VITE_AUTH_MODE` is not `entra`.
-- Gate the deploy step on repository variable `AZURE_DEPLOY_ENABLED == "true"`; keep it unset until the SWA, app registrations/admin consent, API settings, Cosmos database, and deployment token are configured. Once enabled, every approved push to `main` automatically deploys.
+- SWA handles authentication using its existing tenant-specific Entra app registration. The frontend build has no Entra environment variables.
+- Gate the deploy step on repository variable `AZURE_DEPLOY_ENABLED == "true"`; enable it after the SWA settings, single Entra registration, Cosmos database, and deployment token are configured. Once enabled, every approved push to `main` automatically deploys.
 - Deploy the already-built `dist` app and the `api/` Functions source with `Azure/static-web-apps-deploy@v1`, `app_location: "dist"`, `api_location: "api"`, `output_location: ""`, `skip_app_build: true`, and `skip_api_build: false`.
 - Pass only `${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}` as the SWA deployment token. Do not echo secrets, write tokens into artifacts, or use a Cosmos key in GitHub Actions.
 - The static config deployed from `dist/staticwebapp.config.json` sets the managed API runtime to Node 22. Do not add a custom domain or PR preview deployment in this release.
@@ -38,30 +40,32 @@ Deploy the approved frontend and managed API automatically from GitHub `main` af
 
 #### Details
 
-- Runbook order: deploy Bicep; create both tenant-only registrations and obtain admin consent; enter server-only settings in Static Web Apps; add public GitHub variables and the SWA token secret; confirm remote `main` contains only approved code; then set `AZURE_DEPLOY_ENABLED=true`.
+- Runbook order: configure the existing single-tenant Entra app for SWA web login; enter its client ID/secret and Cosmos settings in SWA; add the SWA token to GitHub repository secrets; publish the reviewed code to `main`; set `AZURE_DEPLOY_ENABLED=true`; verify member and guest behavior.
 - Production checks after deployment:
   - Open the default hostname signed out: the sign-in gate appears and no Phaser game starts.
-  - Sign in as a tenant member: `/api/account` succeeds, game starts, save read/write and one leaderboard read succeed.
+  - Sign in as a tenant member: `/.auth/me` returns the `grill-member` role, game starts, save read/write and leaderboard read succeed.
   - Use a guest and a different-tenant account: game/API access is refused; no save or leaderboard data is returned.
   - Verify local settings, account cache isolation, legacy import prompt, and offline queue/recovery.
 - Roll back by reverting the approved deployment commit on `main` and allowing the workflow to redeploy. Never roll back Cosmos database contents as a release rollback step.
 - Document that offboarding retains display names and historical scores by default. When an administrator approves removal, delete the member's item from `player-saves` and every `leaderboards` board using the verified `userId` partition/item ID; preserve unrelated users.
 - Document that API outage leaves local account progress queued, while company leaderboard data may be stale/unavailable until service recovers.
-- The current worktree is observed ahead of `origin/main` by 14 commits and has additional modifications/untracked files. The workflow cannot deploy those until they are reviewed and intentionally published; this task itself must not stage, commit, or push them.
+- The local `main` is ahead of `origin/main` by 10 commits with reviewed deployment changes. The user authorized their publication and the first deployment.
 
 ## Acceptance Criteria
 
-- [ ] A ready, enabled `main` push deploys both `dist/` and the managed API with Node 22.
-- [ ] Missing auth build variables stop deployment; no production build falls back to an unauthenticated local mode.
-- [ ] Static assets contain public app IDs only; Cosmos and deployment credentials remain server/GitHub secrets.
-- [ ] Runbook covers member/guest/wrong-tenant verification, outage sync, rollback, and targeted manual data deletion.
-- [ ] The current local worktree is left unchanged by this task.
+- [x] The gated `main` workflow builds `dist/` and deploys the managed API with Node 22 when the deployment variable and token are configured.
+- [x] SWA authentication is configured in `staticwebapp.config.json` without frontend auth variables.
+- [x] Static build inputs use public app IDs only; Cosmos and deployment credentials remain server/GitHub secrets.
+- [x] Runbook covers member/guest/wrong-tenant verification, outage sync, rollback, and targeted manual data deletion.
+- [x] The reviewed deployment code was published after the user authorized release.
+- [ ] Production smoke checks remain pending first deployment.
 
 ## Validation
 
 - Run `npm run build` and `npm --prefix api run check` after implementation.
 - Inspect the generated workflow and SWA build artifact for the expected Node 22 setting, `/api` payload, static config, and absence of secrets.
-- After user-approved deployment, complete the production smoke checks in I02 and record the resulting hostname and commit SHA in the runbook.
+- Local build and API checks passed; the built `dist/` includes `staticwebapp.config.json` with `apiRuntime: node:22`, and no Cosmos/deployment credential identifiers were found in `dist/`.
+- After operator configuration and approved publication to `main`, complete the production smoke checks in I02 and record the resulting hostname and commit SHA in the runbook.
 
 ## Commit Message
 
@@ -78,6 +82,10 @@ Task: T02-main-deploy-runbook
 
 ## Progress
 
-- [ ] Implementation complete
-- [ ] Validation complete
-- commit: pending
+- [x] Workflow and runbook implementation complete.
+- [x] Local validation complete: `npm run build`, `npm --prefix api run check`, artifact/config inspection, and `git diff --check` passed. Vite reports the existing large Phaser bundle warning.
+- [x] Configured the single-tenant `Grill-Me SPA` app for SWA sign-in and its web callback. The old API registration and delegated scope remain in Entra until production verification.
+- [x] Configured all nine SWA Production API settings, including the Cosmos account key, without printing the key; verified setting names only.
+- [x] Readiness audit on 2026-11-23: no organization-wide consent grant exists; GitHub repository `ks-ch0i/grilling.2` has no Actions variables, secrets, workflows, or workflow runs. SWA `repositoryUrl` and `branch` are unset.
+- [ ] Production smoke checks pending because organization admin consent, GitHub variables/secret, and approved `main` publication are not complete.
+- commit: deferred by the plan boundary; do not stage, commit, or push this worktree as part of this task.

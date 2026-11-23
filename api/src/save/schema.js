@@ -1,11 +1,11 @@
 import { ApiError } from '../shared/http.js';
+import { isSwaUserId } from '../auth/swaPrincipal.js';
 
 export const MAX_SAVE_BODY_BYTES = 256 * 1024;
 
 const STAGE_IDS = ['forest-1', 'mine-1'];
 const ROUND_KEYS = Array.from({ length: 8 }, (_, index) => String(index + 1));
 const ROUND_ENEMY_COUNTS = [1, 2, 3, 4, 0, 6, 3, 3];
-const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PLAYER_KEYS = [
   'x', 'y', 'vx', 'vy', 'w', 'h', 'grounded', 'hp', 'mode', 'facing', 'horizontalFacing', 'aim',
   'invulnerableTicks', 'defenseMode', 'defenseTicksRemaining', 'shieldCooldownTicks', 'parryCooldownTicks',
@@ -168,8 +168,7 @@ export function validateCloudSave(value) {
 }
 
 function validPrincipal(principal) {
-  return isObject(principal) && GUID_PATTERN.test(principal.tenantId) && GUID_PATTERN.test(principal.objectId) &&
-    principal.userId === `${principal.tenantId}:${principal.objectId}` && typeof principal.displayName === 'string' &&
+  return isObject(principal) && isSwaUserId(principal.userId) && typeof principal.displayName === 'string' &&
     [...principal.displayName.trim()].length > 0 && [...principal.displayName.trim()].length <= 80;
 }
 
@@ -197,8 +196,6 @@ export function toSaveDocument(save, principal, { revision = 1, updatedAt = new 
   return {
     id: principal.userId,
     userId: principal.userId,
-    tenantId: principal.tenantId,
-    objectId: principal.objectId,
     displayName: principal.displayName.trim(),
     ...structuredClone(cloudFields(save)),
     updatedAt,
@@ -208,8 +205,7 @@ export function toSaveDocument(save, principal, { revision = 1, updatedAt = new 
 
 export function fromSaveDocument(document) {
   if (!isObject(document) || typeof document.id !== 'string' || document.id !== document.userId ||
-    !GUID_PATTERN.test(document.tenantId) || !GUID_PATTERN.test(document.objectId) ||
-    document.userId !== `${document.tenantId}:${document.objectId}` ||
+    !isSwaUserId(document.userId) ||
     typeof document.displayName !== 'string' || [...document.displayName.trim()].length < 1 || [...document.displayName.trim()].length > 80 ||
     !isCount(document.revision) || document.revision < 1 || !validTimestamp(document.updatedAt) ||
     !validateCloudSave(cloudFields(document))) throw new ApiError(503, 'service_unavailable');

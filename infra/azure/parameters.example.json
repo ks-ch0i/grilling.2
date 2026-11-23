@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "staticWebAppName": {
+      "value": "swa-grill-me-prod"
+    },
+    "cosmosAccountName": {
+      "value": "REPLACE_WITH_EXISTING_COSMOS_ACCOUNT_NAME"
+    },
+    "databaseName": {
+      "value": "pixel-raid"
+    },
+    "databaseThroughput": {
+      "value": 400
+    }
+  }
+}

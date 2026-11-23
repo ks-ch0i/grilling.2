@@ -1,5 +1,5 @@
 import { config } from '../config.js';
-import { requireEntraPrincipal } from '../auth/entraPrincipal.js';
+import { requireSwaPrincipal } from '../auth/swaPrincipal.js';
 import { createSaveRepository } from '../save/repository.js';
 import { createLeaderboardService } from '../leaderboard/service.js';
 import { fromSaveDocument, MAX_SAVE_BODY_BYTES, validateCloudSave } from '../save/schema.js';
@@ -45,7 +45,7 @@ async function readJsonBody(request) {
 }
 
 async function getSave(request, repositoryFactory) {
-  const principal = await requireEntraPrincipal(request, config);
+  const principal = requireSwaPrincipal(request);
   const repository = repositoryFactory(config);
   const current = await repository.get(principal.userId);
   if (current === null) return jsonResponse(200, { exists: false, save: null, revision: 0 });
@@ -60,7 +60,7 @@ async function getSave(request, repositoryFactory) {
 }
 
 async function putSave(request, repositoryFactory, getLeaderboardService) {
-  const principal = await requireEntraPrincipal(request, config);
+  const principal = requireSwaPrincipal(request);
   const body = await readJsonBody(request);
   if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 || !Object.hasOwn(body, 'save') ||
     !validateCloudSave(body.save)) throw invalidPayload();

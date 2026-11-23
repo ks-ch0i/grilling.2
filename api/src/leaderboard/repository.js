@@ -54,8 +54,6 @@ export function createLeaderboardRepository(config) {
           id: userId,
           boardId,
           userId,
-          tenantId: candidate.tenantId,
-          objectId: candidate.objectId,
           displayName: candidate.displayName,
           elapsedTicks: best.elapsedTicks,
           deaths: best.deaths,

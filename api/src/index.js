@@ -1,8 +1,8 @@
 import { app } from '@azure/functions';
-import { registerAccountFunction } from './functions/account.js';
+import { registerRolesFunction } from './functions/roles.js';
 import { registerSaveFunction } from './functions/save.js';
 import { registerLeaderboardsFunction } from './functions/leaderboards.js';
 
-registerAccountFunction(app);
+registerRolesFunction(app);
 registerSaveFunction(app);
 registerLeaderboardsFunction(app);

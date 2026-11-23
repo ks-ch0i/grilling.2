@@ -8,7 +8,7 @@ Create the Node 22 managed Functions API foundation and a single reusable verifi
 
 ## Decision Summary
 
-- Hosting is Static Web Apps Free with managed Functions at `/api`; custom SWA OIDC and `x-ms-client-principal` are not used.
+- Hosting is a dedicated Static Web Apps Standard resource with managed Functions at `/api`; the app uses MSAL Bearer tokens and API-side JWT validation, not SWA OIDC or `x-ms-client-principal`.
 - The browser is a public MSAL client. It requests one delegated scope from a separately registered single-tenant API app. The API requires a signed v2 access token, exact tenant/audience/client/scope, valid object ID and display name, and `acct=0`.
 - No Microsoft Graph permissions, client secret, or API key is needed for Entra token validation.
 
@@ -50,7 +50,7 @@ Create the Node 22 managed Functions API foundation and a single reusable verifi
   - `name` is a non-empty string after trimming, at most 80 characters; use it only for display.
 - Derive `userId` only on the server as `${tid}:${oid}`. Never accept `tenantId`, `objectId`, `userId`, display name, or Cosmos container names from request parameters/body as identity.
 - Return HTTP 401 for missing, expired, malformed, or invalid-signature tokens; HTTP 403 for wrong tenant, guest, wrong SPA, or missing delegated scope. Responses contain no token, claim dump, or key material.
-- Do not read `x-ms-client-principal`; the Free Static Web Apps default principal does not carry the claims needed for this policy.
+- Do not read `x-ms-client-principal`; API access is authorized only by the validated Entra Bearer token and its required claims.
 
 ### I03. Authenticated account endpoint
 

@@ -7,19 +7,12 @@ export class CloudRequestError extends Error{
 function isObject(value){return value!==null&&typeof value==='object'&&!Array.isArray(value);}
 function invalidResponse(){return new CloudRequestError(503,'invalid-response');}
 
-export function createCloudSaveClient(auth){
+export function createCloudSaveClient(){
   const leaderboardCache=new Map();
   const cacheLifetimeMs=5*60*1000;
 
-  async function request(path,{method='GET',body,forceRefresh=false,retried=false}={}){
-    let token;
-    try{token=await auth.getAccessToken({forceRefresh});}
-    catch(error){
-      const code=String(error?.errorCode??error?.code??error?.message??'').toLowerCase();
-      if(/network|timeout|fetch/.test(code))throw new CloudRequestError(0,'token-unavailable');
-      throw error;
-    }
-    const headers={Authorization:`Bearer ${token}`};
+  async function request(path,{method='GET',body}={}){
+    const headers={};
     if(body!==undefined)headers['Content-Type']='application/json';
     let response;
     try{
@@ -27,24 +20,17 @@ export function createCloudSaveClient(auth){
         method,
         credentials:'same-origin',
         cache:'no-store',
+        redirect:'manual',
         headers,
         ...(body===undefined?{}:{body:JSON.stringify(body)})
       });
     }catch{throw new CloudRequestError(0,'network-unavailable');}
-    if(response.status===401&&!retried){
-      return request(path,{method,body,forceRefresh:true,retried:true});
-    }
+    if(response.type==='opaqueredirect')throw new CloudRequestError(401,'sign-in-required');
     if(!response.ok)throw new CloudRequestError(response.status,`http-${response.status}`);
     try{return await response.json();}catch{throw invalidResponse();}
   }
 
   return {
-    async getAccount(){
-      const value=await request('account');
-      if(!isObject(value)||typeof value.userId!=='string'||typeof value.displayName!=='string')throw invalidResponse();
-      return value;
-    },
-
     async getSave(){
       const value=await request('save');
       if(!isObject(value)||typeof value.exists!=='boolean'||!Number.isSafeInteger(value.revision)||value.revision<0||

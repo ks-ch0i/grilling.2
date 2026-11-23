@@ -63,8 +63,6 @@ export function createLeaderboardService(config, { repositoryFactory = createLea
           id: principal.userId,
           boardId,
           userId: principal.userId,
-          tenantId: principal.tenantId,
-          objectId: principal.objectId,
           displayName: principal.displayName,
           elapsedTicks: candidate.best.elapsedTicks,
           deaths: candidate.best.deaths,

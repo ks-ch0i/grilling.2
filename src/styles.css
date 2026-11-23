@@ -97,8 +97,6 @@ canvas { display: block; image-rendering: pixelated; }
   color:#1b1912;
 }
 .auth-button-primary:hover,.auth-button-primary:focus-visible { background:#c59d56; }
-.auth-account-list { display:grid; gap:6px; margin-bottom:12px; }
-.auth-account-list .auth-button { margin:0; overflow-wrap:anywhere; }
 .import-panel { border-color:#b59b63; }
 
 .game-overlay--title {
