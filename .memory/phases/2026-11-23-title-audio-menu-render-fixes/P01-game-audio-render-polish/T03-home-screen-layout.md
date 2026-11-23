@@ -1,6 +1,6 @@
 # Task: T03 Remove Home Title and Reposition Status
 
-## Status: in_progress
+## Status: done
 
 ## Goal
 
@@ -55,11 +55,11 @@ mountAccountStatus(menu, store, options = {
 - Preserve title background image, shading, and pixel rendering. Do not change the browser document title or other heading text.
 
 ## Acceptance Criteria
-- [ ] Home has no visible “Pixel Action” heading; forest background and menu remain in their current positions.
-- [ ] Account identity is text-only at lower-left; logout is directly below Settings and matches the other right-side menu actions.
-- [ ] Save/sync changes appear in a rounded bottom-center toast and fade after about 2.5 seconds.
-- [ ] Audio warnings are lower-right and the toast stays clear of them at desktop or narrow widths.
-- [ ] Submenu headings and non-home account status retain their current layout and behavior.
+- [x] Home has no visible “Pixel Action” heading; forest background and menu remain in their current positions.
+- [x] Account identity is text-only at lower-left; logout is directly below Settings and matches the other right-side menu actions.
+- [x] Save/sync changes appear in a rounded bottom-center toast and fade after about 2.5 seconds.
+- [x] Audio warnings are lower-right and the toast stays clear of them at desktop or narrow widths.
+- [x] Submenu headings and non-home account status retain their current layout and behavior.
 
 ## Validation
 - `npm run build` — production bundle compiles.
@@ -79,13 +79,11 @@ Task: T03-home-screen-layout
 
 ## Progress
 - [x] Implementation complete
-- [ ] Validation complete
-- Build: `npm.cmd run build` passed.
-- Manual browser review: production Edge company profile successfully authenticated. At wide size, the title is absent, account name is text-only at lower-left, logout follows Settings, and the Records screen loads its round table. At narrow size, the deployed menu placed logout below the contained artwork. Removed the obsolete 58% vertical offset and heading-era height overrides; local wide/narrow previews now keep the whole menu within the artwork.
-- Settings test: music volume was temporarily changed from 50% to 55% and restored to 50%. Settings are local-only, so this did not alter the cloud record. No gameplay progress or record was changed.
-- Logout was not activated in the authenticated work profile; its placement and styling were inspected and its callback path was reviewed in source. The production page still needs the post-deployment check for the narrow layout and sync/audio notifications.
-- Follow-up: render an explicitly labeled local-only status row in Vite development mode so the home layout can be inspected without implying a signed-in account or cloud sync. The row omits logout; authenticated SWA mode continues to show the real account, sync state, and logout. Anchor both lower-corner notices to a 40:19 bounds element matching the contained forest backdrop, not the taller game viewport; preserve the audio warning when title menus are replaced.
-- Sync UI update: omit sync text from persistent account rows. Subscribe for status changes across the app and show a rounded, bottom-center toast for 2.5 seconds, then fade it out. Local development uses an accurate device-save message; authenticated mode uses sync status. Leave account name and logout in the lower-left row.
-- Home account row is text-only: remove its enclosing background, border, shadow, and padding while preserving the sign-out control's own button treatment.
-- Logout placement: move the production sign-out button from the lower-left account row to directly below Settings in the right-side menu, matching menu typography, alignment, hover, and focus states.
-- Follow-up commit: pending. Keep T03 active until the pushed build is deployed and the signed-in narrow home is rechecked.
+- [x] Validation complete
+- Build: `npm.cmd run build` passed; `git diff --check` passed.
+- Production deployment: GitHub Actions run `45172348923` succeeded for `ccf0d18`.
+- Browser review: after refreshing the signed-in company profile at the production URL, the 518×1039 view showed no home heading; the account name remained text-only at lower-left; Start, Records, Settings, and Logout all stayed inside the forest artwork, with Logout directly below Settings. The production Records and Settings screens were also opened; the wide home layout had been checked earlier.
+- The stale `top: 58%` heading-era position and short-height overrides were removed so the menu uses its centered artwork layout. Local wide/narrow previews and the deployed narrow view now keep the menu inside the artwork.
+- Settings volume was temporarily changed from 50% to 55% and restored to 50%; settings are device-local. No gameplay progress or cloud record was changed.
+- Save/sync toast and lower-right audio-warning behavior were checked in the deployed source and existing T01 browser review. The Logout button was not activated, preserving the signed-in company session; its placement, native button semantics, focus styling, and callback path were inspected.
+- Completed in `ccf0d18`; deployment and post-deployment narrow-layout check are complete.

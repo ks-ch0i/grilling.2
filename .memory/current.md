@@ -1,24 +1,23 @@
 # Current Context
 
 ## Active Plan
-[Title Audio, Menu Layout, and Shield Rendering Fixes](./plans/2026-11-23-title-audio-menu-render-fixes.md)
+None
 
 ## Active Phase
-[P01 Game Audio and Screen Polish](./phases/2026-11-23-title-audio-menu-render-fixes/P01-game-audio-render-polish/phase.md)
+None
 
 ## Active Task
-[T03 Remove Home Title and Reposition Status](./phases/2026-11-23-title-audio-menu-render-fixes/P01-game-audio-render-polish/T03-home-screen-layout.md)
+None
 
 ## Status
-- The interview decisions are recorded in [the confirmed decision file](./decisions/2026-11-23-sync-notice-ux.md).
+- Title Audio, Menu Layout, and Shield Rendering Fixes is complete; P01/T01–T03 are done.
+- T03 layout correction `ccf0d18` was deployed successfully (GitHub Actions run `45172348923`) and checked in the signed-in production browser at narrow size.
 - Save and Sync Notice UX P01/T01 is complete in `5445a5f`; its browser-review record is in `4179689`.
-- T03 production review authenticated successfully, confirmed home/records, and found logout below the artwork at narrow sizes. Removed the stale vertical offset locally; build and local wide/narrow checks pass. The correction is ready for the previously authorized push and production recheck.
-- The workspace contains unrelated untracked public-git-history-cleanup memory documents; they were left untouched.
+- Unrelated untracked public-git-history-cleanup memory documents remain untouched.
 
 ## Next Step (IMPORTANT)
-Push the T03 layout correction, then confirm the deployment and recheck the authenticated narrow home plus save/sync and audio notices.
+No active memory task. Create or select a plan when new work is requested.
 
-## Completed Plan
-[Save and Sync Notice UX](./plans/2026-11-23-sync-notice-ux.md) — P01/T01 complete.
-
-- The plan is complete in `5445a5f`; validation and pointer sync are recorded in `4179689`.
+## Completed Plans
+- [Title Audio, Menu Layout, and Shield Rendering Fixes](./plans/2026-11-23-title-audio-menu-render-fixes.md) — P01/T01–T03 complete.
+- [Save and Sync Notice UX](./plans/2026-11-23-sync-notice-ux.md) — P01/T01 complete in `5445a5f`; validation and pointer sync are recorded in `4179689`.
