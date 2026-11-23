@@ -45,11 +45,13 @@ export class TitleScene extends Phaser.Scene {
   }
   showMain(){
     this.menu?.remove();this.menu=mountMenu('Pixel Action','',{variant:'title',layout:'main',showMainHeading:false,accessibleLabel:'메인 메뉴'});
-    mountAccountStatus(this.menu,this.store,{showAccount:true,showSignOut:!import.meta.env.DEV,placement:'root',showLocalDevStatus:import.meta.env.DEV});
+    const accountStatus=mountAccountStatus(this.menu,this.store,{showAccount:true,showSignOut:!import.meta.env.DEV,placement:'root',showLocalDevStatus:import.meta.env.DEV});
     this.menu.button('시작',()=>this.showModes());
     this.menu.button('기록',()=>this.showRecords());
     if(isRoundSelectorEnabled({development:import.meta.env.DEV,enabled:import.meta.env.VITE_DEV_ROUND_SELECTOR!=='false'}))this.menu.button('라운드 선택 (개발용)',()=>this.showPracticeRounds());
-    this.menu.button('설정',()=>this.openSettings());this.menu.focus();
+    this.menu.button('설정',()=>this.openSettings());
+    const signOut=accountStatus?.querySelector('.account-sign-out');if(signOut)this.menu.panel.append(signOut);
+    this.menu.focus();
   }
   showPracticeRounds(){this.menu.remove();this.menu=mountMenu('라운드 선택','연습 기록은 저장되지 않습니다.',{variant:'title',layout:'submenu'});for(const round of ROUND_TARGETS)this.menu.button(round.label,()=>{this.startAudio(round.stageId);this.scene.start('stage',{practiceTarget:round.id});});this.menu.button('뒤로',()=>this.showMain());this.menu.focus();}
   showModes(){this.menu?.remove();this.menu=mountMenu('모드 선택','',{variant:'title',layout:'submenu'});this.menu.button('이지 모드',()=>this.showEasySelector());this.menu.button('하드 모드',()=>this.showHardMenu());this.menu.button('뒤로',()=>this.showMain());this.menu.focus();}

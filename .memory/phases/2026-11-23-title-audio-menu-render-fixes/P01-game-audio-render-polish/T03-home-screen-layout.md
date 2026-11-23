@@ -8,7 +8,7 @@ Match the supplied home-screen references: remove the visible “Pixel Action”
 
 ## Decision Summary
 - Keep the forest background, home menu buttons, and all submenu headings. Hide only the home heading.
-- Keep account name and logout together at lower-left; show sync feedback in a transient toast; move `.audio-warning` to lower-right.
+- Keep account name at lower-left and place logout directly below Settings in the right-side menu; show sync feedback in a transient toast; move `.audio-warning` to lower-right.
 
 ## Implementation
 
@@ -39,7 +39,7 @@ mountAccountStatus(menu, store, options = {
 - In `TitleScene.showMain()`, request the main title layout with `showMainHeading:false`. Preserve the forest background, button labels/order, record popup, mode selection, and submenu headings.
 - Add an account-status placement option to `mountAccountStatus()`, defaulting to the current panel parent. For the home screen only, append the whole status row to the title overlay root.
 - Preserve the authenticated account name and sign-out action. Use a clearly labeled local-only status in Vite development without presenting it as an authenticated account.
-- Keep the home account controls text-only, with no enclosing background, border, shadow, or padding. Do not move account controls in result/record dialogs.
+- Keep the home account name text-only, with no enclosing background, border, shadow, or padding. Place the sign-out control after the Settings menu action and style it like the other menu buttons. Do not move account controls in result/record dialogs.
 - Subscribe to save/sync state across the app and show a rounded bottom-center toast for about 2.5 seconds, then fade it out. Use a device-save message in local development and sync messages for authenticated accounts.
 - Anchor account controls and title-screen notifications to a 40:19 bounds element matching the contained forest artwork; preserve notices when menus are replaced or hidden.
 
@@ -50,13 +50,13 @@ mountAccountStatus(menu, store, options = {
 #### Details
 - Anchor the home status row to lower-left with safe-area-aware insets. Limit its width to `min(520px, calc(50vw - 20px))` so the opposite corner stays clear. Keep it compact horizontally on desktop; allow wrapping on narrow viewports so all status and logout controls stay readable/clickable.
 - Move `.audio-warning` from bottom-left to bottom-right with safe-area-aware insets and `max-width: min(360px, calc(50vw - 20px))`. The half-viewport width limits leave a horizontal gap between the two notices even at narrow widths. Preserve warning z-index, styling, `role=status`, error copy, and recovery behavior.
-- Add a title-home-scoped rule for the sign-out button because the row will no longer be inside `.game-panel`; do not alter button styling in other dialogs.
+- Style the title-home sign-out button as a right-side menu action; do not alter sign-out button styling in other dialogs.
 - Remove obsolete visible-heading position rules and short-height override if the main heading is no longer rendered. Keep `.game-panel--title` at its current right-side placement so the menu does not shift when the heading disappears.
 - Preserve title background image, shading, and pixel rendering. Do not change the browser document title or other heading text.
 
 ## Acceptance Criteria
 - [ ] Home has no visible “Pixel Action” heading; forest background and menu remain in their current positions.
-- [ ] Account identity/logout are text-only at lower-left and remain functional.
+- [ ] Account identity is text-only at lower-left; logout is directly below Settings and matches the other right-side menu actions.
 - [ ] Save/sync changes appear in a rounded bottom-center toast and fade after about 2.5 seconds.
 - [ ] Audio warnings are lower-right and the toast stays clear of them at desktop or narrow widths.
 - [ ] Submenu headings and non-home account status retain their current layout and behavior.
@@ -85,4 +85,5 @@ Task: T03-home-screen-layout
 - Follow-up: render an explicitly labeled local-only status row in Vite development mode so the home layout can be inspected without implying a signed-in account or cloud sync. The row omits logout; authenticated SWA mode continues to show the real account, sync state, and logout. Anchor both lower-corner notices to a 40:19 bounds element matching the contained forest backdrop, not the taller game viewport; preserve the audio warning when title menus are replaced.
 - Sync UI update: omit sync text from persistent account rows. Subscribe for status changes across the app and show a rounded, bottom-center toast for 2.5 seconds, then fade it out. Local development uses an accurate device-save message; authenticated mode uses sync status. Leave account name and logout in the lower-left row.
 - Home account row is text-only: remove its enclosing background, border, shadow, and padding while preserving the sign-out control's own button treatment.
+- Logout placement: move the production sign-out button from the lower-left account row to directly below Settings in the right-side menu, matching menu typography, alignment, hover, and focus states.
 - commit: pending

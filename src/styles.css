@@ -480,23 +480,16 @@ canvas { display: block; image-rendering: pixelated; }
   color:var(--challenge-muted, #b9c1b8);
   font-size:12px;
 }
-.game-overlay--title-main .account-status--title-home .account-sign-out {
-  flex:0 0 auto;
-  width:auto;
-  min-height:30px;
+.game-panel--title .account-sign-out {
+  width:100%;
+  min-height:0;
   margin:0;
-  padding:4px 8px;
-  border:1px solid rgba(205,190,143,.7);
-  color:#f0e5ca;
-  background:rgba(37,48,40,.94);
-  font:600 12px system-ui,sans-serif;
-  cursor:pointer;
-}
-.game-overlay--title-main .account-status--title-home .account-sign-out:hover,
-.game-overlay--title-main .account-status--title-home .account-sign-out:focus-visible {
-  outline:2px solid #ffdf86;
-  outline-offset:2px;
-  background:#48694f;
+  padding:4px 28px 4px 4px;
+  border:0;
+  color:#f2edda;
+  background:transparent;
+  font:700 20px/1.25 system-ui,sans-serif;
+  text-align:right;
 }
 .game-panel.challenge-panel .challenge-record-table th:first-child { width:18%; }
 .challenge-record-table th:last-child:not(:first-child) { width:72px; }

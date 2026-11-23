@@ -34,9 +34,9 @@
 - **Rationale**: Fix the reported detachment while retaining the existing shield art and directional poses.
 
 ## D07. Account status placement on the home screen
-- **Chosen**: Show account identity and logout as text/button controls at the lower-left of the home screen. Remove the enclosing box. Show save/sync changes as a short-lived notification at the bottom center instead of persistent sync text.
-- **Rationale**: Keep account controls visible without a card while making save feedback brief and easy to notice.
-- **Implementation note**: Keep the account controls and notifications within the actual contained forest artwork bounds. Use a clearly labeled local-only account status in Vite development mode.
+- **Chosen**: Show account identity as text at the lower-left of the home screen. Place logout directly below Settings in the right-side menu, styled like the other menu actions. Remove the account row's enclosing box. Show save/sync changes as a short-lived notification at the bottom center instead of persistent sync text.
+- **Rationale**: Keep account identity visible while grouping logout with the other navigation actions and keeping save feedback brief.
+- **Implementation note**: Keep the account identity and notifications within the actual contained forest artwork bounds. Use a clearly labeled local-only account status in Vite development mode.
 
 ## D08. Remove the visible title heading
 - **Chosen**: Remove the “Pixel Action” heading from the home screen; keep the forest background and menu buttons.

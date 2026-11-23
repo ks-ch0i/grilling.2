@@ -15,10 +15,10 @@
 - T02 is committed as `16f5081`. The user confirmed the shield now appears correct in the signed-in production game; no source correction was needed because the deployed player renderer and shield asset already matched the composite-frame implementation.
 - The latest successful SWA deployment workflow used `main` commit `3534c2c`. Its player render, shield animation mapping, texture manifest, and shield PNG match local source; the original report's cause was not established.
 - Account status moves lower-left; the audio warning moves lower-right to avoid overlap.
-- T03 implementation and production build pass. The user confirmed the heading removal, reviewed the local account row, reported its artwork overflow, then approved pushing the corrected layout. The account row is text-only at lower-left; save/sync feedback uses a transient rounded bottom-center toast. Home notices follow the 40:19 contained forest artwork bounds. The authenticated production session still needs visual confirmation after deployment.
+- T03 was pushed as `d9c0f3c` and its automatic SWA deployment succeeded. The user reports the account row is too spread out and requests logout directly below Settings using the same menu styling. This follow-up is local and unpushed; the account name remains lower-left and sync feedback remains a transient bottom-center toast.
 
 ## Next Step (IMPORTANT)
-After the automatic SWA deployment, review the authenticated home at wide and narrow sizes. Confirm the text-only account/logout row is lower-left, save/sync feedback appears briefly in a rounded bottom-center toast, audio errors are lower-right, and submenu headings/keyboard focus remain intact. Then close T03.
+Review the local home screen to confirm logout sits below Settings with matching menu styling, while account identity stays text-only at lower-left. If approved, publish the follow-up and confirm the authenticated production view, toast, audio warning, and submenu behavior before closing T03.
 
 ## Suspended Plan
 None.
