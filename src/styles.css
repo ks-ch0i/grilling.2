@@ -181,13 +181,6 @@ canvas { display: block; image-rendering: pixelated; }
 .game-panel--title button:not(:disabled):hover::before,
 .game-panel--title button:not(:disabled):focus-visible::before { opacity: 1; }
 .game-panel--title button:disabled { opacity: .48; cursor: not-allowed; }
-.game-overlay--title-main .game-panel--title {
-  top: 58%;
-  max-height: calc(100% - 110px);
-}
-@media (max-height: 500px) {
-  .game-overlay--title-main .game-panel--title { max-height: calc(100% - 100px); }
-}
 @media (max-width: 420px) {
   .game-panel--title { right: 16px; }
 }
