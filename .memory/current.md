@@ -1,24 +1,24 @@
 # Current Context
 
 ## Active Plan
-[Title Audio, Menu Layout, and Shield Rendering Fixes](./plans/2026-11-23-title-audio-menu-render-fixes.md)
+[Save and Sync Notice UX](./plans/2026-11-23-sync-notice-ux.md)
 
 ## Active Phase
-[P01 Game Audio and Screen Polish](./phases/2026-11-23-title-audio-menu-render-fixes/P01-game-audio-render-polish/phase.md)
+[P01 Storage and Sync Notices](./phases/2026-11-23-sync-notice-ux/P01-storage-sync-notices/phase.md)
 
 ## Active Task
-[T03 Home Screen Layout](./phases/2026-11-23-title-audio-menu-render-fixes/P01-game-audio-render-polish/T03-home-screen-layout.md)
+[T01 Consolidate Save and Sync Notices](./phases/2026-11-23-sync-notice-ux/P01-storage-sync-notices/T01-bottom-center-notice-controller.md)
 
 ## Status
-- T01 (title BGM and continuous playback) is committed as `bca6003`; the build passed and the user confirmed the BGM scenarios work in the browser.
-- The selected title theme is bundled as a local CC0 OGG. `NotAllowedError` is treated as a pending request and retried on the first title interaction without showing an audio warning.
-- T02 is committed as `16f5081`. The user confirmed the shield now appears correct in the signed-in production game; no source correction was needed because the deployed player renderer and shield asset already matched the composite-frame implementation.
-- The latest successful SWA deployment workflow used `main` commit `3534c2c`. Its player render, shield animation mapping, texture manifest, and shield PNG match local source; the original report's cause was not established.
-- Account status moves lower-left; the audio warning moves lower-right to avoid overlap.
-- T03 was pushed as `d9c0f3c` and its automatic SWA deployment succeeded. The user reports the account row is too spread out and requests logout directly below Settings using the same menu styling. This follow-up is local and unpushed; the account name remains lower-left and sync feedback remains a transient bottom-center toast.
+- The interview decisions are recorded in [the confirmed decision file](./decisions/2026-11-23-sync-notice-ux.md).
+- T01 implementation is complete and `npm.cmd run build` passes. Manual wide/narrow browser review remains pending; the available interactive browser windows are active Netflix/YouTube sessions and were not redirected.
+- The workspace contains unrelated untracked public-git-history-cleanup memory documents; they were left untouched.
 
 ## Next Step (IMPORTANT)
-Review the local home screen to confirm logout sits below Settings with matching menu styling, while account identity stays text-only at lower-left. If approved, publish the follow-up and confirm the authenticated production view, toast, audio warning, and submenu behavior before closing T03.
+Complete the T01 browser review at wide and narrow sizes, including routine status, storage/network retry, authentication actions, and overlap with the audio warning. The implementation checkpoint is committed; keep T01 active until this review is complete.
 
 ## Suspended Plan
-None.
+[Title Audio, Menu Layout, and Shield Rendering Fixes](./plans/2026-11-23-title-audio-menu-render-fixes.md) — P01, T03 Home Screen Layout.
+
+- T01 and T02 are complete. T03's logout placement follow-up was committed as `a749d05`, pushed, and its SWA deployment succeeded.
+- The authenticated production view still needs a final check for the account row, toast, audio warning, and submenu behavior before closing T03.

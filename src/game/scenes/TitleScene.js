@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import {getAppStore} from '../storage/appStore.js';
-import {mountMenu,mountStorageNotice,mountAccountStatus,createNewRun,menuState} from '../ui/menu.js';
+import {mountMenu,mountAccountStatus,createNewRun,menuState} from '../ui/menu.js';
 import {preloadAssets,validateAssets} from '../assets/manifest.js';
 import {getAudioManager} from '../audio/AudioManager.js';
 import {isRoundSelectorEnabled,ROUND_TARGETS} from '../dev/roundSelector.js';
@@ -10,7 +10,7 @@ export class TitleScene extends Phaser.Scene {
   constructor(){super('title');}
   preload(){this.assetErrors=[];this.onAssetError=file=>this.assetErrors.push(file.key);this.load.on('loaderror',this.onAssetError);preloadAssets(this.load,this.textures);}
   create(){
-    this.load.off('loaderror',this.onAssetError);this.store=getAppStore();mountStorageNotice(this.store);this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{this.removeTitleAudioFallback();this.menu?.remove();});
+    this.load.off('loaderror',this.onAssetError);this.store=getAppStore();this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{this.removeTitleAudioFallback();this.menu?.remove();});
     const validation=validateAssets(this.textures),errors=[...this.assetErrors,...validation.errors];
     if(errors.length){this.menu=mountMenu('에셋을 불러오지 못했습니다',`누락 또는 손상: ${errors.join(', ')}. 파일을 확인한 뒤 다시 시도하세요.`);this.menu.button('다시 시도',()=>window.location.reload());this.menu.focus();return;}
     this.showMain();this.startTitleAudio();

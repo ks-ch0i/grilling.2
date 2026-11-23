@@ -29,7 +29,7 @@ async function startGame(store){
     const [{default:Phaser},{createGameConfig},{disposeAudioManager},{mountAccountSyncToast:mountToast}]=await Promise.all([
       import('phaser'),import('./game/config.js'),import('./game/audio/AudioManager.js'),import('./game/ui/menu.js')
     ]);
-    removeAccountSyncToast=mountToast(store);
+    removeAccountSyncToast=mountToast(store,{onReauthenticate:signIn,onSignOut:()=>signOutAccount(store)});
     authScreen?.remove();authScreen=null;
     const game=new Phaser.Game(createGameConfig('game'));
     activeGame=game;

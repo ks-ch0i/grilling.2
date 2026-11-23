@@ -26,13 +26,6 @@ export function mountMenu(title,subtitle='',{variant='panel',layout='panel',show
   return {root,panel,titleArtBounds,text,button,range,checkbox,focus(){root.querySelector('button:not(:disabled):not(.account-sign-out),input')?.focus();},hide(){preserveNotices();root.hidden=true;},show(){root.hidden=false;attachNotices();this.focus();},onRemove(callback){if(typeof callback!=='function')throw new TypeError('Cleanup callback is required');if(removed)callback();else cleanups.add(callback);},remove(){if(removed)return;removed=true;for(const cleanup of cleanups)cleanup();cleanups.clear();preserveNotices();root.remove();}};
 }
 
-const syncLabels={
-  'sync-pending':'동기화 중',
-  'sync-unavailable':'오프라인 · 전송 대기',
-  'storage-unavailable':'기기 저장소 확인 필요',
-  unauthorized:'로그인 확인 필요',
-  forbidden:'계정 접근 거부'
-};
 export function mountAccountStatus(menu,store,{showAccount=false,showSignOut=false,placement='panel',showLocalDevStatus=false}={}){
   if(!store)return null;
   const account=store.getAccount?.();
@@ -50,48 +43,120 @@ export function mountAccountStatus(menu,store,{showAccount=false,showSignOut=fal
   (placement==='root'?(menu.titleArtBounds??menu.root):menu.panel).append(status);return status;
 }
 
-let activeAccountToast=null,accountToastHideTimer=null,accountToastRemoveTimer=null;
-function showAccountToast(message){
-  const toast=activeAccountToast;if(!toast)return;
-  clearTimeout(accountToastHideTimer);clearTimeout(accountToastRemoveTimer);
-  const wasHidden=toast.hidden;toast.hidden=false;toast.textContent=message;
-  if(wasHidden){toast.classList.remove('is-visible');requestAnimationFrame(()=>toast.classList.add('is-visible'));}
-  else toast.classList.add('is-visible');
-  accountToastHideTimer=setTimeout(()=>{toast.classList.remove('is-visible');accountToastRemoveTimer=setTimeout(()=>{toast.hidden=true;},220);},2500);
-}
-export function mountAccountSyncToast(store){
+const errorNoticeDetails={
+  invalid:{message:'저장 데이터가 손상되어 덮어쓰지 않았습니다. 현재 진행은 저장되지 않습니다.',action:'retry'},
+  'unsupported-version':{message:'지원하지 않는 저장 버전입니다. 기존 데이터를 보존하며 현재 진행은 저장되지 않습니다.',action:'retry'},
+  unavailable:{message:'저장 공간을 사용할 수 없습니다. 현재 진행은 메모리에만 있습니다.',action:'retry'},
+  conflict:{message:'기존 저장이 발견되어 덮어쓰지 않았습니다. 저장 상태를 확인해 주세요.',action:'retry'},
+  'storage-unavailable':{message:'이 기기의 저장 공간을 사용할 수 없습니다. 기록이 안전하게 보관되지 않을 수 있습니다.',action:'retry'},
+  'sync-unavailable':{message:'서버에 연결할 수 없습니다. 기록은 이 기기에 보관되며 연결이 복구되면 전송합니다.',action:'retry'},
+  unauthorized:{message:'로그인 세션을 다시 확인해야 합니다. 계정 저장 동기화가 멈췄습니다.',action:'reauthenticate'},
+  forbidden:{message:'이 계정은 저장 데이터에 접근할 수 없습니다. 기록을 서버에 전송하지 않았습니다.',action:'signout'}
+};
+let activeAccountToastController=null;
+function showAccountToast(message){activeAccountToastController?.showRoutine(message);}
+export function mountAccountSyncToast(store,actions={}){
   const game=document.getElementById('game');if(!game||!store)return ()=>{};
-  const toast=document.createElement('div');toast.className='account-sync-toast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');toast.hidden=true;game.append(toast);activeAccountToast=toast;
+  activeAccountToastController?.remove();
+  const toast=document.createElement('div');toast.className='account-sync-toast';toast.hidden=true;game.append(toast);
   const authenticated=store.hasAuthenticatedAccount?.()??Boolean(store.getAccount?.());
-  let hasPreviousWarning=false,previousWarning;
+  let hasPreviousWarning=false,previousWarning=null,currentErrorWarning=null,hideTimer=null,removeTimer=null,removed=false,observedAudioWarning=null;
+  const clearTimers=()=>{clearTimeout(hideTimer);clearTimeout(removeTimer);hideTimer=null;removeTimer=null;};
+  const updateToastPosition=()=>{
+    if(removed||toast.hidden||!toast.classList.contains('is-visible'))return;
+    const audioWarning=game.querySelector('.audio-warning');
+    if(resizeObserver&&audioWarning!==observedAudioWarning){
+      if(observedAudioWarning)resizeObserver.unobserve(observedAudioWarning);
+      observedAudioWarning=audioWarning;
+      if(observedAudioWarning)resizeObserver.observe(observedAudioWarning);
+    }
+    let lift=0;
+    if(audioWarning?.getClientRects().length){
+      const noticeBounds=toast.getBoundingClientRect(),audioBounds=audioWarning.getBoundingClientRect();
+      const overlapsHorizontally=noticeBounds.left<audioBounds.right&&noticeBounds.right>audioBounds.left;
+      const overlapsVertically=noticeBounds.top<audioBounds.bottom&&noticeBounds.bottom>audioBounds.top;
+      if(overlapsHorizontally&&overlapsVertically)lift=Math.ceil(noticeBounds.bottom-audioBounds.top+8);
+    }
+    toast.style.setProperty('--account-sync-toast-y',lift?`-${lift}px`:'0px');
+  };
+  const schedulePosition=()=>requestAnimationFrame(updateToastPosition);
+  const resizeObserver=typeof ResizeObserver==='function'?new ResizeObserver(schedulePosition):null;
+  resizeObserver?.observe(toast);
+  const mutationObserver=typeof MutationObserver==='function'?new MutationObserver(schedulePosition):null;
+  mutationObserver?.observe(game,{childList:true,subtree:true,characterData:true});
+  window.addEventListener('resize',schedulePosition);
+
+  function renderNotice(message,{error=false,actionType=null}={}){
+    clearTimers();
+    const wasHidden=toast.hidden;
+    toast.className=`account-sync-toast${error?' is-error':' is-routine'}`;
+    toast.setAttribute('role',error?'alert':'status');
+    toast.setAttribute('aria-live',error?'assertive':'polite');
+    toast.removeAttribute('aria-busy');
+    const label=document.createElement('span');label.className='account-sync-toast-message';label.textContent=message;
+    toast.replaceChildren(label);
+    if(actionType){
+      const actionButton=document.createElement('button');actionButton.type='button';actionButton.className='account-sync-toast-action';
+      const invoke=actionType==='retry'?()=>store.retry():actionType==='reauthenticate'?actions.onReauthenticate:actions.onSignOut;
+      actionButton.textContent=actionType==='retry'?'저장 다시 시도':actionType==='reauthenticate'?'다시 로그인':'로그아웃';
+      actionButton.addEventListener('click',async()=>{
+        if(actionButton.disabled||typeof invoke!=='function')return;
+        actionButton.disabled=true;toast.setAttribute('aria-busy','true');
+        try{await Promise.resolve(invoke());}
+        catch{if(actionButton.isConnected)actionButton.disabled=false;}
+        finally{
+          if(actionButton.isConnected){
+            toast.removeAttribute('aria-busy');
+            if(actionType==='retry')actionButton.disabled=false;
+          }
+        }
+      });
+      toast.append(actionButton);
+    }
+    toast.hidden=false;
+    if(wasHidden){toast.classList.remove('is-visible');requestAnimationFrame(()=>{if(!removed)toast.classList.add('is-visible');schedulePosition();});}
+    else{toast.classList.add('is-visible');schedulePosition();}
+    if(!error){
+      hideTimer=setTimeout(()=>{
+        toast.classList.remove('is-visible');toast.style.setProperty('--account-sync-toast-y','0px');
+        removeTimer=setTimeout(()=>{toast.hidden=true;},220);
+      },2500);
+    }
+  }
+
+  function showRoutine(message){if(currentErrorWarning!==null)return;renderNotice(message);}
+  function showError(warning){
+    const details=errorNoticeDetails[warning]??{message:'저장에 실패했습니다.',action:'retry'};
+    currentErrorWarning=warning;renderNotice(details.message,{error:true,actionType:details.action});
+  }
   const unsubscribe=store.subscribe(warning=>{
-    if(!hasPreviousWarning){hasPreviousWarning=true;previousWarning=warning;if(warning)showAccountToast(syncLabels[warning]??'저장 상태를 확인해 주세요');return;}
-    if(authenticated){
-      if(warning===previousWarning)return;
-      const hadWarning=previousWarning!==null&&previousWarning!==undefined;previousWarning=warning;
-      if(warning===null&&hadWarning)showAccountToast('동기화 완료');
-      else if(warning!==null)showAccountToast(syncLabels[warning]??'저장 상태를 확인해 주세요');
+    if(!hasPreviousWarning){
+      hasPreviousWarning=true;previousWarning=warning;
+      if(warning==='sync-pending')renderNotice('동기화 중');
+      else if(warning!==null)showError(warning);
       return;
     }
-    previousWarning=warning;
-    showAccountToast(warning?(syncLabels[warning]??'기기 저장소를 확인할 수 없습니다'):'기기에 저장됨');
+    const priorWarning=previousWarning;previousWarning=warning;
+    if(warning==='sync-pending'){
+      if(currentErrorWarning===null)renderNotice('동기화 중');
+      return;
+    }
+    if(warning===null){
+      if(authenticated&&priorWarning===null)return;
+      currentErrorWarning=null;
+      renderNotice(authenticated?'동기화 완료':'기기에 저장됨');
+      return;
+    }
+    if(warning===priorWarning&&currentErrorWarning===warning)return;
+    showError(warning);
   });
-  return ()=>{unsubscribe();clearTimeout(accountToastHideTimer);clearTimeout(accountToastRemoveTimer);toast.remove();if(activeAccountToast===toast)activeAccountToast=null;};
-}
-export function mountStorageNotice(store){
-  const game=document.getElementById('game');if(game.querySelector('.storage-warning'))return;
-  const box=document.createElement('div');box.className='storage-warning';box.setAttribute('role','alert');box.hidden=true;
-  const label=document.createElement('span'),retry=document.createElement('button');retry.type='button';retry.textContent='저장 다시 시도';retry.addEventListener('click',()=>store.retry());box.append(label,retry);game.append(box);
-  const messages={
-    invalid:'저장 데이터가 손상되어 덮어쓰지 않았습니다. 현재 진행은 저장되지 않습니다.',
-    'unsupported-version':'지원하지 않는 저장 버전입니다. 기존 데이터를 보존하며 현재 진행은 저장되지 않습니다.',
-    unavailable:'저장 공간을 사용할 수 없습니다. 현재 진행은 메모리에만 있습니다.',
-    conflict:'기존 저장이 발견되어 덮어쓰지 않았습니다. 저장 상태를 확인해 주세요.',
-    'storage-unavailable':'이 기기의 저장 공간을 사용할 수 없습니다. 기록이 안전하게 보관되지 않을 수 있습니다.',
-    'sync-pending':'계정 기록을 서버에 저장하고 있습니다.',
-    'sync-unavailable':'서버에 연결할 수 없습니다. 기록은 이 기기에 보관되며 연결이 복구되면 전송합니다.',
-    unauthorized:'로그인 세션을 다시 확인해야 합니다. 계정 저장 동기화가 멈췄습니다.',
-    forbidden:'이 계정은 저장 데이터에 접근할 수 없습니다. 기록을 서버에 전송하지 않았습니다.'
+  const controller={
+    showRoutine,
+    remove(){
+      if(removed)return;removed=true;unsubscribe();clearTimers();mutationObserver?.disconnect();resizeObserver?.disconnect();window.removeEventListener('resize',schedulePosition);toast.remove();
+      if(activeAccountToastController===controller)activeAccountToastController=null;
+    }
   };
-  store.subscribe(reason=>{box.hidden=!reason;label.textContent=messages[reason]??'저장에 실패했습니다.';});
+  activeAccountToastController=controller;
+  return controller.remove;
 }
