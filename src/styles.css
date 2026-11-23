@@ -6,6 +6,10 @@ h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: i
 canvas { display: block; image-rendering: pixelated; }
 .game-overlay { position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(10, 17, 22, .76); }
 .game-overlay[hidden] { display: none; }
+.resume-countdown-overlay { position:absolute; inset:0; z-index:25; display:grid; place-items:center; pointer-events:none; background:transparent; }
+.resume-countdown-number { color:#fff1c8; font:800 clamp(72px, 22vw, 144px)/1 system-ui,sans-serif; text-shadow:0 4px 0 #4b3a2a, 0 0 24px #000b; animation:resume-countdown-pop 220ms ease-out; }
+@keyframes resume-countdown-pop { from { opacity:.35; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+@media (prefers-reduced-motion: reduce) { .resume-countdown-number { animation:none; } }
 .game-panel { width: min(520px, 100%); max-height: 90%; overflow: auto; padding: 20px 24px; border: 2px solid #9db98a; background: linear-gradient(#101b18e8,#1b2422ed), url('/assets/world/forest/backdrop.png') center / cover; image-rendering: pixelated; box-shadow: 0 12px 35px #0008; }
 .game-panel h2 { margin: 0 0 10px; color: #d7e8b9; font-size: clamp(22px, 4vw, 32px); }
 .game-panel p { line-height: 1.45; margin: 9px 0; }

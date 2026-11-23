@@ -14,8 +14,10 @@ import { CAMERA_EASING, CAMERA_ZOOM, cameraScrollTarget, visibleWorldBounds } fr
 import { getAppStore } from '../storage/appStore.js';
 import { createRunCoordinator } from '../storage/runCoordinator.js';
 import { getAudioManager } from '../audio/AudioManager.js';
+import { unlockAudioForResume } from '../audio/resumeAudio.js';
 import {EVENT_SFX} from '../audio/eventSounds.js';
 import { mountMenu } from '../ui/menu.js';
+import { mountResumeCountdown, resumeCountdownValue } from '../ui/resumeCountdown.js';
 import {initializeEasyRun,isEasyRoundUnlocked,handleEasyDeath as handleEasyDeathFlow,handleEasyRoundClear as handleEasyRoundClearFlow,handleEasyStageClear as handleEasyStageClearFlow,showEasyChoice as showEasyChoiceFlow,showEasyRoundSelector as showEasyRoundSelectorFlow,startEasyRound as startEasyRoundFlow,leaveEasySession as leaveEasySessionFlow} from './easySession.js';
 import {createPracticeRun,isRoundSelectorEnabled} from '../dev/roundSelector.js';
 import {authoredPlatformPlacements,platformModulePlacements,platformTopEdgeSegments,terrainLayoutSignature} from '../render/platforms.js';
@@ -30,7 +32,7 @@ export class StageScene extends Phaser.Scene {
     if(this.practiceTarget){this.mode='hard';this.run=createPracticeRun(this.practiceTarget);this.stage=getStage(this.run.stageId);}
     else if(!this.initializeRun(data))return;
     this.accumulator=0;
-    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.audio=getAudioManager();this.audio.setVolumes(this.store.getSave().settings);this.audio.setSfxSuppressed(false);
+    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.resumeCountdownElapsed=null;this.resumeCountdownView=null;this.resumeCountdownNeedsFreshFrame=false;this.audio=getAudioManager();this.audio.setVolumes(this.store.getSave().settings);this.audio.setSfxSuppressed(false);
     const mine=this.stage.id==='mine-1';
     this.backdrop=this.add.tileSprite(0,0,640,304,mine?'mine-backdrop':'forest').setOrigin(0,0).setScrollFactor(0).setDepth(-20).setTint(mine?0xffffff:0xb8b8b8);
     this.terrainBase=this.add.graphics().setDepth(-6);this.terrainViews=[];this.terrainSignature=null;this.syncTerrainViews();
@@ -48,15 +50,16 @@ export class StageScene extends Phaser.Scene {
     this.inputController=new InputController(window,this.game.canvas);
     this.pauseReset=()=>{this.accumulator=0;this.inputController.reset();};
     this.coordinator=this.practiceTarget||this.mode==='easy'?noopCoordinator():createRunCoordinator({store:this.store}).bind(this);
-    this.onEscape=e=>{if(e.code==='Escape'&&!e.repeat&&!this.settingsOpen){e.preventDefault();if(this.paused){if(!this.easyDecisionOpen)this.resumeGame();}else this.pauseGame();}};
-    this.onBlur=()=>this.pauseGame();
-    this.onVisibility=()=>{if(document.hidden){this.pauseGame();this.coordinator.flush();}};
+    this.onEscape=e=>{if(e.code==='Escape'&&!e.repeat&&!this.settingsOpen){e.preventDefault();if(this.paused){if(this.resumeCountdownElapsed!==null)this.cancelResumeCountdown();else if(!this.easyDecisionOpen)this.resumeGame();}else this.pauseGame();}};
+    this.onBlur=()=>{if(this.resumeCountdownElapsed!==null)this.resumeCountdownNeedsFreshFrame=true;this.pauseGame();};
+    this.onVisibility=()=>{if(document.hidden){if(this.resumeCountdownElapsed!==null)this.resumeCountdownNeedsFreshFrame=true;this.pauseGame();this.coordinator.flush();}};
     this.onPageHide=()=>this.coordinator.flush();
     window.addEventListener('keydown',this.onEscape);window.addEventListener('blur',this.onBlur);window.addEventListener('pagehide',this.onPageHide);document.addEventListener('visibilitychange',this.onVisibility);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{
       if(!this.coordinator.isFinished())this.coordinator.flush();this.coordinator.dispose();
       window.removeEventListener('keydown',this.onEscape);window.removeEventListener('blur',this.onBlur);window.removeEventListener('pagehide',this.onPageHide);document.removeEventListener('visibilitychange',this.onVisibility);
       this.events.off(Phaser.Scenes.Events.ADDED_TO_SCENE,this.routeWorldObject,this);if(this.hudCamera)this.cameras.remove(this.hudCamera);this.screenSpaceObjects?.clear();this.hudCamera=null;
+      this.resumeCountdownView?.remove();this.resumeCountdownView=null;this.resumeCountdownElapsed=null;this.resumeCountdownNeedsFreshFrame=false;
       this.easyDecisionOpen=false;this.easyDecisionMenu?.remove();this.easyBoardMenu?.remove();this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
     });
     this.renderWorld();
@@ -76,8 +79,8 @@ export class StageScene extends Phaser.Scene {
   startEasyRound(stageId,round){return startEasyRoundFlow(this,stageId,round);}
   leaveEasySession(){return leaveEasySessionFlow(this);}
   update(_time,delta){
-    if(document.hidden||!document.hasFocus())this.pauseGame();
-    if(this.paused){this.pauseReset();this.renderWorld();return;}
+    if(document.hidden||!document.hasFocus()){if(this.resumeCountdownElapsed!==null)this.resumeCountdownNeedsFreshFrame=true;this.pauseGame();}
+    if(this.paused){if(this.resumeCountdownElapsed!==null)this.updateResumeCountdown(delta);this.pauseReset();this.renderWorld();return;}
     this.accumulator+=Math.min(delta,STEP*8);let ticks=0;
     while(this.accumulator>=STEP&&ticks++<8){
       const previousBossHp=this.run.boss.hp,wasDead=this.run.player.mode==='dead';
@@ -165,7 +168,22 @@ export class StageScene extends Phaser.Scene {
     this.pauseMenu=mountMenu('일시정지',notice);this.pauseMenu.button('재개',()=>this.resumeGame());this.pauseMenu.button('설정',()=>{this.settingsOpen=true;this.pauseMenu.hide();this.scene.launch('settings',{onClose:()=>{this.settingsOpen=false;this.pauseMenu?.show();}});});this.pauseMenu.button('처음 화면',()=>{this.coordinator.flush();this.scene.start('title');});this.pauseMenu.focus();
   }
   musicForRun(){return this.run.boss.state!=='dormant'&&this.run.player.mode!=='dead'?(this.stage.id==='mine-1'?'mine-boss':'forest-boss'):(this.stage.id==='mine-1'?'mine':'forest');}
-  resumeGame(){if(!this.paused||this.easyDecisionOpen||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;this.audio.setSfxSuppressed(false);if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();}this.audio.playMusic(this.musicForRun());}
+  resumeGame(){if(!this.paused||this.easyDecisionOpen||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.hide();this.pauseReset();this.resumeCountdownElapsed=0;this.resumeCountdownNeedsFreshFrame=false;this.audio.pauseMusic();unlockAudioForResume(this.audio,this.store.getSave().settings);this.resumeCountdownView=mountResumeCountdown(3);}
+  cancelResumeCountdown(){if(this.resumeCountdownElapsed===null)return;this.resumeCountdownView?.remove();this.resumeCountdownView=null;this.resumeCountdownElapsed=null;this.resumeCountdownNeedsFreshFrame=false;this.pauseReset();this.pauseMenu?.show();}
+  updateResumeCountdown(delta){
+    if(document.hidden||!document.hasFocus()){this.resumeCountdownNeedsFreshFrame=true;return;}
+    if(this.resumeCountdownNeedsFreshFrame){this.resumeCountdownNeedsFreshFrame=false;return;}
+    const elapsed=this.resumeCountdownElapsed+Math.max(0,Number.isFinite(delta)?delta:0);
+    const value=resumeCountdownValue(elapsed);
+    if(value===null){
+      this.resumeCountdownView?.remove();this.resumeCountdownView=null;this.resumeCountdownElapsed=null;this.resumeCountdownNeedsFreshFrame=false;
+      this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;this.audio.setSfxSuppressed(false);
+      this.audio.playMusic(this.musicForRun());return;
+    }
+    const previousValue=resumeCountdownValue(this.resumeCountdownElapsed);
+    this.resumeCountdownElapsed=elapsed;
+    if(value!==previousValue)this.resumeCountdownView?.setValue(value);
+  }
   pauseEasyDecision(){
     this.easyDecisionOpen=true;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.audio.setSfxSuppressed(true);
   }

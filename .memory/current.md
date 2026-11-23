@@ -1,23 +1,18 @@
 # Current Context
 
 ## Active Plan
-None
+[Gameplay Controls and Round Safety](./plans/2026-11-20-gameplay-round-safety.md)
 
 ## Active Phase
-None
+[P01 Gameplay Safety and Controls](./phases/2026-11-20-gameplay-round-safety/P01-gameplay-safety-and-controls/phase.md)
 
 ## Active Task
-None
+[T03 One-Second Hit Protection](./phases/2026-11-20-gameplay-round-safety/P01-gameplay-safety-and-controls/T03-one-second-hit-protection.md)
 
 ## Status
-- Title Audio, Menu Layout, and Shield Rendering Fixes is complete; P01/T01–T03 are done.
-- T03 layout correction `ccf0d18` was deployed successfully (GitHub Actions run `45172348923`) and checked in the signed-in production browser at narrow size.
-- Save and Sync Notice UX P01/T01 is complete in `5445a5f`; its browser-review record is in `4179689`.
-- Unrelated untracked public-git-history-cleanup memory documents remain untouched.
+- Implementation branch `feature/gameplay-round-safety` is based on `origin/main` at `5ad654e`.
+- T02 is included in this baseline from upstream commit `d7f657b`; T01, T03, and T04 remain.
+- The unrelated title-screen plan documents remain untracked and must stay outside gameplay-task commits.
 
 ## Next Step (IMPORTANT)
-No active memory task. Create or select a plan when new work is requested.
-
-## Completed Plans
-- [Title Audio, Menu Layout, and Shield Rendering Fixes](./plans/2026-11-23-title-audio-menu-render-fixes.md) — P01/T01–T03 complete.
-- [Save and Sync Notice UX](./plans/2026-11-23-sync-notice-ux.md) — P01/T01 complete in `5445a5f`; validation and pointer sync are recorded in `4179689`.
+Implement T03's shared one-second ordinary-hit protection, run the task validation commands, then commit only the gameplay source, tests, and gameplay memory plan files. T04 follows afterward.
