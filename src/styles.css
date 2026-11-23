@@ -17,7 +17,7 @@ canvas { display: block; image-rendering: pixelated; }
 .storage-warning { position: absolute; z-index: 50; right: 10px; top: 10px; width: min(360px, calc(100% - 20px)); padding: 10px 12px; color: #fff4df; background: #6d3428; border: 2px solid #ffd49c; line-height: 1.4; }
 .storage-warning button { margin-bottom: 0; background: #74483d; }
 
-.audio-warning { position:absolute; z-index:45; left:10px; bottom:10px; max-width:360px; padding:8px 10px; background:#5b3926; border:2px solid #d5ba82; color:#fff3dc; }
+.audio-warning { position:absolute; z-index:45; right:max(10px, env(safe-area-inset-right)); bottom:max(10px, env(safe-area-inset-bottom)); max-width:min(360px, calc(50vw - 20px)); padding:8px 10px; background:#5b3926; border:2px solid #d5ba82; color:#fff3dc; }
 .result-overlay { padding:12px; background:rgba(8, 13, 17, .82); }
 .result-panel { width:min(520px, 100%); padding:20px clamp(16px, 4vw, 28px); border-color:#d7bd82; background:linear-gradient(155deg, #17251fF2, #25231fee 72%), url('/assets/world/forest/backdrop.png') center / cover; }
 .result-panel h2 { margin-bottom:4px; text-align:center; color:#ffe5a5; letter-spacing:.04em; }
@@ -100,6 +100,7 @@ canvas { display: block; image-rendering: pixelated; }
 .import-panel { border-color:#b59b63; }
 
 .game-overlay--title {
+  container-type: size;
   display: block;
   padding: 0;
   overflow: hidden;
@@ -110,6 +111,16 @@ canvas { display: block; image-rendering: pixelated; }
   background-repeat: no-repeat, no-repeat;
   image-rendering: pixelated;
 }
+.title-art-bounds {
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:min(100cqw, 210.526316cqh);
+  aspect-ratio:40 / 19;
+  transform:translate(-50%, -50%);
+  pointer-events:none;
+}
+.title-art-bounds .audio-warning { max-width:min(360px, calc(50vw - 20px)); }
 .game-panel--title {
   position: absolute;
   top: 50%;
@@ -173,24 +184,11 @@ canvas { display: block; image-rendering: pixelated; }
 .game-panel--title button:not(:disabled):hover::before,
 .game-panel--title button:not(:disabled):focus-visible::before { opacity: 1; }
 .game-panel--title button:disabled { opacity: .48; cursor: not-allowed; }
-.game-overlay--title-main .title-menu-heading {
-  position: absolute;
-  top: 20%;
-  left: 50%;
-  width: min(520px, calc(100% - 32px));
-  margin: 0;
-  color: #d7e8b9;
-  font-size: clamp(28px, 4vw, 40px);
-  line-height: 1.2;
-  text-align: center;
-  transform: translate(-50%, -50%);
-}
 .game-overlay--title-main .game-panel--title {
   top: 58%;
   max-height: calc(100% - 110px);
 }
 @media (max-height: 500px) {
-  .game-overlay--title-main .title-menu-heading { top: 14%; }
   .game-overlay--title-main .game-panel--title { max-height: calc(100% - 100px); }
 }
 @media (max-width: 420px) {
@@ -426,6 +424,48 @@ canvas { display: block; image-rendering: pixelated; }
   color:var(--challenge-muted, #b9c1b8);
   font-size:12px;
 }
+.account-status--title-home {
+  position:absolute;
+  left:max(10px, env(safe-area-inset-left));
+  bottom:max(10px, env(safe-area-inset-bottom));
+  z-index:30;
+  width:min(520px, calc(50vw - 20px));
+  min-width:0;
+  justify-content:flex-start;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+}
+.account-status--title-home { pointer-events:auto; }
+.account-status--title-home .account-status-name { flex:1 1 180px; min-width:0; }
+.account-status--title-home .account-status-sync { flex:0 1 auto; }
+.account-sync-toast {
+  position:absolute;
+  z-index:44;
+  left:50%;
+  bottom:max(14px, env(safe-area-inset-bottom));
+  width:max-content;
+  max-width:min(420px, calc(100% - 32px));
+  padding:9px 16px;
+  border:1px solid rgba(223,202,151,.82);
+  border-radius:12px;
+  color:#fff4d8;
+  background:rgba(16,24,22,.94);
+  box-shadow:0 5px 18px #0008;
+  font-size:14px;
+  line-height:1.35;
+  text-align:center;
+  opacity:0;
+  visibility:hidden;
+  transform:translate(-50%, 8px);
+  transition:opacity .18s ease, transform .18s ease, visibility .18s ease;
+  pointer-events:none;
+}
+.account-sync-toast[hidden] { display:none; }
+.account-sync-toast.is-visible { opacity:1; visibility:visible; transform:translate(-50%, 0); }
+.title-art-bounds .account-sync-toast { bottom:clamp(64px, 9vh, 96px); }
 .account-status-name { overflow-wrap:anywhere; }
 .account-status-sync { color:var(--challenge-accent, #d7e8b9); }
 .account-status-sync[data-state="sync-unavailable"],
@@ -439,6 +479,24 @@ canvas { display: block; image-rendering: pixelated; }
   border-color:var(--challenge-line, #526052);
   color:var(--challenge-muted, #b9c1b8);
   font-size:12px;
+}
+.game-overlay--title-main .account-status--title-home .account-sign-out {
+  flex:0 0 auto;
+  width:auto;
+  min-height:30px;
+  margin:0;
+  padding:4px 8px;
+  border:1px solid rgba(205,190,143,.7);
+  color:#f0e5ca;
+  background:rgba(37,48,40,.94);
+  font:600 12px system-ui,sans-serif;
+  cursor:pointer;
+}
+.game-overlay--title-main .account-status--title-home .account-sign-out:hover,
+.game-overlay--title-main .account-status--title-home .account-sign-out:focus-visible {
+  outline:2px solid #ffdf86;
+  outline-offset:2px;
+  background:#48694f;
 }
 .game-panel.challenge-panel .challenge-record-table th:first-child { width:18%; }
 .challenge-record-table th:last-child:not(:first-child) { width:72px; }

@@ -413,7 +413,9 @@ let instance;
 export function getAudioManager(){
   if(!instance)instance=new AudioManager({settings:getAppStore().getSave().settings,onRecovered:()=>document.querySelector('.audio-warning')?.remove(),onError:message=>{
     let node=document.querySelector('.audio-warning');
-    if(!node){node=document.createElement('div');node.className='audio-warning';node.setAttribute('role','status');document.getElementById('game').append(node);}
+    if(!node){node=document.createElement('div');node.className='audio-warning';node.setAttribute('role','status');}
+    const host=document.querySelector('.game-overlay--title:not([hidden]) .title-art-bounds')??document.getElementById('game');
+    host.append(node);
     node.textContent=message;
   }});
   return instance;

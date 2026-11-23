@@ -24,19 +24,23 @@ async function startGame(store){
   gameStarting=true;
   initializeAppStore(store);
   showLoading('게임을 불러오고 있습니다…');
+  let removeAccountSyncToast=null;
   try{
-    const [{default:Phaser},{createGameConfig},{disposeAudioManager}]=await Promise.all([
-      import('phaser'),import('./game/config.js'),import('./game/audio/AudioManager.js')
+    const [{default:Phaser},{createGameConfig},{disposeAudioManager},{mountAccountSyncToast:mountToast}]=await Promise.all([
+      import('phaser'),import('./game/config.js'),import('./game/audio/AudioManager.js'),import('./game/ui/menu.js')
     ]);
+    removeAccountSyncToast=mountToast(store);
     authScreen?.remove();authScreen=null;
     const game=new Phaser.Game(createGameConfig('game'));
     activeGame=game;
     game.events.once(Phaser.Core.Events.DESTROY,()=>{
       disposeAudioManager();
+      removeAccountSyncToast?.();removeAccountSyncToast=null;
       if(activeGame===game){activeGame=null;gameStarted=false;}
     });
     gameStarted=true;
   }catch{
+    removeAccountSyncToast?.();removeAccountSyncToast=null;
     showScreen({title:'게임을 불러올 수 없습니다',message:'게임 파일을 불러오지 못했습니다. 페이지를 새로고침해 주세요.'});
   }finally{gameStarting=false;}
 }

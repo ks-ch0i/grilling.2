@@ -44,8 +44,8 @@ export class TitleScene extends Phaser.Scene {
     audio.playMusic(stageId==='mine-1'?'mine':'forest',{fadeMs:1000});
   }
   showMain(){
-    this.menu?.remove();this.menu=mountMenu('Pixel Action','',{variant:'title',layout:'main'});
-    mountAccountStatus(this.menu,this.store,{showAccount:true,showSignOut:true});
+    this.menu?.remove();this.menu=mountMenu('Pixel Action','',{variant:'title',layout:'main',showMainHeading:false,accessibleLabel:'메인 메뉴'});
+    mountAccountStatus(this.menu,this.store,{showAccount:true,showSignOut:!import.meta.env.DEV,placement:'root',showLocalDevStatus:import.meta.env.DEV});
     this.menu.button('시작',()=>this.showModes());
     this.menu.button('기록',()=>this.showRecords());
     if(isRoundSelectorEnabled({development:import.meta.env.DEV,enabled:import.meta.env.VITE_DEV_ROUND_SELECTOR!=='false'}))this.menu.button('라운드 선택 (개발용)',()=>this.showPracticeRounds());
