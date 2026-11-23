@@ -10,12 +10,39 @@ export class TitleScene extends Phaser.Scene {
   constructor(){super('title');}
   preload(){this.assetErrors=[];this.onAssetError=file=>this.assetErrors.push(file.key);this.load.on('loaderror',this.onAssetError);preloadAssets(this.load,this.textures);}
   create(){
-    this.load.off('loaderror',this.onAssetError);this.store=getAppStore();mountStorageNotice(this.store);this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>this.menu?.remove());
+    this.load.off('loaderror',this.onAssetError);this.store=getAppStore();mountStorageNotice(this.store);this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>{this.removeTitleAudioFallback();this.menu?.remove();});
     const validation=validateAssets(this.textures),errors=[...this.assetErrors,...validation.errors];
     if(errors.length){this.menu=mountMenu('에셋을 불러오지 못했습니다',`누락 또는 손상: ${errors.join(', ')}. 파일을 확인한 뒤 다시 시도하세요.`);this.menu.button('다시 시도',()=>window.location.reload());this.menu.focus();return;}
-    this.showMain();
+    this.showMain();this.startTitleAudio();
   }
-  startAudio(stageId){const audio=getAudioManager();audio.setVolumes(this.store.getSave().settings);void audio.unlock();audio.resumeMusic();audio.playMusic(stageId==='mine-1'?'mine':'forest');}
+  startTitleAudio(){
+    this.audio=getAudioManager();this.audio.setVolumes(this.store.getSave().settings);this.audio.setSfxSuppressed(false);
+    const game=document.getElementById('game');
+    this.onTitleClick=event=>{if(game.contains(event.target))this.retryTitleAudioFromGesture();};
+    this.onTitleKeydown=event=>{
+      if(!game.contains(event.target)||event.key==='Enter'||event.key===' '||event.code==='Space')return;
+      this.retryTitleAudioFromGesture();
+    };
+    document.addEventListener('click',this.onTitleClick);
+    document.addEventListener('keydown',this.onTitleKeydown);
+    this.removeAudioRecoveryListener=this.audio.onPlaybackRecovered(()=>this.removeTitleAudioFallback());
+    void this.audio.unlock();
+    this.audio.playMusic('title');
+  }
+  retryTitleAudioFromGesture(){
+    void this.audio.unlock();
+    this.audio.retryPendingMusicFromGesture();
+  }
+  removeTitleAudioFallback(){
+    if(this.onTitleClick)document.removeEventListener('click',this.onTitleClick);
+    if(this.onTitleKeydown)document.removeEventListener('keydown',this.onTitleKeydown);
+    this.onTitleClick=null;this.onTitleKeydown=null;
+    this.removeAudioRecoveryListener?.();this.removeAudioRecoveryListener=null;
+  }
+  startAudio(stageId){
+    const audio=getAudioManager();audio.setVolumes(this.store.getSave().settings);audio.setSfxSuppressed(false);void audio.unlock();
+    audio.playMusic(stageId==='mine-1'?'mine':'forest',{fadeMs:1000});
+  }
   showMain(){
     this.menu?.remove();this.menu=mountMenu('Pixel Action','',{variant:'title',layout:'main'});
     mountAccountStatus(this.menu,this.store,{showAccount:true,showSignOut:true});

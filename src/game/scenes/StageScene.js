@@ -30,7 +30,7 @@ export class StageScene extends Phaser.Scene {
     if(this.practiceTarget){this.mode='hard';this.run=createPracticeRun(this.practiceTarget);this.stage=getStage(this.run.stageId);}
     else if(!this.initializeRun(data))return;
     this.accumulator=0;
-    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.audio=getAudioManager();
+    this.paused=false;this.settingsOpen=false;this.pauseMenu=null;this.audio=getAudioManager();this.audio.setVolumes(this.store.getSave().settings);this.audio.setSfxSuppressed(false);
     const mine=this.stage.id==='mine-1';
     this.backdrop=this.add.tileSprite(0,0,640,304,mine?'mine-backdrop':'forest').setOrigin(0,0).setScrollFactor(0).setDepth(-20).setTint(mine?0xffffff:0xb8b8b8);
     this.terrainBase=this.add.graphics().setDepth(-6);this.terrainViews=[];this.terrainSignature=null;this.syncTerrainViews();
@@ -60,7 +60,7 @@ export class StageScene extends Phaser.Scene {
       this.easyDecisionOpen=false;this.easyDecisionMenu?.remove();this.easyBoardMenu?.remove();this.pauseMenu?.remove();this.inputController.destroy();this.playerView.destroy();this.enemyView.destroy();this.mineHazardView?.destroy();this.wormIntroView?.destroy();this.light?.destroy();this.bossBlackout?.destroy();
     });
     this.renderWorld();
-    this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());
+    this.audio.playMusic(this.musicForRun(),{fadeMs:1000});
   }
   initializeRun(data={}){
     return initializeEasyRun(this,data);
@@ -97,7 +97,7 @@ export class StageScene extends Phaser.Scene {
       this.visualEffects=this.visualEffects.filter(effect=>{if(effect.until>this.run.elapsedTicks){if(effect.draw)effect.draw(this.run.elapsedTicks-effect.start);if(effect.fade)effect.sprite.setAlpha((effect.until-this.run.elapsedTicks)/effect.fade*(effect.strength??1));return true;}effect.sprite.destroy();return false;});
       if(this.run.player.mode==='run'&&this.run.player.grounded&&this.run.elapsedTicks%18===0)this.audio.playSfx('step');
       this.coordinator.tick();
-      if(result.events.some(event=>event.type==='stage:clear')){this.audio.pauseMusic();const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{stageId:this.run.stageId,record,practice:Boolean(this.practiceTarget),practiceTarget:this.practiceTarget});return;}
+      if(result.events.some(event=>event.type==='stage:clear')){const record={elapsedTicks:this.run.elapsedTicks,deaths:this.run.deaths};this.scene.start('result',{stageId:this.run.stageId,record,practice:Boolean(this.practiceTarget),practiceTarget:this.practiceTarget});return;}
       this.accumulator-=STEP;
     }
     this.renderWorld();
@@ -161,13 +161,13 @@ export class StageScene extends Phaser.Scene {
   }
   pauseGame(notice=''){
     if(this.easyDecisionOpen){this.pauseReset();return;}
-    if(this.paused)return;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.coordinator.flush();this.audio.pauseMusic();
+    if(this.paused)return;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.coordinator.flush();this.audio.setSfxSuppressed(true);
     this.pauseMenu=mountMenu('일시정지',notice);this.pauseMenu.button('재개',()=>this.resumeGame());this.pauseMenu.button('설정',()=>{this.settingsOpen=true;this.pauseMenu.hide();this.scene.launch('settings',{onClose:()=>{this.settingsOpen=false;this.pauseMenu?.show();}});});this.pauseMenu.button('처음 화면',()=>{this.coordinator.flush();this.scene.start('title');});this.pauseMenu.focus();
   }
   musicForRun(){return this.run.boss.state!=='dormant'&&this.run.player.mode!=='dead'?(this.stage.id==='mine-1'?'mine-boss':'forest-boss'):(this.stage.id==='mine-1'?'mine':'forest');}
-  resumeGame(){if(!this.paused||this.easyDecisionOpen||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();}this.audio.resumeMusic();this.audio.playMusic(this.musicForRun());}
+  resumeGame(){if(!this.paused||this.easyDecisionOpen||this.settingsOpen||document.hidden||!document.hasFocus())return;this.pauseMenu?.remove();this.pauseMenu=null;this.pauseReset();this.inputController.setEnabled(true);this.paused=false;this.audio.setSfxSuppressed(false);if(!this.audio.unlocked){this.audio.setVolumes(this.store.getSave().settings);void this.audio.unlock();}this.audio.playMusic(this.musicForRun());}
   pauseEasyDecision(){
-    this.easyDecisionOpen=true;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.audio.pauseMusic();
+    this.easyDecisionOpen=true;this.paused=true;this.pauseReset();this.inputController.setEnabled(false);this.audio.setSfxSuppressed(true);
   }
   exportStageSnapshot(){return snapshotStageRun(this.run);}
   restoreStageSnapshot(data){this.run=createStageRun(this.stage,data);this.playerView.resetAttackIndicator();this.pauseReset();this.coordinator.flush();this.renderWorld();}
