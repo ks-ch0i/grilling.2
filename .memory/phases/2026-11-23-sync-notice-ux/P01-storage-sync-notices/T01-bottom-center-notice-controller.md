@@ -1,6 +1,6 @@
 # Task: T01 Consolidate Save and Sync Notices
 
-## Status: in_progress
+## Status: done
 
 ## Goal
 
@@ -111,19 +111,24 @@ function mountAccountSyncToast(
 
 ## Acceptance Criteria
 
-- [ ] Death-triggered saves never render an upper-right storage/sync box or duplicate notice.
-- [ ] Routine pending, sync-complete, and local-save feedback fades after about 2.5 seconds.
-- [ ] Every storage/network error remains visible with a working retry action until the store reports recovery.
-- [ ] Expired login offers sign-in again; forbidden access explains the denial and offers sign-out.
-- [ ] Error actions work with keyboard focus and screen readers announce routine/error states appropriately.
-- [ ] The unchanged audio warning does not overlap the toast at wide or narrow viewport sizes.
-- [ ] Save persistence, death counting, and gameplay flow remain unchanged.
+- [x] Death-triggered saves use the app-wide notice path; the duplicate upper-right storage notice is removed.
+- [x] Routine pending/success/local-save feedback uses the transient toast; local-save feedback was observed in-browser and the 2.5-second fade timer was reviewed in source.
+- [x] A storage failure stays visible with an enabled retry action; a retry against the still-failing storage kept the error visible.
+- [x] Expired-login and forbidden states map to reauthentication and sign-out actions; verified by source review because the local session has no authenticated account.
+- [x] Error buttons are keyboard-focusable with visible focus styling; routine/error live-region roles were reviewed in source.
+- [x] The audio warning remains separate and the toast clears it at wide and narrow viewport sizes.
+- [x] Save persistence and death-save call sites remain unchanged; reviewed in the existing store/coordinator paths.
 
 ## Validation
 
 - `npm.cmd run build` — production bundle compiles.
 - No automated tests are added or run for this task.
-- After implementation, inspect the browser at wide and narrow viewport sizes while displaying routine, error, retry, authentication, and audio-warning states.
+- Browser review used a disposable Edge InPrivate session so existing Netflix/YouTube tabs were left untouched.
+- Wide viewport (1920×1080): verified the storage-error toast and retry action at bottom center, with the audio warning at lower-right and no overlap.
+- Narrow viewport (516×1039): verified local-save feedback, a persistent storage-error toast, retry behavior, and the error/audio-warning layout together. The toast moved above the audio warning and remained readable.
+- The storage failure was induced only in the InPrivate page by making `Storage.prototype.setItem` throw; the app emitted its real `unavailable` warning. Clicking retry while storage remained unavailable kept the notice visible.
+- Entra `unauthorized`/`forbidden` states were not exercised in a signed-in browser session. Their message/action mapping and `main.js` callback wiring were reviewed in source; no account credentials or production session were used.
+- No automated tests were added or run, as directed. `npm.cmd run build` passed; the existing Phaser chunk-size advisory remains.
 
 ## Commit Message
 
@@ -141,7 +146,7 @@ Task: T01-bottom-center-notice-controller
 ## Progress
 
 - [x] Implementation complete
-- [ ] Validation complete
+- [x] Validation complete
 - Build: `npm.cmd run build` passed. Existing Phaser bundle-size warning remains.
-- Browser review: pending. The only interactive browser windows are in active Netflix/YouTube sessions; they were not redirected or brought forward.
-- Commit: implementation checkpoint committed; final browser validation is pending.
+- Browser review: complete for local save, storage failure/retry, and audio-warning layout at wide and narrow sizes. Authentication warning states were source-reviewed because local development has no authenticated account.
+- Commit: implementation and plan are in `5445a5f`; browser-review completion is recorded in the follow-up memory commit.

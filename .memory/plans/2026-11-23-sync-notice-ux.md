@@ -8,7 +8,7 @@ Replace the distracting upper-right save/sync warning with one bottom-center not
 
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Consolidate save/sync status and error notices, preserve recovery actions, and remove the upper-right notice. | [P01](../phases/2026-11-23-sync-notice-ux/P01-storage-sync-notices/phase.md) |
+| P01 | `complete` | Consolidate save/sync status and error notices, preserve recovery actions, and remove the upper-right notice. | [P01](../phases/2026-11-23-sync-notice-ux/P01-storage-sync-notices/phase.md) |
 
 ## Confirmed Decisions
 
@@ -21,3 +21,8 @@ Replace the distracting upper-right save/sync warning with one bottom-center not
 ## Source Decision
 
 See [confirmed interview decisions](../decisions/2026-11-23-sync-notice-ux.md).
+
+## Completion
+
+- P01 and T01 completed. The implementation is in `5445a5f`; the final browser-review record is in the follow-up memory commit.
+- Wide/narrow local-save, storage-error/retry, and audio-warning layout checks passed. Entra error states were verified by source review because no authenticated local session was available.
