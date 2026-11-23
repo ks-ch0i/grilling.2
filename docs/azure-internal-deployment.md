@@ -4,8 +4,8 @@
 
 | 항목 | 값 |
 | --- | --- |
-| Azure 구독 | `REPLACE_WITH_AZURE_SUBSCRIPTION_ID` |
-| 리소스 그룹 | `REPLACE_WITH_AZURE_RESOURCE_GROUP` |
+| Azure 구독 | `b7af62a9-9a10-4deb-95fa-1690f7bbd33d` |
+| 리소스 그룹 | `grill-me-edu` |
 | Static Web App | `swa-grill-me-prod` / Standard / East Asia |
 | 사이트 주소 | `https://happy-ocean-085e57100.6.azurestaticapps.net` |
 | Cosmos DB 계정 | 기존 공유 계정 / Korea Central (실제 계정 이름과 endpoint는 Git에 기록하지 않음) |
@@ -13,7 +13,7 @@
 | 저장 컨테이너 | `player-saves`, 파티션 키 `/userId` |
 | 기록 컨테이너 | `leaderboards`, 파티션 키 `/boardId` |
 
-Standard SWA, 데이터베이스와 컨테이너 2개가 준비되어 있습니다. 현재 Azure에는 기존 방식의 Entra 앱 등록 두 개와 API 환경 설정이 있습니다. 아래 단일 앱 구성은 로컬 배포 코드에 반영했으며, SWA 운영 환경은 첫 배포를 기다리고 있습니다.
+Standard SWA, 데이터베이스와 컨테이너 2개가 준비되어 있습니다. 2026-11-23에 단일 Entra 앱 로그인 구성을 배포했고, 첫 GitHub Actions 배포가 성공했습니다. 사이트의 익명 접근은 로그인으로 리디렉션되는 것을 확인했습니다. 실제 회사 계정 로그인과 게임 저장/기록 기능은 브라우저 검증이 남아 있습니다. 기존 `Grill-Me API` Entra 앱 등록은 검증이 끝날 때까지 유지합니다.
 
 Bicep은 새 Static Web App과 `pixel-raid` 데이터베이스 및 컨테이너 2개만 관리합니다. 공유 Cosmos 계정과 리소스 그룹의 다른 프로젝트 자원은 배포 범위가 아닙니다.
 
@@ -71,23 +71,30 @@ DB 및 컨테이너 이름의 기본값은 `pixel-raid`, `player-saves`, `leader
 
 토큰은 Azure Portal의 해당 SWA 배포 토큰 화면에서 확인해 GitHub secret에 바로 입력합니다. 채팅, 커밋, 변수, 빌드 산출물 또는 로그에 복사하지 않습니다. Cosmos 키는 GitHub에 등록하지 않습니다.
 
-워크플로 파일 `.github/workflows/azure-static-web-apps.yml`은 `main` push와 수동 실행에서 Node 22.12.0으로 프론트엔드/API를 검증하고 빌드합니다. 빌드 결과에서 Node 22, SWA 역할 함수, 경로 보호 설정을 확인한 뒤 `dist/`와 `api/`를 배포합니다.
+워크플로 파일 `.github/workflows/azure-static-web-apps.yml`은 `main` push와 수동 실행에서 Node 22.12.0으로 프론트엔드/API를 검증하고 빌드합니다. 빌드 결과에서 Node 22, SWA 역할 함수, 경로 보호 설정을 확인한 뒤 `dist/`와 `api/`를 배포합니다. Actions의 checkout/setup-node는 Node 24 기반 릴리스로 실행하며, SWA API 빌드는 기본 동작을 사용합니다.
 
-배포 단계에는 추가로 `AZURE_DEPLOY_ENABLED` Repository variable을 정확히 `true`로 설정해야 합니다. 이 변수는 아래 선행 작업이 모두 끝나고, 원격 `main`에 배포할 변경을 검토해 게시한 후에만 켭니다.
+배포 단계에는 추가로 `AZURE_DEPLOY_ENABLED` Repository variable을 정확히 `true`로 설정해야 합니다. 운영 배포를 위해 이미 설정되어 있습니다.
 
-1. Standard SWA와 Cosmos 데이터베이스/컨테이너가 존재하는지 확인합니다.
-2. 로그인용 Entra 웹 앱과 콜백 URI, ID 토큰의 `acct` 클레임을 확인합니다.
-3. SWA 서버 환경 변수와 GitHub 배포 secret을 등록합니다.
-4. 원격 `main`에 포함된 코드와 설정을 검토합니다.
-5. `AZURE_DEPLOY_ENABLED=true`를 설정하고 워크플로 실행 결과를 확인합니다.
+1. Standard SWA와 Cosmos 데이터베이스/컨테이너가 존재하는지 확인했습니다.
+2. 로그인용 Entra 웹 앱과 콜백 URI, ID 토큰의 `acct` 클레임을 확인했습니다.
+3. SWA 서버 환경 변수와 GitHub 배포 secret이 등록된 것을 확인했습니다.
+4. 검토한 코드를 `main`에 게시하고 워크플로 실행을 확인했습니다.
+5. 첫 배포 commit은 `9feb87d`이며, [GitHub Actions 실행 결과](https://github.com/ks-ch0i/grilling.2/actions/runs/45122328202)는 성공입니다.
 
-변수가 없거나 `true`가 아니면 빌드까지만 수행하고 배포하지 않습니다. 다른 브랜치의 수동 실행은 빌드만 하며 배포하지 않습니다. 현재 이 저장소의 미게시 로컬 변경은 이 절차만으로 원격에 올라가지 않습니다. 공개 ID 외의 인증 비밀은 빌드에 전달하지 않습니다.
+변수가 없거나 `true`가 아니면 빌드까지만 수행하고 배포하지 않습니다. 다른 브랜치의 수동 실행은 빌드만 하며 배포하지 않습니다. 공개 ID 외의 인증 비밀은 빌드에 전달하지 않습니다.
 
 ## 검증과 장애 대응
 
 ### 배포 후 smoke 확인
 
-배포 후 위 사이트 주소에서 다음을 확인하고 결과 및 배포 commit SHA를 운영 기록에 남깁니다.
+2026-11-23 첫 배포 후 위 사이트에서 아래 익명 접근 검사를 수행했습니다. 로그인 계정이 필요한 검사는 완료 전입니다.
+
+- `/`는 HTTP 302로 `/.auth/login/aad`에 이동합니다.
+- `/.auth/me`는 HTTP 200을 반환합니다. 익명 세션에서 구성원 역할이 부여되지 않았습니다.
+- `/api/roles`는 HTTP 302로 로그인을 요구합니다.
+- 배포 commit: `9feb87d`; [GitHub Actions run 45122328202](https://github.com/ks-ch0i/grilling.2/actions/runs/45122328202).
+
+로그인한 회사 계정으로 다음을 추가 확인하고 결과를 기록합니다.
 
 1. 로그아웃 상태에서 사이트가 Entra 로그인으로 이동하는지 확인합니다. 게임 파일과 API에도 같은 접근 제한을 확인합니다.
 2. 회사 테넌트 구성원이 로그인하면 `/.auth/me`에 `grill-member` 역할이 있고 게임이 시작되는지 확인합니다.
@@ -95,7 +102,7 @@ DB 및 컨테이너 이름의 기본값은 `pixel-raid`, `player-saves`, `leader
 4. 게스트 및 다른 테넌트 계정은 접근 거부되며 다른 계정의 데이터가 반환되지 않습니다.
 5. 로컬 설정, 계정별 캐시 분리, 기존 기록 가져오기 안내, 오프라인 저장 대기 및 복구 동작을 확인합니다.
 
-구성원 로그인과 SWA의 클레임 전달을 실제 Azure에서 확인합니다. 게스트 계정으로 로그인하여 게임과 API 접근 차단을 확인합니다.
+아직 확인할 항목은 회사 계정의 `grill-member` 역할, 게임 로딩, 저장 읽기/쓰기, 개인 기록과 리더보드, 게스트 및 다른 테넌트 접근 거부입니다. 이 결과를 확인하기 전까지 기존 `Grill-Me API` 앱 등록은 삭제하지 않습니다.
 
 ### 롤백 및 API 장애
 

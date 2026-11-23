@@ -28,7 +28,7 @@ Deploy the approved frontend and managed API automatically from GitHub `main` af
 - Trigger on `push` to `main` and `workflow_dispatch`. Use `actions/checkout`, setup Node 22 (compatible with the root `>=22.12.0` engine), then `npm ci`, `npm --prefix api ci`, `npm run build`, and `npm --prefix api run check`.
 - SWA handles authentication using its existing tenant-specific Entra app registration. The frontend build has no Entra environment variables.
 - Gate the deploy step on repository variable `AZURE_DEPLOY_ENABLED == "true"`; enable it after the SWA settings, single Entra registration, Cosmos database, and deployment token are configured. Once enabled, every approved push to `main` automatically deploys.
-- Deploy the already-built `dist` app and the `api/` Functions source with `Azure/static-web-apps-deploy@v1`, `app_location: "dist"`, `api_location: "api"`, `output_location: ""`, `skip_app_build: true`, and `skip_api_build: false`.
+- Deploy the already-built `dist` app and the `api/` Functions source with `Azure/static-web-apps-deploy@v1`, `app_location: "dist"`, `api_location: "api"`, `output_location: ""`, and `skip_app_build: true`. The action builds the API by default; omit the unsupported `skip_api_build` input.
 - Pass only `${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}` as the SWA deployment token. Do not echo secrets, write tokens into artifacts, or use a Cosmos key in GitHub Actions.
 - The static config deployed from `dist/staticwebapp.config.json` sets the managed API runtime to Node 22. Do not add a custom domain or PR preview deployment in this release.
 
@@ -58,14 +58,16 @@ Deploy the approved frontend and managed API automatically from GitHub `main` af
 - [x] Static build inputs use public app IDs only; Cosmos and deployment credentials remain server/GitHub secrets.
 - [x] Runbook covers member/guest/wrong-tenant verification, outage sync, rollback, and targeted manual data deletion.
 - [x] The reviewed deployment code was published after the user authorized release.
-- [ ] Production smoke checks remain pending first deployment.
+- [x] First production deployment succeeded from commit `9feb87d` on 2026-11-23: GitHub Actions run [45122328202](https://github.com/ks-ch0i/grilling.2/actions/runs/45122328202).
+- [x] Anonymous smoke check: `/` redirects to `/.auth/login/aad`; `/.auth/me` returns HTTP 200; `/api/roles` redirects to sign-in. No signed-in identity or account data was used for this check.
+- [ ] Signed-in company-member role, game load, save/leaderboard operations, guest sign-in denial, and wrong-tenant denial still require browser verification.
 
 ## Validation
 
 - Run `npm run build` and `npm --prefix api run check` after implementation.
 - Inspect the generated workflow and SWA build artifact for the expected Node 22 setting, `/api` payload, static config, and absence of secrets.
 - Local build and API checks passed; the built `dist/` includes `staticwebapp.config.json` with `apiRuntime: node:22`, and no Cosmos/deployment credential identifiers were found in `dist/`.
-- After operator configuration and approved publication to `main`, complete the production smoke checks in I02 and record the resulting hostname and commit SHA in the runbook.
+- Production hostname is `https://happy-ocean-085e57100.6.azurestaticapps.net`; first release commit is `9feb87d`. Continue with the signed-in checks in I02.
 
 ## Commit Message
 
@@ -87,5 +89,7 @@ Task: T02-main-deploy-runbook
 - [x] Configured the single-tenant `Grill-Me SPA` app for SWA sign-in and its web callback. The old API registration and delegated scope remain in Entra until production verification.
 - [x] Configured all nine SWA Production API settings, including the Cosmos account key, without printing the key; verified setting names only.
 - [x] Readiness audit on 2026-11-23: no organization-wide consent grant exists; GitHub repository `ks-ch0i/grilling.2` has no Actions variables, secrets, workflows, or workflow runs. SWA `repositoryUrl` and `branch` are unset.
-- [ ] Production smoke checks pending because organization admin consent, GitHub variables/secret, and approved `main` publication are not complete.
+- [x] GitHub deployment secret and `AZURE_DEPLOY_ENABLED=true` were present; first `main` deployment completed successfully. Entra sign-in/guest checks remain pending.
+- [x] SWA Production settings were pruned to the four values consumed by the deployed app: `COSMOS_ENDPOINT`, `COSMOS_KEY`, `ENTRA_SWA_CLIENT_ID`, and `ENTRA_SWA_CLIENT_SECRET`.
+- [ ] Signed-in company-member, guest, and wrong-tenant account checks remain pending.
 - commit: deferred by the plan boundary; do not stage, commit, or push this worktree as part of this task.
