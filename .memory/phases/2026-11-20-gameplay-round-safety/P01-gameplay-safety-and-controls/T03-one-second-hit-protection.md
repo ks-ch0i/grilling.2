@@ -1,6 +1,6 @@
 # Task: T03 One-Second Hit Protection
 
-## Status: pending
+## Status: done
 
 ## Implementation Baseline
 - Target `origin/main` at `5ad654e`. The shared ordinary-damage guard remains in `applyPlayerDamage()`, and `HURT_INVULNERABLE_TICKS` is still 45 at `TICK_RATE=60`.
@@ -23,6 +23,7 @@ Give the player one full second of shared protection after ordinary damage so a 
   - `src/game/sim/player.js` :: `stepPlayer` — read-only timer decrement and visual timer state
   - `test/player.test.js` :: exact one-second duration boundary; modify
   - `test/mine-boss.test.js` :: hazard multi-contact protection assertion/name; modify
+  - `test/mine-stage.test.js` :: persistent-pool re-hit boundary after shared protection expires; modify
   - `test/knockback.test.js` :: all-source immunity regression cases; modify
   - `test/defense.test.js` :: defense-block timer and repeated-hit assertion; modify
 
@@ -64,12 +65,12 @@ Give the player one full second of shared protection after ordinary damage so a 
 - Retain the existing assertion that pit damage bypasses protection and that dead players do not receive repeated death events.
 
 ## Acceptance Criteria
-- [ ] A successful ordinary hit sets the timer to 60 ticks, equal to one second at 60 ticks per second.
-- [ ] All existing ordinary damage sources share the same 60-tick guard; blocked hits neither remove another heart nor reset the timer.
-- [ ] Pit death, roll protection, dive protection, and knockback behavior are unchanged.
+- [x] A successful ordinary hit sets the timer to 60 ticks, equal to one second at 60 ticks per second.
+- [x] Existing ordinary damage sources share the same 60-tick guard; blocked hits neither remove another heart nor reset the timer.
+- [x] Pit death, roll protection, dive protection, and knockback behavior are unchanged.
 
 ## Validation
-- `node --test test/player.test.js test/knockback.test.js test/mine-boss.test.js test/defense.test.js` — exact boundary, all-source sharing, defense-block timer, and pit exception pass.
+- `node --test test/player.test.js test/knockback.test.js test/mine-boss.test.js test/defense.test.js test/mine-stage.test.js` — exact boundary, all-source sharing, persistent hazard re-hit, defense-block timer, and pit exception pass.
 - `npm run build` — Vite production build completes successfully.
 
 ## Commit Message
@@ -85,6 +86,7 @@ Task: T03-one-second-hit-protection
 ```
 
 ## Progress
-- [ ] 구현 완료
-- [ ] 검증 통과
+- [x] 구현 완료
+- [x] 검증 통과 (`node --test test/player.test.js test/knockback.test.js test/mine-boss.test.js test/defense.test.js test/mine-stage.test.js`, `npm run build`, `git diff --check`)
+- review: no actionable findings
 - commit: pending

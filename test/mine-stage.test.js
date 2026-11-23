@@ -25,7 +25,7 @@ test('a swing destroys a cart and a persistent pool damages again after invulner
  r.cartZones[0].centerX=128;r.cartZones[0].state='active';r.cartZones[0].cartId='cart-1-vehicle';r.hazards.push({id:'cart-1-vehicle',ownerId:'cart-1',kind:'cart',x:24,y:284,w:32,h:20,vx:0,vy:0,life:0,alive:true});
  let result=stepStage(r,{...input,aimX:700},MINE_STAGE);r=result.run;assert.ok(result.events.some(e=>e.type==='cart:destroyed'));assert.equal(r.hazards[0].alive,false);
  r=createStageRun(MINE_STAGE,{}, {seed:1});r.hazards.push({id:'pool',ownerId:'insect-1',kind:'acid-pool',x:0,y:298,w:1000,h:6,vx:0,vy:0,life:120,alive:true});
- r=stepStage(r,input,MINE_STAGE).run;assert.equal(r.player.hp,2);for(let i=0;i<46;i++)r=stepStage(r,input,MINE_STAGE).run;assert.equal(r.player.hp,1);
+ r=stepStage(r,input,MINE_STAGE).run;assert.equal(r.player.hp,2);for(let i=0;i<61;i++)r=stepStage(r,input,MINE_STAGE).run;assert.equal(r.player.hp,1);
 });
 test('live mine states remain serializable through cart warnings and spawns',()=>{
  let r=createStageRun(MINE_STAGE,{}, {seed:8});

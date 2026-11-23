@@ -7,7 +7,7 @@
 [P01 Gameplay Safety and Controls](./phases/2026-11-20-gameplay-round-safety/P01-gameplay-safety-and-controls/phase.md)
 
 ## Active Task
-[T03 One-Second Hit Protection](./phases/2026-11-20-gameplay-round-safety/P01-gameplay-safety-and-controls/T03-one-second-hit-protection.md)
+[T04 Safe Hostile Spawn Placement](./phases/2026-11-20-gameplay-round-safety/P01-gameplay-safety-and-controls/T04-safe-round-spawn.md)
 
 ## Status
 - Implementation branch `feature/gameplay-round-safety` is based on `origin/main` at `5ad654e`.
@@ -15,4 +15,4 @@
 - The unrelated title-screen plan documents remain untracked and must stay outside gameplay-task commits.
 
 ## Next Step (IMPORTANT)
-Implement T03's shared one-second ordinary-hit protection, run the task validation commands, then commit only the gameplay source, tests, and gameplay memory plan files. T04 follows afterward.
+Implement T04's deterministic safe hostile spawn positioning while preserving the selected roster, run its focused/full validation commands, then commit only the gameplay source, tests, and gameplay memory plan files.

@@ -85,8 +85,9 @@ test('front matching attacks chip half a heart without hurt or knockback; wrong,
   const shielding = { ...grounded(), defenseMode: 'shield', defenseTicksRemaining: 60, aim: { x: 1, y: 0 } };
   const blocked = applyPlayerDamage(shielding, 'projectile', { originX: 200, originY: 290 }, 'ranged');
   assert.equal(blocked.player.hp, 2.5); assert.equal(blocked.player.mode, 'idle'); assert.equal(blocked.player.hurtPushTicks, 0);
-  assert.equal(blocked.events[0].type, 'shield:blocked'); assert.equal(blocked.events[0].originX,200); assert.equal(blocked.events[0].originY,290); assert.equal(blocked.player.invulnerableTicks, 45);
-  assert.equal(applyPlayerDamage(blocked.player, 'projectile', { originX: 200, originY: 290 }, 'ranged').player.hp, 2.5);
+  assert.equal(blocked.events[0].type, 'shield:blocked'); assert.equal(blocked.events[0].originX,200); assert.equal(blocked.events[0].originY,290); assert.equal(blocked.player.invulnerableTicks, C.HURT_INVULNERABLE_TICKS); assert.equal(blocked.player.invulnerableTicks, 60);
+  const repeated = applyPlayerDamage(blocked.player, 'projectile', { originX: 200, originY: 290 }, 'ranged');
+  assert.equal(repeated.player.hp, 2.5); assert.equal(repeated.player.invulnerableTicks, C.HURT_INVULNERABLE_TICKS); assert.equal(repeated.events.length, 0);
   const wrongCategory=applyPlayerDamage(shielding, 'enemy-attack', { originX: 200, originY: 290 }, 'melee');
   assert.equal(wrongCategory.player.hp, 2); assert.equal(wrongCategory.events.some(event=>event.type==='shield:blocked'||event.type==='parry:blocked'),false);
   const fromBehind=applyPlayerDamage(shielding, 'projectile', { originX: 80, originY: 290 }, 'ranged');

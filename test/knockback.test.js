@@ -26,8 +26,11 @@ test('airborne knockback preserves gravity, and equal or absent source uses faci
  for(let i=1;i<=12;i++){const before=p.vy;const result=stepPlayer(p,input,[]);p=result.player;assert.ok(Math.abs(p.vy-Math.min(400,before+650/60))<1e-9);assert.equal(p.x,120+i);}
 });
 test('immune and lethal hits do not create or reset a push; pits remain lethal',()=>{
- for(const extra of [{mode:'roll'},{mode:'dive'},{diveGraceActive:true},{invulnerableTicks:5}]){
-  const p={...createPlayer(),...extra,hurtPushTicks:7,hurtPushDirection:1};const result=applyPlayerDamage(p,'contact',{originX:500});assert.equal(result.player.hp,3);assert.equal(result.player.hurtPushTicks,7);assert.equal(result.player.hurtPushDirection,1);assert.equal(result.events.length,0);
+ for(const extra of [{mode:'roll'},{mode:'dive'},{diveGraceActive:true},{invulnerableTicks:60}]){
+  const p={...createPlayer(),...extra,hurtPushTicks:7,hurtPushDirection:1};
+  for(const source of ['contact','enemy-attack','projectile','boss-attack','boss-contact','hazard']){
+   const result=applyPlayerDamage(p,source,{originX:500});assert.equal(result.player.hp,3,source);assert.equal(result.player.hurtPushTicks,7,source);assert.equal(result.player.hurtPushDirection,1,source);assert.equal(result.player.invulnerableTicks,extra.invulnerableTicks??0,source);assert.equal(result.events.length,0,source);
+  }
   assert.equal(applyPlayerDamage(p,'pit').player.mode,'dead');
  }
  const p={...createPlayer(),hp:1};const dead=applyPlayerDamage(p,'contact',{originX:0}).player;assert.equal(dead.mode,'dead');assert.equal(dead.hurtPushTicks,0);
@@ -52,7 +55,7 @@ test('deep contact separates after push, while a solid wall prevents escape and 
  function setup(world){let r=createStageRun(world);Object.assign(r.player,{x:200,y:276,grounded:true});const e=r.enemies[0];Object.assign(e,{x:200,y:276,state:'hurt',stateTicks:100});r.enemies=[e];return r;}
  let r=step(setup(stage)).run;assert.equal(r.player.hp,2);for(let i=0;i<12;i++)r=step(r).run;assert.equal(r.player.x,184);assert.equal(intersects(r.player,r.enemies[0]),false);
  const world=structuredClone(stage),wall={x:180,y:200,w:20,h:104};r=setup(world);r.terrainLayout.platforms.push(wall);r=step(r,world).run;for(let i=0;i<12;i++)r=step(r,world).run;assert.equal(r.player.x,200);assert.equal(intersects(r.player,r.enemies[0]),true);
- for(let i=0;i<34;i++)r=step(r,world).run;assert.equal(r.player.hp,1);assert.equal(r.player.x,200);
+ for(let i=0;i<49;i++)r=step(r,world).run;assert.equal(r.player.hp,1);assert.equal(r.player.x,200);
  const restored=createStageRun(world);assert.equal(restored.player.hurtPushTicks,0);
 });
 test('two overlapping enemies cause one hit and do not reset the initial knockback',()=>{

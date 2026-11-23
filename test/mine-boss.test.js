@@ -129,7 +129,7 @@ test('machine mineral hazards and attack kinds survive snapshots; removed swipe 
  const snapshot=snapshotStageRun(run),restored=restoreStageRun(stage,snapshot);assert.deepEqual(restored,run);assert.deepEqual(stepStage(restored,input,stage),stepStage(run,input,stage));
  const invalid=snapshotStageRun(run);invalid.boss.attackKind='swipe';assert.throws(()=>restoreStageRun(stage,invalid),/Invalid mine boss/);
 });
-test('multiple mineral contacts preserve the existing 45-tick single-heart protection',()=>{
+test('multiple mineral contacts preserve the shared one-second single-heart protection',()=>{
  const run=makeRound(createStageRun(stage,{}, {seed:88}),5);run.boss.state='recovery';run.boss.stateTicks=20;run.boss.x=stage.arena.right-100;Object.assign(run.player,{x:stage.arena.left+40,y:276,hp:3,mode:'idle',grounded:true,invulnerableTicks:0});
  for(let i=0;i<2;i++)run.hazards.push({id:`m${i}`,ownerId:run.boss.id,kind:'mineral',x:run.player.x+i*2,y:276,w:12,h:12,vx:0,vy:0,life:50,alive:true});
  const result=stepStage(run,input,stage);assert.equal(result.run.player.hp,2);assert.equal(result.run.player.invulnerableTicks,HURT_INVULNERABLE_TICKS);assert.equal(result.events.filter(e=>e.type==='hurt'&&e.source==='hazard').length,1);assert.equal(result.run.hazards.length,0);

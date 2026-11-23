@@ -70,8 +70,9 @@ test('roll protects every movement tick, then cooldown prevents restart', () => 
   assert.equal(applyPlayerDamage(p,'pit').player.hp,0);
 });
 test('damage grants immunity and death happens once', () => {
-  let p=grounded(); let result=applyPlayerDamage(p); p=result.player; assert.equal(p.hp,2); assert.equal(applyPlayerDamage(p).player.hp,2);
-  for(let i=0;i<C.HURT_INVULNERABLE_TICKS;i++) { p=tick(p); assert.equal(applyPlayerDamage(p).player.hp,2); } p=tick(p); p=applyPlayerDamage(p).player; assert.equal(p.hp,1);
+  assert.equal(C.HURT_INVULNERABLE_TICKS, 60);
+  let p=grounded(); let result=applyPlayerDamage(p); p=result.player; assert.equal(p.hp,2); assert.equal(p.invulnerableTicks,60); assert.equal(applyPlayerDamage(p).player.hp,2);
+  for(let i=0;i<C.HURT_INVULNERABLE_TICKS;i++) { p=tick(p); assert.equal(p.invulnerableTicks,C.HURT_INVULNERABLE_TICKS-i-1); const blocked=applyPlayerDamage(p); assert.equal(blocked.player.hp,2); assert.equal(blocked.player.invulnerableTicks,C.HURT_INVULNERABLE_TICKS-i-1); } p=tick(p); p=applyPlayerDamage(p).player; assert.equal(p.hp,1);
   for(let i=0;i<C.HURT_INVULNERABLE_TICKS+1;i++) p=tick(p); result=applyPlayerDamage(p); assert.equal(result.player.hp,0); assert.equal(result.events[0].type,'death'); assert.equal(applyPlayerDamage(result.player).events.length,0);
 });
 test('dive requires air, falls vertically and starts cooldown at landing', () => {
