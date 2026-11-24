@@ -14,7 +14,7 @@ Update combat controls and timing so right-click performs a timed parry, Q holds
 ## Phases
 | Phase | Status | Summary | Blueprint |
 | :--- | :--- | :--- | :--- |
-| P01 | `in_progress` | Implement simulation and save compatibility, remap controls and guides, then add perfect-parry feedback. | [P01](../phases/2026-11-24-parry-and-dive-controls/P01-parry-and-dive-controls/phase.md) |
+| P01 | `done ✅` | Implement simulation and save compatibility, remap controls and guides, then add perfect-parry feedback. | [P01](../phases/2026-11-24-parry-and-dive-controls/P01-parry-and-dive-controls/phase.md) |
 
 ## Scope Boundaries
 - Keep existing melee-only parry and ranged-only shield categories, forward aiming coverage, shield/parry cooldowns, dive landing wave, and landing protection.
