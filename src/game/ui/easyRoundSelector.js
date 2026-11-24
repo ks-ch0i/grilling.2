@@ -11,7 +11,7 @@ const record=value=>hasExactKeys(value,['best','recent'])&&(value.best===null||r
 
 function validEasyProgress(save){
   const easy=save?.easy;
-  if(save?.version!==6||!hasExactKeys(easy,['unlockedRoundByStage','roundDeaths','roundRecords']))return false;
+  if(!hasExactKeys(easy,['unlockedRoundByStage','roundDeaths','roundRecords']))return false;
   if(!hasExactKeys(easy.unlockedRoundByStage,['forest-1','mine-1']))return false;
   const forestRound=easy.unlockedRoundByStage['forest-1'],mineRound=easy.unlockedRoundByStage['mine-1'];
   if(!Number.isInteger(forestRound)||forestRound<1||forestRound>ROUND_COUNT||!Number.isInteger(mineRound)||mineRound<0||mineRound>ROUND_COUNT)return false;

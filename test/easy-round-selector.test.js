@@ -14,10 +14,16 @@ class FakeElement {
   focus(){this.focused=true;}
   click(){if(!this.disabled)this.listeners.get('click')?.();}
   querySelector(selector){
-    if(selector!=='button:not(:disabled),input')return null;
+    if(!selector.startsWith('button:not(:disabled)')||!selector.includes(',input'))return null;
     const pending=[...this.children];
     while(pending.length){const candidate=pending.shift();if(candidate.tagName==='BUTTON'&&!candidate.disabled||candidate.tagName==='INPUT')return candidate;pending.unshift(...candidate.children);}
     return null;
+  }
+  querySelectorAll(selector){
+    const classes=selector.split(',').map(value=>value.trim().slice(1));
+    const matches=[],pending=[...this.children];
+    while(pending.length){const candidate=pending.shift();if(classes.some(name=>candidate.className.split(/\s+/).includes(name)))matches.push(candidate);pending.unshift(...candidate.children);}
+    return matches;
   }
   remove(){if(!this.parent)return;this.parent.children=this.parent.children.filter(child=>child!==this);this.parent=null;}
 }
