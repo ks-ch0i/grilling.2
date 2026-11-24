@@ -10,8 +10,8 @@ export class SettingsScene extends Phaser.Scene {
     this.menu.range('음악 음량',settings.musicVolume,v=>change({musicVolume:v}));
     this.menu.range('효과음 음량',settings.sfxVolume,v=>change({sfxVolume:v}));
     this.menu.checkbox('화면 흔들림',settings.screenShake,v=>change({screenShake:v}));
-    this.menu.text('조작: A/D 이동 · Space 점프 · S 또는 ↓ + Space 발판 내려가기(발판이 없으면 점프) · 마우스 왼쪽 공격 · Shift 구르기 · E 내려베기 · Esc 일시정지');
-    this.menu.text('방어: 우클릭 유지(최대 1초·종료 후 3초 대기) 원거리 방어 · Q(0.25초 근접 패링·입력 후 3초 대기). 이동·점프 가능, 구르기로 취소.');
+    this.menu.text('조작: A/D 이동 · Space 점프 · S 또는 ↓ + Space 발판 내려가기(발판이 없으면 점프) · 왼쪽 클릭 검 공격(공중 30틱 전 일반 베기, 이후 준비 시 내려찍기) · Shift 구르기 · Esc 일시정지');
+    this.menu.text('방어: Q 유지 원거리 방패(최대 1초·해제 후 3초 대기) · 우클릭 근접 패링(총 37틱≈0.618초, 첫 23틱≈0.382초 퍼펙트; 60틱/초 정수 판정·입력 후 3초 대기). 이동·점프 가능, 구르기로 취소.');
     this.menu.text('배경음: Magic Forest — Kevin MacLeod (incompetech.com), CC BY 4.0');
     this.menu.text('광산 탐험·보스 음악: 프로젝트 자체 합성, 외부 음원 없음');
     this.fullscreenButton=this.menu.button('',()=>this.toggleFullscreen());this.fullscreenError=this.menu.text('');this.fullscreenError.setAttribute('role','status');

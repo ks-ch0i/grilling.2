@@ -39,10 +39,25 @@ test('down+jump captures the modifier at Space keydown and consumes one queued e
  input.destroy();
 });
 
-test('right mouse shield and Q parry are edge input that disabling clears',()=>{
+test('right mouse parry and held Q shield are edge input that disabling clears',()=>{
  const target=new Target(),canvas={getBoundingClientRect:()=>({left:0,top:0,right:640,bottom:360,width:640,height:360})},input=new InputController(target,canvas);
- target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});target.fire('keydown',{code:'KeyQ'});
- input.setEnabled(false);let frame=input.sample(scene);assert.equal(frame.shieldPressed,false);assert.equal(frame.shieldHeld,false);assert.equal(frame.parryPressed,false);
+ const outside={};
+ target.fire('mousedown',{button:2,target:outside,clientX:20,clientY:30});
+ target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});
+ let frame=input.sample(scene);assert.equal(frame.parryPressed,true);assert.equal(frame.shieldPressed,false);assert.equal(frame.shieldHeld,false);
+ target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});
+ frame=input.sample(scene);assert.equal(frame.parryPressed,false);
+ target.fire('mouseup',{button:2});target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});
+ assert.equal(input.sample(scene).parryPressed,true);
+ target.fire('mouseup',{button:2});let preventedQ=false;
+ target.fire('keydown',{code:'KeyQ',preventDefault(){preventedQ=true;}});target.fire('keydown',{code:'KeyQ',repeat:true});
+ frame=input.sample(scene);assert.equal(frame.shieldPressed,true);assert.equal(frame.shieldHeld,true);assert.equal(frame.parryPressed,false);assert.equal(preventedQ,true);
+ frame=input.sample(scene);assert.equal(frame.shieldPressed,false);assert.equal(frame.shieldHeld,true);
+ target.fire('keyup',{code:'KeyQ'});assert.equal(input.sample(scene).shieldHeld,false);
+ let preventedE=false;target.fire('keydown',{code:'KeyE',preventDefault(){preventedE=true;}});
+ frame=input.sample(scene);assert.equal(Object.hasOwn(frame,'divePressed'),false);assert.equal(preventedE,false);
+ target.fire('keydown',{code:'KeyQ'});target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});
+ input.setEnabled(false);frame=input.sample(scene);assert.equal(frame.shieldPressed,false);assert.equal(frame.shieldHeld,false);assert.equal(frame.parryPressed,false);
  input.setEnabled(true);target.fire('mousedown',{button:2,target:canvas,clientX:20,clientY:30});target.fire('keydown',{code:'KeyQ'});
  frame=input.sample(scene);assert.equal(frame.shieldPressed,true);assert.equal(frame.shieldHeld,true);assert.equal(frame.parryPressed,true);input.destroy();
 });

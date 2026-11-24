@@ -1,13 +1,13 @@
 // DOM events capture edges independently of rendering; sample consumes one edge per tick.
 export class InputController {
   constructor(target = window, canvas = null) {
-    this.target = target; this.canvas = canvas; this.enabled = true; this.held = new Set(); this.jumps = []; this.queue = { attack: 0, roll: 0, dive: 0, shield: 0, parry: 0 };
+    this.target = target; this.canvas = canvas; this.enabled = true; this.held = new Set(); this.jumps = []; this.queue = { attack: 0, roll: 0, shield: 0, parry: 0 };
     this.pointer = null; this.pointerInside = false; this.listeners = [];
     const on = (type, fn, source = target) => { source.addEventListener(type, fn); this.listeners.push([source, type, fn]); };
-    const keys = { ShiftLeft: 'roll', ShiftRight: 'roll', KeyE: 'dive', KeyQ: 'parry' };
+    const keys = { ShiftLeft: 'roll', ShiftRight: 'roll', KeyQ: 'shield' };
     on('keydown', e => {
       if (!this.enabled || e.target?.closest?.('button,input,select,textarea,[contenteditable]')) return;
-      if (['KeyA','KeyD','KeyS','ArrowDown','Space','ShiftLeft','ShiftRight','KeyE','KeyQ'].includes(e.code)) e.preventDefault();
+      if (['KeyA','KeyD','KeyS','ArrowDown','Space','ShiftLeft','ShiftRight','KeyQ'].includes(e.code)) e.preventDefault();
       if (!e.repeat && !this.held.has(e.code)) {
         if (e.code === 'Space') this.jumps.push(this.held.has('KeyS') || this.held.has('ArrowDown'));
         else if (keys[e.code]) this.queue[keys[e.code]]++;
@@ -20,7 +20,7 @@ export class InputController {
       if (this.canvas && e.target !== this.canvas) return;
       if (e.button === 2) {
         if (this.held.has('Mouse2')) return;
-        this.held.add('Mouse2'); this.queue.shield++; this.updatePointer(e); return;
+        this.held.add('Mouse2'); this.queue.parry++; this.updatePointer(e); return;
       }
       if (e.button !== 0 || this.held.has('Mouse0')) return;
       this.held.add('Mouse0'); this.queue.attack++; this.updatePointer(e);
@@ -44,8 +44,8 @@ export class InputController {
     const drop = this.jumps.shift();
     const world = this.pointer && (!this.canvas || this.pointerInside) ? scene.cameras.main.getWorldPoint(this.pointer.x, this.pointer.y) : null;
     return { move: Number(this.held.has('KeyD'))-Number(this.held.has('KeyA')), jumpPressed: drop !== undefined, dropPressed: drop === true,
-      jumpHeld: this.held.has('Space'), attackPressed: take('attack'), rollPressed: take('roll'), divePressed: take('dive'),
-      shieldPressed: take('shield'), shieldHeld: this.held.has('Mouse2'), parryPressed: take('parry'),
+      jumpHeld: this.held.has('Space'), attackPressed: take('attack'), rollPressed: take('roll'),
+      shieldPressed: take('shield'), shieldHeld: this.held.has('KeyQ'), parryPressed: take('parry'),
       aimX: world?.x ?? NaN, aimY: world?.y ?? NaN };
   }
   setEnabled(enabled) { this.enabled = enabled; if (!enabled) this.reset(); }
