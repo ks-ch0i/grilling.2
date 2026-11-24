@@ -1,45 +1,9 @@
 import { canonicalBoardId } from './boardId.js';
+import { rankBoard } from './ranking.js';
 import { createLeaderboardRepository } from './repository.js';
 
 const STAGE_IDS = ['forest-1', 'mine-1'];
 const ROUNDS = Array.from({ length: 8 }, (_, index) => index + 1);
-
-function compareText(left, right) {
-  if (left < right) return -1;
-  if (left > right) return 1;
-  return 0;
-}
-
-function compareResult(left, right) {
-  if (left.elapsedTicks !== right.elapsedTicks) return left.elapsedTicks - right.elapsedTicks;
-  return left.deaths - right.deaths;
-}
-
-function compareDisplayOrder(left, right) {
-  return compareResult(left, right) || compareText(left.displayName, right.displayName) || compareText(left.userId, right.userId);
-}
-
-function entry(row, rank) {
-  return { rank, displayName: row.displayName, elapsedTicks: row.elapsedTicks, deaths: row.deaths };
-}
-
-function rankBoard(rows, userId, boardId) {
-  const ordered = [...rows].sort(compareDisplayOrder);
-  let lastResult = null;
-  let rank = 0;
-  const ranked = ordered.map((row, index) => {
-    if (!lastResult || compareResult(lastResult, row) !== 0) rank = index + 1;
-    lastResult = row;
-    return { row, rank };
-  });
-  const mine = ranked.find(({ row }) => row.userId === userId);
-  return {
-    boardId,
-    totalParticipants: ranked.length,
-    entries: ranked.slice(0, 10).map(({ row, rank: rowRank }) => entry(row, rowRank)),
-    me: mine ? entry(mine.row, mine.rank) : null
-  };
-}
 
 export function createLeaderboardService(config, { repositoryFactory = createLeaderboardRepository } = {}) {
   const repository = repositoryFactory(config);
@@ -49,7 +13,7 @@ export function createLeaderboardService(config, { repositoryFactory = createLea
       const updatedAt = new Date().toISOString();
       const candidates = [];
       for (const stageId of STAGE_IDS) {
-        const hardBest = document.records?.[stageId]?.best;
+        const hardBest = document.hardProgress?.[stageId]?.best;
         if (hardBest) candidates.push({ mode: 'hard', stageId, best: hardBest });
         for (const round of ROUNDS) {
           const easyBest = document.easy?.roundRecords?.[stageId]?.[String(round)]?.best;
@@ -64,6 +28,10 @@ export function createLeaderboardService(config, { repositoryFactory = createLea
           boardId,
           userId: principal.userId,
           displayName: principal.displayName,
+          ...(candidate.mode === 'hard' ? {
+            roundReached: candidate.best.roundReached,
+            cleared: candidate.best.cleared
+          } : {}),
           elapsedTicks: candidate.best.elapsedTicks,
           deaths: candidate.best.deaths,
           updatedAt
@@ -73,7 +41,7 @@ export function createLeaderboardService(config, { repositoryFactory = createLea
 
     async getBoard(challenge, principal) {
       const rows = await repository.listBoard(challenge.boardId);
-      return rankBoard(rows, principal.userId, challenge.boardId);
+      return rankBoard(rows, principal.userId, challenge.boardId, challenge.mode);
     }
   };
 }

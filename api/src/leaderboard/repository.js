@@ -1,5 +1,6 @@
 import { getLeaderboardContainer } from '../cosmos/client.js';
 import { ApiError } from '../shared/http.js';
+import { compareResults, normalizeHardResult } from './ranking.js';
 
 const MAX_ATTEMPTS = 5;
 
@@ -12,20 +13,23 @@ function isPreconditionFailed(error) {
 }
 
 function isValidStoredRow(row, boardId, userId) {
-  return row && typeof row.id === 'string' && row.id === userId &&
+  const validBase = row && typeof row.id === 'string' && row.id === userId &&
     typeof row.userId === 'string' && row.userId === userId && row.boardId === boardId &&
     Number.isSafeInteger(row.elapsedTicks) && row.elapsedTicks >= 0 &&
     Number.isSafeInteger(row.deaths) && row.deaths >= 0 &&
     typeof row.displayName === 'string' && [...row.displayName.trim()].length > 0 && [...row.displayName].length <= 80;
+  if (!validBase) return false;
+  if (!boardId.startsWith('hard:')) return true;
+  try {
+    normalizeHardResult(row);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function compareResult(left, right) {
-  if (left.elapsedTicks !== right.elapsedTicks) return left.elapsedTicks - right.elapsedTicks;
-  return left.deaths - right.deaths;
-}
-
-export function createLeaderboardRepository(config) {
-  const container = getLeaderboardContainer(config);
+export function createLeaderboardRepository(config, { containerFactory = getLeaderboardContainer } = {}) {
+  const container = containerFactory(config);
 
   async function read(boardId, userId) {
     try {
@@ -43,13 +47,20 @@ export function createLeaderboardRepository(config) {
   return {
     async upsertBest(candidate) {
       const { boardId, userId } = candidate;
-      if (!isValidStoredRow({ ...candidate, id: userId }, boardId, userId)) {
+      const isHardBoard = boardId.startsWith('hard:');
+      if (!isValidStoredRow({ ...candidate, id: userId }, boardId, userId) ||
+          (isHardBoard && (!Object.hasOwn(candidate, 'roundReached') || !Object.hasOwn(candidate, 'cleared')))) {
         throw new ApiError(503, 'service_unavailable');
       }
 
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
         const current = await read(boardId, userId);
-        const best = current && compareResult(current.resource, candidate) < 0 ? current.resource : candidate;
+        const mode = boardId.startsWith('hard:') ? 'hard' : 'easy';
+        const currentResult = current && (mode === 'hard' ? normalizeHardResult(current.resource) : current.resource);
+        const candidateResult = mode === 'hard' ? normalizeHardResult(candidate) : candidate;
+        const best = current && compareResults(mode, currentResult, candidateResult) < 0
+          ? currentResult
+          : candidateResult;
         const document = {
           id: userId,
           boardId,
@@ -59,6 +70,10 @@ export function createLeaderboardRepository(config) {
           deaths: best.deaths,
           updatedAt: candidate.updatedAt
         };
+        if (mode === 'hard') {
+          document.roundReached = best.roundReached;
+          document.cleared = best.cleared;
+        }
 
         try {
           await container.items.upsert(document, {
@@ -78,8 +93,9 @@ export function createLeaderboardRepository(config) {
 
     async listBoard(boardId) {
       try {
+        const scoreFields = boardId.startsWith('hard:') ? ', c.roundReached, c.cleared' : '';
         const query = {
-          query: 'SELECT c.id, c.boardId, c.userId, c.displayName, c.elapsedTicks, c.deaths FROM c WHERE c.boardId = @boardId',
+          query: `SELECT c.id, c.boardId, c.userId, c.displayName, c.elapsedTicks, c.deaths${scoreFields} FROM c WHERE c.boardId = @boardId`,
           parameters: [{ name: '@boardId', value: boardId }]
         };
         const { resources } = await container.items.query(query, { partitionKey: boardId }).fetchAll();
