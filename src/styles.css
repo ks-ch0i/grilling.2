@@ -564,6 +564,22 @@ canvas { display: block; image-rendering: pixelated; }
 .company-board-table tbody th { color:var(--challenge-accent); font-variant-numeric:tabular-nums; }
 .company-board-table tbody td:nth-child(3),
 .company-board-table tbody td:nth-child(4) { font-variant-numeric:tabular-nums; }
+.company-board-table.company-board-table-hard {
+  width:100%;
+  table-layout:fixed;
+  font-size:12px;
+}
+.company-board-table.company-board-table-hard th,
+.company-board-table.company-board-table-hard td {
+  padding:6px 4px;
+  overflow-wrap:anywhere;
+}
+.company-board-table.company-board-table-hard th:first-child { width:14%; }
+.company-board-table.company-board-table-hard th:nth-child(2) { width:27%; }
+.company-board-table.company-board-table-hard th:nth-child(3) { width:17%; }
+.company-board-table.company-board-table-hard th:nth-child(4) { width:17%; }
+.company-board-table.company-board-table-hard th:nth-child(5) { width:12%; }
+.company-board-table.company-board-table-hard th:nth-child(6) { width:13%; }
 .company-board-own { background:rgba(215,232,185,.1); }
 .company-board-own-note { text-align:right; }
 @media (max-width: 420px) {
@@ -671,4 +687,16 @@ canvas { display: block; image-rendering: pixelated; }
   .game-panel.challenge-panel.challenge-records-home .company-board-table th:nth-child(3) { width:74px; }
   .game-panel.challenge-panel.challenge-records-home .company-board-table th:nth-child(4) { width:40px; }
   .game-panel.challenge-panel.challenge-records-home .company-board-table td:nth-child(3) { white-space:nowrap; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard {
+    font-size:10px;
+    line-height:1.25;
+  }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th,
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard td { padding:4px 2px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th:first-child { width:42px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th:nth-child(2) { width:22%; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th:nth-child(3) { width:16%; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th:nth-child(4) { width:17%; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th:nth-child(5) { width:12%; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table.company-board-table-hard th:nth-child(6) { width:16%; }
 }

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {freshSave} from '../src/game/storage/saveStore.js';
 import {mountRecordsPopup} from '../src/game/ui/recordsPopup.js';
+import {mountCompanyLeaderboard} from '../src/game/ui/companyLeaderboard.js';
 
 class FakeElement {
   constructor(tag){
@@ -53,7 +54,7 @@ const rowsOf=menu=>tableOf(menu).children.find(node=>node.tagName==='TBODY').chi
 const cardsOf=menu=>descendants(menu.panel).filter(node=>node.className.split(' ').includes('challenge-record-card'));
 const choice=(menu,value)=>descendants(menu.panel).find(node=>node.attributes.get('data-choice')===value);
 
-test('fresh result records show an empty eight-row Easy table and two empty Hard cards',()=>withDocument(()=>{
+test('fresh result records show an empty eight-row Easy table and four empty Hard cards',()=>withDocument(()=>{
   const menu=mountRecordsPopup({save:freshSave(),onBack:()=>{},titleScreen:false});
   assert.equal(choice(menu,'easy').focused,true);
   assert.equal(tableOf(menu).attributes.get('aria-label'),'숲 이지 라운드별 기록');
@@ -72,8 +73,31 @@ test('fresh result records show an empty eight-row Easy table and two empty Hard
   assert.equal(tableOf(menu).attributes.get('aria-label'),'광산 이지 라운드별 기록');
   choice(menu,'hard').click();
   assert.equal(tableOf(menu),undefined);
-  assert.deepEqual(cardsOf(menu).map(textOf),['최고 기록 기록 없음','최근 기록 기록 없음']);
+  assert.deepEqual(cardsOf(menu).map(textOf),[
+    '최고 도달 기록 없음','최근 도달 기록 없음','최고 기록 기록 없음','최근 기록 기록 없음'
+  ]);
   assert.equal(choice(menu,'mine-1').attributes.get('aria-pressed'),'true');
+}));
+
+test('Hard personal records show progress and preserve completion records',()=>withDocument(()=>{
+  const save=freshSave();
+  save.hardProgress['forest-1']={
+    best:{roundReached:6,cleared:false,elapsedTicks:1800,deaths:3},
+    recent:{roundReached:4,cleared:false,elapsedTicks:900,deaths:1}
+  };
+  save.records['forest-1']={
+    best:{elapsedTicks:300,deaths:1},
+    recent:{elapsedTicks:420,deaths:2}
+  };
+  const menu=mountRecordsPopup({save,onBack:()=>{},titleScreen:false});
+  choice(menu,'hard').click();
+
+  assert.deepEqual(cardsOf(menu).map(textOf),[
+    '최고 도달 06라운드 도전 중 00:30 사망 3회',
+    '최근 도달 04라운드 도전 중 00:15 사망 1회',
+    '최고 기록 00:05 사망 1회',
+    '최근 기록 00:07 사망 2회'
+  ]);
 }));
 
 test('mode and stage switches keep time and deaths paired without changing the save',()=>withDocument(()=>{
@@ -93,9 +117,13 @@ test('mode and stage switches keep time and deaths paired without changing the s
   assert.equal(choice(menu,'hard'),hard);
   assert.equal(choice(menu,'mine-1'),mine);
   assert.equal(tableOf(menu),undefined);
-  assert.deepEqual(cardsOf(menu).map(textOf),['최고 기록 01:01 사망 4회','최근 기록 02:03 사망 8회']);
+  assert.deepEqual(cardsOf(menu).map(textOf),[
+    '최고 도달 기록 없음','최근 도달 기록 없음','최고 기록 01:01 사망 4회','최근 기록 02:03 사망 8회'
+  ]);
   choice(menu,'forest-1').click();
-  assert.deepEqual(cardsOf(menu).map(textOf),['최고 기록 00:50 사망 1회','최근 기록 기록 없음']);
+  assert.deepEqual(cardsOf(menu).map(textOf),[
+    '최고 도달 기록 없음','최근 도달 기록 없음','최고 기록 00:50 사망 1회','최근 기록 기록 없음'
+  ]);
   assert.deepEqual(save,before);
 }));
 
@@ -165,6 +193,50 @@ test('home shows the company top ten and an out-of-range personal rank only in t
   assert.equal(descendants(personal).some(node=>node.className.split(' ').includes('company-board-own')),false);
   assert.equal(descendants(company).filter(node=>node.className.split(' ').includes('company-board-entry')).length,10);
   menu.remove();
+}));
+
+test('Hard company board shows progress columns, status, and the out-of-range personal rank',()=>withAsyncDocument(async parent=>{
+  const entries=[
+    {rank:1,displayName:'클리어 플레이어',roundReached:8,cleared:true,elapsedTicks:1800,deaths:3},
+    {rank:2,displayName:'도전 플레이어',roundReached:6,cleared:false,elapsedTicks:2400,deaths:4},
+    ...Array.from({length:8},(_,index)=>({
+      rank:index+3,displayName:`플레이어 ${index+3}`,roundReached:3,cleared:false,elapsedTicks:3000,deaths:5
+    }))
+  ];
+  const board=mountCompanyLeaderboard({
+    parent,
+    challenge:{mode:'hard',stageId:'forest-1'},
+    getLeaderboard:async()=>({
+      boardId:'hard:forest-1',totalParticipants:11,entries,
+      me:{rank:11,displayName:'내 계정',roundReached:8,cleared:true,elapsedTicks:1800,deaths:2},stale:false
+    })
+  });
+  await new Promise(resolve=>setTimeout(resolve,180));
+
+  const table=descendants(board.element).find(node=>node.className.split(' ').includes('company-board-table'));
+  assert.deepEqual(table.children[0].children[0].children.map(textOf),['순위','플레이어','도달','상태','사망','시간']);
+  const rows=table.children[1].children;
+  assert.deepEqual(rows[0].children.map(textOf),['1','클리어 플레이어','08라운드','클리어','3회','00:30']);
+  assert.deepEqual(rows[1].children.map(textOf),['2','도전 플레이어','06라운드','도전 중','4회','00:40']);
+  assert.deepEqual(rows.at(-1).children.map(textOf),['11 · 내 기록','내 계정','08라운드','클리어','2회','00:30']);
+  board.remove();
+}));
+
+test('Hard company board rejects entries without a complete progress result',()=>withAsyncDocument(async parent=>{
+  const board=mountCompanyLeaderboard({
+    parent,
+    challenge:{mode:'hard',stageId:'forest-1'},
+    getLeaderboard:async()=>({
+      boardId:'hard:forest-1',totalParticipants:1,
+      entries:[{rank:1,displayName:'플레이어',elapsedTicks:1800,deaths:3}],
+      me:null,stale:false
+    })
+  });
+  await new Promise(resolve=>setTimeout(resolve,180));
+
+  assert.ok(textOf(board.element).includes('순위 응답을 확인할 수 없습니다.'));
+  assert.equal(descendants(board.element).some(node=>node.className.split(' ').includes('company-board-table')),false);
+  board.remove();
 }));
 
 test('Easy and Hard result entry keeps its selected challenge and returns to the caller',()=>withAsyncDocument(async()=>{

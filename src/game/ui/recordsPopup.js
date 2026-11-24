@@ -5,6 +5,7 @@ import {mountCompanyLeaderboard} from './companyLeaderboard.js';
 
 const STAGE_LABELS={'forest-1':'숲','mine-1':'광산'};
 const RECORD_LABELS={best:'최고 기록',recent:'최근 기록'};
+const PROGRESS_LABELS={best:'최고 도달',recent:'최근 도달'};
 
 function element(tag,text,className){
   const node=document.createElement(tag);
@@ -17,6 +18,16 @@ function recordValue(result,emptyText='기록 없음'){
   if(result===null)return element('span',emptyText,'challenge-record-empty');
   const value=element('span',undefined,'challenge-record-value');
   value.append(element('strong',formatTicks(result.elapsedTicks),'challenge-record-time'),
+    element('span',`사망 ${result.deaths}회`,'challenge-record-deaths'));
+  return value;
+}
+
+function progressValue(result){
+  if(result===null)return element('span','기록 없음','challenge-record-empty');
+  const value=element('span',undefined,'challenge-record-value challenge-record-progress-value');
+  value.append(element('strong',`${String(result.roundReached).padStart(2,'0')}라운드`,'challenge-record-round'),
+    element('span',result.cleared?'클리어':'도전 중','challenge-record-status'),
+    element('strong',formatTicks(result.elapsedTicks),'challenge-record-time'),
     element('span',`사망 ${result.deaths}회`,'challenge-record-deaths'));
   return value;
 }
@@ -68,10 +79,15 @@ function easyTable(stageId,roundRecords,onBoard,{selectedRound,onSelectRound}={}
   return table;
 }
 
-function hardCards(stageId,record,onBoard){
+function hardCards(stageId,record,progress,onBoard){
   const cards=element('div',undefined,'challenge-record-cards');
   cards.setAttribute('role','group');
   cards.setAttribute('aria-label',`${STAGE_LABELS[stageId]} 하드 스테이지 기록`);
+  for(const [kind,label] of Object.entries(PROGRESS_LABELS)){
+    const card=element('section',undefined,`challenge-record-card challenge-record-progress-${kind}`);
+    card.append(element('h3',label),progressValue(progress?.[kind]??null));
+    cards.append(card);
+  }
   for(const [kind,label] of Object.entries(RECORD_LABELS)){
     const card=element('section',undefined,`challenge-record-card challenge-record-${kind}`);
     card.append(element('h3',label),recordValue(record[kind]));
@@ -195,7 +211,7 @@ export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,
       setPanelStage(menu.panel,stageId);
       personalRecords.replaceChildren(element('h3','내 기록','challenge-records-heading'));
       if(mode==='easy')personalRecords.append(easyTable(stageId,save.easy.roundRecords[stageId],null,{selectedRound,onSelectRound:selectHomeRound}));
-      else personalRecords.append(hardCards(stageId,save.records[stageId],null));
+      else personalRecords.append(hardCards(stageId,save.records[stageId],save.hardProgress?.[stageId],null));
       showHomeBoard();
       return;
     }
@@ -204,7 +220,7 @@ export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,
     setPanelStage(menu.panel,stageId);
     content.replaceChildren(mode==='easy'
       ?easyTable(stageId,save.easy.roundRecords[stageId],hasBoards?showBoard:null)
-      :hardCards(stageId,save.records[stageId],hasBoards?showBoard:null));
+      :hardCards(stageId,save.records[stageId],save.hardProgress?.[stageId],hasBoards?showBoard:null));
     menu.focus();
   }
   menu.panel.append(content);
