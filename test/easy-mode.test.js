@@ -6,6 +6,8 @@ import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.j
 import {createStageRun,snapshotStageRun} from '../src/game/sim/stage.js';
 import {freshSave} from '../src/game/storage/saveStore.js';
 import {handleEasyDeath,handleEasyRoundClear,handleEasyStageClear,initializeEasyRun} from '../src/game/scenes/easySession.js';
+const visualApi=await import('../src/game/assets/manifest.js');
+const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 
 class FakeElement {
   constructor(tagName){
@@ -61,6 +63,8 @@ test('Easy starts at an unlocked round with full health and leaves the saved Har
   assert.equal(scene.run.round,4);assert.equal(scene.run.elapsedTicks,0);assert.equal(scene.run.player.hp,3);
   assert.equal(scene.run.terrainLayout.mode,'authored');
   assert.ok(ARENA_PLATFORM_PRESETS['forest-1'].some(preset=>preset.id===scene.run.terrainLayout.presetId));
+  const playerVisual=visualApi.actorVisualBounds(scene.run.player,'hero-directions',visualApi.ACTOR_OUTLINE_SCALES.player);
+  for(const enemy of scene.run.enemies)assert.equal(overlaps(visualApi.actorVisualBounds(enemy,enemy.kind,visualApi.ACTOR_OUTLINE_SCALES.enemy),playerVisual),false,enemy.kind);
   assert.equal(Object.hasOwn(scene.run,'mode'),false);assert.deepEqual(scene.store.getSave().run,hardRun);
 });
 

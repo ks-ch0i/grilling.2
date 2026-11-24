@@ -13,6 +13,14 @@ const entries=[
  ['boss-forest-fx','/assets/effects/boss/forest.png',128,128,16],['boss-machine-fx','/assets/effects/boss/machine.png',128,128,16],['boss-worm-fx','/assets/effects/boss/worm.png',128,128,16],['worm-entrance-fx','/assets/effects/boss/worm-entrance.png',256,192,8]
 ];
 export const ASSETS=Object.freeze(entries.map(([key,url,frameWidth,frameHeight,count])=>Object.freeze({key,url,frameWidth,frameHeight,count,origin:Object.freeze({x:.5,y:1})})));
+export const ACTOR_OUTLINE_SCALES=Object.freeze({player:1.15,enemy:1.10,boss:1.04});
+export function actorVisualBounds(actor,textureKey,outlineScale){
+ const asset=ASSETS.find(item=>item.key===textureKey);
+ if(!asset)throw new TypeError(`Unknown actor texture: ${textureKey}`);
+ const anchorX=Math.round(actor.x+actor.w/2),anchorY=Math.round(actor.y+actor.h);
+ const w=asset.frameWidth*outlineScale,h=asset.frameHeight*outlineScale;
+ return {x:anchorX-asset.origin.x*w,y:anchorY-asset.origin.y*h,w,h};
+}
 const clips={};
 function clip(key,owner,state,texture,frames,{fps=8,loop=false,direction=null}={}){clips[key]=Object.freeze({key,owner,state,direction,texture,frames:Object.freeze(frames),fps,loop,origin:Object.freeze({x:.5,y:1})});}
 for(let direction=0;direction<8;direction++){

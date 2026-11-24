@@ -5,6 +5,8 @@ import {HURT_INVULNERABLE_TICKS} from '../src/game/sim/constants.js';
 import {createStageRun,stepStage,snapshotStageRun,restoreStageRun} from '../src/game/sim/stage.js';
 import {createRoundEnemies} from '../src/game/sim/rounds.js';
 import {createPlayer,stepPlayer} from '../src/game/sim/player.js';import {intersects} from '../src/game/sim/geometry.js';import {nextRandom} from '../src/game/sim/mineCarts.js';import {MINE_STAGE as stage} from '../src/game/content/mineStage.js';import {freshSave,parseSave} from '../src/game/storage/saveStore.js';
+const visualApi=await import('../src/game/assets/manifest.js');
+const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const arena=stage.arena,input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 const player={x:300,y:276,w:16,h:28,mode:'idle'};
 const round=r=>restoreStageRun(stage,JSON.parse(JSON.stringify(snapshotStageRun(r))));
@@ -43,11 +45,13 @@ test('a short jump cannot clear the 30px wave while a long jump can',()=>{
  assert.ok(jump(1)>wave.y);assert.ok(jump(40)<wave.y);
 });
 test('machine death does not clear; drop is rolled once and worm entrance freezes exactly 240 ticks',()=>{
- let r=makeRound(createStageRun(stage,{}, {seed:40}),8);Object.assign(r.player,{x:500,y:276,grounded:true,hp:2,mode:'idle'});Object.assign(r.boss,{state:'dying',stateTicks:1,hp:0});r.arenaLocked=true;
+ let r=makeRound(createStageRun(stage,{}, {seed:40}),8);Object.assign(r.player,{x:312,y:276,grounded:true,hp:2,mode:'idle'});Object.assign(r.boss,{state:'dying',stateTicks:1,hp:0});r.arenaLocked=true;
  r.hazards.push({id:'pool',ownerId:'i',kind:'acid-pool',x:300,y:298,w:28,h:6,vx:0,vy:0,life:100,alive:true});
  r.projectiles.push({id:'p',ownerId:'e',x:300,y:200,w:8,h:8,vx:0,vy:0,life:100,alive:true});
  const expected=nextRandom(r.rngState);const result=stepStage(r,input,stage);r=result.run;
  assert.equal(r.bossSequence,'worm-intro');assert.equal(r.boss.stateTicks,240);assert.equal(r.player.hp,2);assert.equal(r.bossDrop.rolled,true);assert.equal(r.bossDrop.spawned,shouldDropPotion(expected.value));assert.equal(r.rngState,expected.state);assert.deepEqual(r.hazards,[]);assert.deepEqual(r.projectiles,[]);assert.equal(r.outcome,null);
+ const playerVisual=visualApi.actorVisualBounds(r.player,'hero-directions',visualApi.ACTOR_OUTLINE_SCALES.player),wormVisual=visualApi.actorVisualBounds(r.boss,'worm',visualApi.ACTOR_OUTLINE_SCALES.boss);
+ assert.equal(overlaps(r.player,r.boss),false);assert.equal(overlaps(playerVisual,wormVisual),false,'Worm reveal artwork clears player artwork');
  assert.equal(shouldDropPotion(.399),true);assert.equal(shouldDropPotion(.4),false);const saved=round(r);assert.deepEqual(saved.bossDrop,r.bossDrop);
  const position={x:r.player.x,y:r.player.y,hp:r.player.hp};for(let i=0;i<239;i++){r=stepStage(r,{...input,move:1,jumpPressed:true},stage).run;assert.deepEqual({x:r.player.x,y:r.player.y,hp:r.player.hp},position);}
  assert.equal(r.bossSequence,'worm-intro');assert.equal(r.boss.stateTicks,1);r=stepStage(r,input,stage).run;assert.equal(r.bossSequence,'worm');assert.equal(r.boss.kind,'worm');assert.equal(r.boss.hp,18);assert.equal(r.bossDrop.rolled,true);

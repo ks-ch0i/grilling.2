@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import sharp from 'sharp';
 import {ASSETS,validateAssets} from '../src/game/assets/manifest.js';
+const visualApi=await import('../src/game/assets/manifest.js');
 import {ARENA_PLATFORM_PRESETS} from '../src/game/content/arenaPlatformPresets.js';
 async function inspect(bytes,asset){
  const {data,info}=await sharp(bytes,{failOn:'error'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
@@ -17,6 +18,18 @@ test('real PNG files decode with valid alpha, cells and frame gutters',async()=>
 test('hero defense sheets register eight shield directions and two parry sides',()=>{
  assert.deepEqual(ASSETS.filter(asset=>asset.key==='hero-shield').map(({url,frameWidth,frameHeight,count})=>({url,frameWidth,frameHeight,count})),[{url:'/assets/characters/hero/shield.png',frameWidth:32,frameHeight:32,count:8}]);
  assert.deepEqual(ASSETS.filter(asset=>asset.key==='hero-parry').map(({url,frameWidth,frameHeight,count})=>({url,frameWidth,frameHeight,count})),[{url:'/assets/characters/hero/parry.png',frameWidth:32,frameHeight:32,count:2}]);
+});
+test('actor artwork bounds use every hero frame origin and the renderer outline scales',()=>{
+ const scales=visualApi.ACTOR_OUTLINE_SCALES;
+ assert.deepEqual(scales,{player:1.15,enemy:1.10,boss:1.04});
+ for(const key of ['hero-directions','hero-walk','hero-actions','hero-dive','hero-attacks','hero-shield','hero-parry']){
+  const asset=ASSETS.find(item=>item.key===key);assert.deepEqual([asset.frameWidth,asset.frameHeight,asset.origin],[32,32,{x:.5,y:1}],key);
+ }
+ assert.equal(typeof visualApi.actorVisualBounds,'function');
+ const bounds=visualApi.actorVisualBounds({x:10,y:20,w:16,h:28},'hero-directions',scales.player);
+ assert.ok(Math.abs(bounds.x+0.4)<1e-9);assert.ok(Math.abs(bounds.y-11.2)<1e-9);
+ assert.ok(Math.abs(bounds.w-36.8)<1e-9);assert.ok(Math.abs(bounds.h-36.8)<1e-9);
+ assert.throws(()=>visualApi.actorVisualBounds({x:0,y:0,w:16,h:28},'missing-actor',1),TypeError);
 });
 test('themed platform module sheets register all 12 16x32 frames',async()=>{
  for(const [key,url] of [['forest-platform-modules','/assets/world/forest/platform-modules.png'],['mine-platform-modules','/assets/world/mine/platform-modules.png']]){

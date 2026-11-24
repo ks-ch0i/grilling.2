@@ -1,6 +1,6 @@
 # Task: T04 Safe Hostile Spawn Placement
 
-## Status: pending
+## Status: done (focused checks and build pass; full-suite failures and browser limitation recorded)
 
 ## Implementation Baseline
 - Target `origin/main` at `5ad654e`. `createRoundEnemies()` currently selects the roster once, then greedily places each enemy using preferred X positions on a 48-pixel candidate spacing. It checks gameplay rectangles against the player, boss, terrain, and already-placed enemies; it does not check rendered artwork bounds or retry a complete roster layout.
@@ -115,17 +115,18 @@ At every round start and boss appearance, preserve the already-selected enemy ro
 - Assert impossible geometry raises the explicit `RangeError` instead of returning an overlapping fallback.
 
 ## Acceptance Criteria
-- [ ] At initial round and every subsequent round, player artwork does not overlap any spawned regular enemy or boss artwork.
-- [ ] A rejected placement changes only positions; the chosen enemy roster and the RNG state used for later rounds remain unchanged.
-- [ ] Boss placement at round entry and the round-8 Worm reveal search beyond the old three positions and never fall back to an overlapping location.
-- [ ] Collision rectangles, arena bounds, floor/platform support, legacy terrain, and Forest boar floor-only placement rules remain valid.
-- [ ] Impossible layouts fail explicitly rather than spawning overlapping actors.
+- [x] At initial and subsequent round starts, player artwork does not overlap spawned regular enemy or boss artwork.
+- [x] A rejected placement changes only positions; the chosen enemy roster and gameplay RNG state remain unchanged.
+- [x] Boss entry and round-8 Worm reveal search the full 16-pixel grid and never fall back to an overlapping location.
+- [x] Collision rectangles, arena bounds, floor/platform support, legacy terrain, Easy mode, and Forest boar floor-only placement rules remain valid.
+- [x] Impossible layouts fail explicitly rather than spawning overlapping actors.
 
 ## Validation
 - `node --test test/round-selector.test.js test/stage-lifecycle.test.js test/mine-boss.test.js test/easy-mode.test.js test/assets.test.js` — deterministic placement, support, roster, Easy-mode, asset-bounds, and visual-clearance tests pass.
-- `npm test` — complete Node test suite passes.
+- `npm test` — the package script cannot expand `test/*.test.js` on this Windows shell; Node reports the literal wildcard path is missing.
+- `node --test --test-force-exit` — full discovery ran 229 tests: 220 passed, 9 failed in unchanged baseline paths (`audio-manager.test.js`, `easy-round-selector.test.js`, `records-popup.test.js` x3, `save-store.test.js` x2, and `title-menu.test.js` x2). The menu mock failures report missing `game.querySelectorAll`; these code and test files match `origin/main`. The T03 persistent-pool timing failure was corrected separately in the T03 commit.
 - `npm run build` — Vite production build completes successfully.
-- Manual browser check — start rounds 1, 5, 6, 7, and 8 in Forest and Mine with the player at likely spawn positions; confirm round-entry hostiles and the round-8 Worm reveal never start on top of the player.
+- Manual browser check — not run because the available browser and native pipe connections failed (`browser access host is unavailable`; native pipe unavailable). Spawn behavior is covered by focused simulation tests, but not visually confirmed in a browser.
 
 ## Commit Message
 ```text
@@ -140,6 +141,9 @@ Task: T04-safe-round-spawn
 ```
 
 ## Progress
-- [ ] 구현 완료
-- [ ] 검증 통과
+- [x] 구현 완료
+- [x] 집중 검증 통과 (`node --test test/round-selector.test.js test/stage-lifecycle.test.js test/mine-boss.test.js test/easy-mode.test.js test/assets.test.js`, `npm run build`, `git diff --check`)
+- [ ] 전체 테스트 정리 (변경 파일과 무관한 기존 9건 실패가 남아 있음)
+- [ ] 수동 브라우저 확인 (사용 가능한 browser/native pipe 연결 불가)
+- review: no actionable findings
 - commit: pending

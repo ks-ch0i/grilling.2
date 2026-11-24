@@ -6,9 +6,10 @@ import { playerAttackRangePoints } from './playerAttackRange.js';
 import { attackIndicatorState } from './attackIndicator.js';
 import { attackSwordOffset } from './attackMotion.js';
 import { parryBladeAngle, drawParryGlint } from './defenseEffects.js';
+import { ACTOR_OUTLINE_SCALES } from '../assets/manifest.js';
 export class PlayerView {
   constructor(scene){
-    this.outline=scene.add.sprite(0,0,'hero-directions',0).setOrigin(.5,1).setDepth(4.5).setTint(0xffe0ab).setTintMode(Phaser.TintModes.FILL).setAlpha(.65).setScale(1.15);
+    this.outline=scene.add.sprite(0,0,'hero-directions',0).setOrigin(.5,1).setDepth(4.5).setTint(0xffe0ab).setTintMode(Phaser.TintModes.FILL).setAlpha(.65).setScale(ACTOR_OUTLINE_SCALES.player);
     this.body=scene.add.sprite(0,0,'hero-directions',0).setOrigin(.5,1).setDepth(5);
     this.sword=scene.add.image(0,0,'sword').setOrigin(.16,.5).setDepth(6);
     this.slash=scene.add.sprite(0,0,'effects',0).setOrigin(.5,.5).setDepth(4).setScale(.8);

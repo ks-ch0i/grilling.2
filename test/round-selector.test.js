@@ -7,6 +7,8 @@ import {freshSave,parseSave} from '../src/game/storage/saveStore.js';
 import {stageTerrain} from '../src/game/sim/stage.js';
 import {createRoundEnemies} from '../src/game/sim/rounds.js';
 const platformApi=await import('../src/game/sim/platforms.js').catch(()=>({}));
+const visualApi=await import('../src/game/assets/manifest.js');
+const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 
 const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 test('round selector is available only in development and can be disabled',()=>{
@@ -64,7 +66,20 @@ test('new Forest boars use the fixed floor even when their preferred x overlaps 
 test('Forest boar floor-only spawning retains the no-safe-spawn error',()=>{
  const forest=getStage('forest-1'),boar=forest.enemies.find(enemy=>enemy.kind==='boar');
  const stage={...forest,solids:[forest.solids[0]],enemies:[boar,boar,boar]};
- assert.throws(()=>createRoundEnemies(stage,1,123,{player:{x:0,y:0,w:640,h:360},platformProfiles:[{x:352,w:96,topProfile:Array(6).fill(260),variant:0}]}),/No safe arena spawn is available for boar/);
+ assert.throws(()=>createRoundEnemies(stage,1,123,{player:{x:0,y:0,w:640,h:360},platformProfiles:[{x:352,w:96,topProfile:Array(6).fill(260),variant:0}]}),/No visually safe arena spawn layout is available/);
+});
+test('round placement retries visual overlaps without changing the chosen roster or gameplay RNG',()=>{
+ const stage=getStage('forest-1'),player={x:280,y:276,w:16,h:28},seed=123;
+ const first=createRoundEnemies(stage,7,seed,{player}),again=createRoundEnemies(stage,7,seed,{player});
+ assert.deepEqual(first.enemies.map(({kind,x,y})=>({kind,x,y})),again.enemies.map(({kind,x,y})=>({kind,x,y})));
+ assert.deepEqual(first.enemies.map(enemy=>enemy.kind),stage.enemies.map(enemy=>enemy.kind));
+ assert.equal(first.rngState,seed);
+ const playerVisual=visualApi.actorVisualBounds(player,'hero-directions',visualApi.ACTOR_OUTLINE_SCALES.player);
+ for(const enemy of first.enemies){
+  assert.equal(overlaps(enemy,player),false,`${enemy.kind} collision rectangle`);
+  assert.equal(overlaps(visualApi.actorVisualBounds(enemy,enemy.kind,visualApi.ACTOR_OUTLINE_SCALES.enemy),playerVisual),false,`${enemy.kind} artwork`);
+ }
+ assert.notEqual(first.enemies.find(enemy=>enemy.kind==='wisp').x,stage.enemies.find(enemy=>enemy.kind==='wisp').x,'preferred wisp position overlaps player artwork');
 });
 test('creating practice rounds does not change the saved run or records',()=>{
  const save=freshSave(),before=JSON.stringify(save);

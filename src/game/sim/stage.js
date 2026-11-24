@@ -11,6 +11,7 @@ import {createAuthoredPlatformLayout,validatePlatformLayout} from './terrain.js'
 import {isProfiledPlatform,platformOcclusionRects} from './platforms.js';
 import {WORM_INTRO_TICKS,WORM_INTRO_BURST_TICK} from './wormIntro.js';
 import {createRoundEnemies,isBossRound,roundEnemyCount,ROUND_COUNT,ROUND_CLEAR_TICKS} from './rounds.js';
+import {ACTOR_OUTLINE_SCALES,actorVisualBounds} from '../assets/manifest.js';
 
 const DEATH_TICKS=60;
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -48,24 +49,31 @@ function stageForRun(stage,run){
   return {...stage,solids:[stage.solids[0],...rectangles],platformProfiles};
 }
 
-function safeBossX(stage,player,width,preferred){
-  const candidates=[preferred,stage.arena.left+32,stage.arena.right-32-width];
-  const unique=[...new Set(candidates)].filter(x=>x>=stage.arena.left&&x+width<=stage.arena.right);
-  return unique.find(x=>!overlaps({x,y:stage.arena.bottom-(stage.id==='forest-1'?96:64),w:width,h:stage.id==='forest-1'?96:64},player))
-    ??unique.sort((a,b)=>Math.abs((a+width/2)-(player.x+player.w/2))-Math.abs((b+width/2)-(player.x+player.w/2)))[0]
-    ??preferred;
+function safeBossX(stage,player,boss,preferred){
+  const textureKey=boss.kind==='machine'||boss.kind==='worm'?boss.kind:'boss';
+  const playerVisual=actorVisualBounds(player,'hero-directions',ACTOR_OUTLINE_SCALES.player);
+  const bossXs=[];
+  for(let x=stage.arena.left;x+boss.w<=stage.arena.right;x+=16)bossXs.push(x);
+  bossXs.sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred)||a-b);
+  for(const x of bossXs){
+    const candidate={...boss,x};
+    if(overlaps(candidate,player))continue;
+    if(overlaps(actorVisualBounds(candidate,textureKey,ACTOR_OUTLINE_SCALES.boss),playerVisual))continue;
+    return x;
+  }
+  throw new RangeError('No visually safe boss spawn is available');
 }
 
 function bossForRound(stage,round,player){
   const active=isBossRound(stage.id,round);
   if(stage.id==='forest-1'){
-    const x=active?safeBossX(stage,player,80,stage.boss.x):stage.boss.x;
-    const boss=createBoss({...stage.boss,x});
+    const boss=createBoss(stage.boss);
+    if(active)boss.x=safeBossX(stage,player,boss,stage.boss.x);
     if(active){boss.state='intro';boss.stateTicks=90;}
     return {boss,bossSequence:'none'};
   }
-  const x=active?safeBossX(stage,player,80,stage.boss.x):stage.boss.x;
-  const boss=createMineBoss('machine',{...stage.boss,x});
+  const boss=createMineBoss('machine',stage.boss);
+  if(active)boss.x=safeBossX(stage,player,boss,stage.boss.x);
   if(active){boss.state='intro';boss.stateTicks=90;}
   return {boss,bossSequence:active?'machine':'none'};
 }
@@ -348,8 +356,9 @@ export function stepStage(previous,input,stage){
     run.bossDrop={rolled:true,spawned:shouldDropPotion(roll.value),consumed:false,x:run.boss.x+run.boss.w/2-8,y:stage.arena.bottom-16};
     run.projectiles=[];run.hazards=run.hazards.filter(hazard=>hazard.kind==='cart');run.player.attackTick=0;run.player.hitIds.clear();
     if(run.player.mode==='attack')run.player.mode=run.player.grounded?'idle':'fall';
-    const wormX=safeBossX(stage,run.player,96,(stage.arena.left+stage.arena.right)/2-48);
-    run.boss=createMineBoss('worm',{x:wormX,y:stage.arena.bottom-64});
+    const preferred=(stage.arena.left+stage.arena.right)/2-48;
+    run.boss=createMineBoss('worm',{x:preferred,y:stage.arena.bottom-64});
+    run.boss.x=safeBossX(stage,run.player,run.boss,preferred);
     run.boss.state='intro';run.boss.stateTicks=WORM_INTRO_TICKS;run.bossSequence='worm-intro';
     events.push({type:'boss:worm-intro'});return {run,events};
   }

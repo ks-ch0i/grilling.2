@@ -6,6 +6,8 @@ import {createStageRun,stepStage,restoreStageRun,snapshotStageRun,stageTerrain} 
 import {createEnemy} from '../src/game/sim/enemies.js';
 import {roundEnemyCount,isBossRound,ROUND_COUNT,ROUND_CLEAR_TICKS} from '../src/game/sim/rounds.js';
 import {createAuthoredPlatformLayout} from '../src/game/sim/terrain.js';
+const visualApi=await import('../src/game/assets/manifest.js');
+const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 
 const input={move:0,jumpPressed:false,jumpHeld:false,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290};
 const tick=(run,stage,n=1)=>{let events=[];for(let i=0;i<n;i++){const result=stepStage(run,input,stage);run=result.run;events.push(...result.events);}return {run,events};};
@@ -76,13 +78,45 @@ test('round waves use stage species, one of each species on rounds 7 and 8, and 
   }
 });
 
+test('initial enemy and boss artwork placement clears a player positioned at preferred spawns',()=>{
+  for(const baseStage of [FOREST_STAGE,MINE_STAGE])for(const round of [1,5,6,7,8]){
+    const playerX=[5,7,8].includes(round)?520:280;
+    const stage={...baseStage,spawn:{...baseStage.spawn,x:playerX}};
+    const run=createStageRun(stage,{}, {seed:63,startRound:round});
+    const playerVisual=visualApi.actorVisualBounds(run.player,'hero-directions',visualApi.ACTOR_OUTLINE_SCALES.player);
+    for(const enemy of run.enemies){
+      assert.equal(overlaps(enemy,run.player),false,`${stage.id} round ${round} ${enemy.kind} collision`);
+      assert.equal(overlaps(visualApi.actorVisualBounds(enemy,enemy.kind,visualApi.ACTOR_OUTLINE_SCALES.enemy),playerVisual),false,`${stage.id} round ${round} ${enemy.kind} artwork`);
+    }
+    if(isBossRound(stage.id,round)){
+      const key=stage.id==='forest-1'?'boss':'machine';
+      assert.equal(overlaps(run.boss,run.player),false,`${stage.id} round ${round} boss collision`);
+      assert.equal(overlaps(visualApi.actorVisualBounds(run.boss,key,visualApi.ACTOR_OUTLINE_SCALES.boss),playerVisual),false,`${stage.id} round ${round} boss artwork`);
+    }
+  }
+});
+
 test('a cleared round waits 120 ticks, then starts the next wave at full health',()=>{
   let run=createStageRun(FOREST_STAGE,{}, {seed:14});run.player.hp=1;
   run=defeatRound(run,FOREST_STAGE);let result=tick(run,FOREST_STAGE);
   assert.equal(result.run.round,1);assert.equal(result.run.roundClearTicks,ROUND_CLEAR_TICKS);assert.equal(result.run.player.hp,1);
   result=tick(result.run,FOREST_STAGE,ROUND_CLEAR_TICKS-1);assert.equal(result.run.round,1);assert.equal(result.run.roundClearTicks,1);
   result=tick(result.run,FOREST_STAGE);assert.equal(result.run.round,2);assert.equal(result.run.roundClearTicks,null);assert.equal(result.run.player.hp,3);assert.equal(result.run.enemies.length,2);
+  const playerVisual=visualApi.actorVisualBounds(result.run.player,'hero-directions',visualApi.ACTOR_OUTLINE_SCALES.player);
+  for(const enemy of result.run.enemies)assert.equal(overlaps(visualApi.actorVisualBounds(enemy,enemy.kind,visualApi.ACTOR_OUTLINE_SCALES.enemy),playerVisual),false,`${enemy.kind} next-round artwork`);
   assert.ok(result.events.some(event=>event.type==='round:start'&&event.round===2));
+});
+
+test('boss artwork also clears a player on subsequent round entry',()=>{
+  for(const baseStage of [FOREST_STAGE,MINE_STAGE]){
+    const stage={...baseStage,spawn:{...baseStage.spawn,x:520}},run=createStageRun(stage,{}, {seed:74,startRound:4});
+    run.roundClearTicks=1;
+    const next=stepStage(run,input,stage).run;
+    assert.equal(next.round,5);assert.equal(next.boss.state,'intro');
+    const key=stage.id==='forest-1'?'boss':'machine';
+    assert.equal(overlaps(next.player,next.boss),false,`${stage.id} boss collision`);
+    assert.equal(overlaps(visualApi.actorVisualBounds(next.player,'hero-directions',visualApi.ACTOR_OUTLINE_SCALES.player),visualApi.actorVisualBounds(next.boss,key,visualApi.ACTOR_OUTLINE_SCALES.boss)),false,`${stage.id} boss artwork`);
+  }
 });
 
 test('Guardian keeps phase 1 in rounds 5 and 7, then transitions normally in round 8',()=>{
