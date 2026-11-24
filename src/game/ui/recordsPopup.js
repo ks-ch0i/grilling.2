@@ -102,15 +102,37 @@ export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,
   mountAccountStatus(menu,store);
   let backButton,backHandled=false;
   let boardView=null;
-  let personalRecords,companyRecords,companyTitle;
+  let personalRecords,companyRecords,companyTitle,mobileViewSwitch;
   if(homeLayout){
     const layout=element('div',undefined,'challenge-records-layout');
+    layout.setAttribute('data-mobile-view','personal');
+    mobileViewSwitch=element('div',undefined,'challenge-records-view-switch');
+    mobileViewSwitch.setAttribute('role','group');
+    mobileViewSwitch.setAttribute('aria-label','기록 보기');
     personalRecords=element('section',undefined,'challenge-records-personal');
+    personalRecords.id='challenge-records-personal';
     personalRecords.append(element('h3','내 기록','challenge-records-heading'));
     companyRecords=element('section',undefined,'challenge-records-company');
+    companyRecords.id='challenge-records-company';
     companyTitle=element('h3',undefined,'challenge-records-heading');
     companyRecords.append(companyTitle);
-    layout.append(personalRecords,companyRecords);content.append(layout);
+    const mobileViewButtons=[];
+    for(const [value,label] of [['personal','내 기록'],['company','회사 순위']]){
+      const button=element('button',label,'challenge-records-view-button');
+      button.type='button';
+      button.setAttribute('aria-controls',`challenge-records-${value}`);
+      button.setAttribute('aria-pressed',String(value==='personal'));
+      button.addEventListener('click',()=>{
+        layout.setAttribute('data-mobile-view',value);
+        for(const choice of mobileViewButtons){
+          choice.setAttribute('aria-pressed',String(choice===button));
+        }
+      });
+      mobileViewButtons.push(button);
+      mobileViewSwitch.append(button);
+    }
+    layout.append(personalRecords,companyRecords);
+    content.append(mobileViewSwitch,layout);
   }
   menu.onRemove(()=>{boardVersion++;boardView?.remove();homeBoardView?.remove();});
 

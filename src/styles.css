@@ -577,7 +577,9 @@ canvas { display: block; image-rendering: pixelated; }
 
 .game-panel.challenge-panel.challenge-records-home {
   width:min(960px,100%);
+  padding-block:clamp(8px,1.8vw,14px);
 }
+.challenge-records-view-switch { display:none; }
 .challenge-records-layout {
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
@@ -630,13 +632,43 @@ canvas { display: block; image-rendering: pixelated; }
 }
 .challenge-record-row-selected { background:rgba(184,220,201,.08); }
 @media (max-width:760px) {
+  .challenge-records-view-switch {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+    margin:10px 0 0;
+  }
+  .game-panel.challenge-panel.challenge-records-home .challenge-records-view-button {
+    min-height:34px;
+    padding:6px 8px;
+    border:1px solid var(--challenge-line);
+    background:var(--challenge-surface);
+    color:var(--challenge-muted);
+    font-size:13px;
+  }
+  .game-panel.challenge-panel.challenge-records-home .challenge-records-view-button[aria-pressed="true"] {
+    border-color:var(--challenge-accent);
+    color:var(--challenge-accent);
+  }
   .challenge-records-layout {
     grid-template-columns:minmax(0,1fr);
     grid-template-areas:"personal" "company";
     gap:10px;
   }
+  .challenge-records-layout[data-mobile-view="personal"] .challenge-records-company,
+  .challenge-records-layout[data-mobile-view="company"] .challenge-records-personal { display:none; }
 }
 @media (max-width:420px) {
   .challenge-records-personal,
   .challenge-records-company { padding:10px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table {
+    font-size:13px;
+    line-height:1.25;
+  }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table th,
+  .game-panel.challenge-panel.challenge-records-home .company-board-table td { padding:4px 3px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table th:first-child { width:40px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table th:nth-child(3) { width:74px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table th:nth-child(4) { width:40px; }
+  .game-panel.challenge-panel.challenge-records-home .company-board-table td:nth-child(3) { white-space:nowrap; }
 }
