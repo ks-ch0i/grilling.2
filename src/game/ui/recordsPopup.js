@@ -26,7 +26,7 @@ function boardButton(label,onBoard){
   button.type='button';button.addEventListener('click',onBoard);return button;
 }
 
-function easyTable(stageId,roundRecords,onBoard){
+function easyTable(stageId,roundRecords,onBoard,{selectedRound,onSelectRound}={}){
   const table=element('table',undefined,'challenge-record-table');
   table.setAttribute('aria-label',`${STAGE_LABELS[stageId]} 이지 라운드별 기록`);
   const header=element('thead'),headRow=element('tr'),body=element('tbody');
@@ -38,9 +38,16 @@ function easyTable(stageId,roundRecords,onBoard){
   header.append(headRow);
 
   for(let round=1;round<=ROUND_COUNT;round++){
-    const row=element('tr'),roundHeader=element('th');
+    const selected=round===selectedRound;
+    const row=element('tr',undefined,onSelectRound?(selected?'challenge-record-row-selected':'challenge-record-row'):''),roundHeader=element('th');
     roundHeader.setAttribute('scope','row');
-    roundHeader.append(element('span',String(round).padStart(2,'0'),'challenge-record-round'));
+    if(onSelectRound){
+      const choice=element('button',String(round).padStart(2,'0'),'challenge-record-round-choice');
+      choice.type='button';choice.setAttribute('aria-label',`${String(round).padStart(2,'0')}라운드 회사 순위`);choice.setAttribute('aria-pressed',String(selected));
+      choice.addEventListener('click',()=>{if(!selected)onSelectRound(round);});
+      roundHeader.append(choice);
+    }
+    if(!onSelectRound)roundHeader.append(element('span',String(round).padStart(2,'0'),'challenge-record-round'));
     if(isBossRound(stageId,round))roundHeader.append(element('span','보스','challenge-record-boss'));
     row.append(roundHeader);
     const record=roundRecords[String(round)];
@@ -76,10 +83,13 @@ function hardCards(stageId,record,onBoard){
 
 export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,titleScreen=true}){
   if(typeof onBack!=='function')throw new TypeError('Records Back callback is required');
+  const homeLayout=titleScreen&&initialChallenge===null;
   const menu=mountChallengePanel('기록','',{titleScreen});
   menu.panel.classList.add('challenge-records');
+  if(homeLayout)menu.panel.classList.add('challenge-records-home');
   const content=element('div',undefined,'challenge-record-content');
   let mode='easy',stageId='forest-1';
+  let selectedRound=1,boardVersion=0,homeBoardView=null;
   const hasBoards=typeof store?.getLeaderboard==='function';
   const modeSwitch=appendChoiceSwitch(menu.panel,{
     label:'모드',choices:[{value:'easy',label:'이지'},{value:'hard',label:'하드'}],value:mode,
@@ -90,9 +100,52 @@ export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,
     onChange:value=>{stageId=value;render();}
   });
   mountAccountStatus(menu,store);
-  let backButton;
+  let backButton,backHandled=false;
   let boardView=null;
-  menu.onRemove(()=>boardView?.remove());
+  let personalRecords,companyRecords,companyTitle;
+  if(homeLayout){
+    const layout=element('div',undefined,'challenge-records-layout');
+    personalRecords=element('section',undefined,'challenge-records-personal');
+    personalRecords.append(element('h3','내 기록','challenge-records-heading'));
+    companyRecords=element('section',undefined,'challenge-records-company');
+    companyTitle=element('h3',undefined,'challenge-records-heading');
+    companyRecords.append(companyTitle);
+    layout.append(personalRecords,companyRecords);content.append(layout);
+  }
+  menu.onRemove(()=>{boardVersion++;boardView?.remove();homeBoardView?.remove();});
+
+  function challengeForSelection(){
+    return mode==='easy'?{mode,stageId,round:selectedRound}:{mode,stageId};
+  }
+
+  function showHomeBoard(){
+    boardVersion++;
+    homeBoardView?.remove();homeBoardView=null;
+    const challenge=challengeForSelection(),version=boardVersion;
+    companyTitle.textContent=mode==='easy'
+      ?`${STAGE_LABELS[stageId]} · 이지 · ${String(selectedRound).padStart(2,'0')}라운드`
+      :`${STAGE_LABELS[stageId]} · 하드`;
+    companyRecords.replaceChildren(companyTitle);
+    if(!hasBoards){companyRecords.append(element('p','회사 순위를 사용할 수 없습니다.','company-board-error'));return;}
+    homeBoardView=mountCompanyLeaderboard({parent:companyRecords,challenge,getLeaderboard:async value=>{
+      await store.syncNow?.();
+      if(version!==boardVersion)return null;
+      return store.getLeaderboard(value);
+    }});
+  }
+
+  function selectHomeRound(round){
+    if(round===selectedRound)return;
+    selectedRound=round;
+    const selectedButton=personalRecords.querySelector(`[aria-label="${String(round).padStart(2,'0')}라운드 회사 순위"]`);
+    for(const button of personalRecords.querySelectorAll('.challenge-record-round-choice')){
+      const selected=button===selectedButton;
+      button.setAttribute('aria-pressed',String(selected));
+      const row=button.parentElement.parentElement;
+      row.className=selected?'challenge-record-row-selected':'challenge-record-row';
+    }
+    showHomeBoard();
+  }
 
   function showBoard(challenge){
     if(!hasBoards)return;
@@ -116,6 +169,14 @@ export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,
   }
 
   function render(){
+    if(homeLayout){
+      setPanelStage(menu.panel,stageId);
+      personalRecords.replaceChildren(element('h3','내 기록','challenge-records-heading'));
+      if(mode==='easy')personalRecords.append(easyTable(stageId,save.easy.roundRecords[stageId],null,{selectedRound,onSelectRound:selectHomeRound}));
+      else personalRecords.append(hardCards(stageId,save.records[stageId],null));
+      showHomeBoard();
+      return;
+    }
     if(boardView){boardView.remove();boardView=null;}
     modeSwitch.root.hidden=false;stageSwitch.root.hidden=false;backButton.hidden=false;
     setPanelStage(menu.panel,stageId);
@@ -125,7 +186,7 @@ export function mountRecordsPopup({save,onBack,store=null,initialChallenge=null,
     menu.focus();
   }
   menu.panel.append(content);
-  backButton=menu.button('뒤로',()=>{menu.remove();onBack();});
+  backButton=menu.button('뒤로',()=>{if(backHandled)return;backHandled=true;menu.remove();onBack();});
   backButton.classList.add('challenge-back');
   render();
   if(initialChallenge&&hasBoards){mode=initialChallenge.mode;stageId=initialChallenge.stageId;showBoard(initialChallenge);}

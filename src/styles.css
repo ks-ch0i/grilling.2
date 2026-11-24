@@ -574,3 +574,69 @@ canvas { display: block; image-rendering: pixelated; }
   .company-board-table th:nth-child(3) { width:62px; }
   .company-board-table th:nth-child(4) { width:44px; }
 }
+
+.game-panel.challenge-panel.challenge-records-home {
+  width:min(960px,100%);
+}
+.challenge-records-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  grid-template-areas:"company personal";
+  gap:16px;
+  margin-top:14px;
+}
+.challenge-records-personal,
+.challenge-records-company {
+  min-width:0;
+  padding:14px;
+  border:1px solid var(--challenge-line);
+  border-radius:8px;
+  background:var(--challenge-surface);
+}
+.challenge-records-personal { grid-area:personal; }
+.challenge-records-company { grid-area:company; }
+.challenge-records-heading {
+  margin:0 0 12px;
+  color:var(--challenge-accent);
+  font-size:15px;
+}
+.challenge-records-home .challenge-record-content { margin-top:0; }
+.game-panel.challenge-panel.challenge-records-home .challenge-record-table th:first-child { width:18%; }
+.game-panel.challenge-panel.challenge-records-home .challenge-record-table th:nth-child(2),
+.game-panel.challenge-panel.challenge-records-home .challenge-record-table th:last-child:not(:first-child) { width:41%; }
+.challenge-record-round-choice {
+  width:auto !important;
+  min-width:34px;
+  min-height:30px;
+  margin:0 !important;
+  padding:4px 7px !important;
+  border:1px solid var(--challenge-line) !important;
+  background:transparent !important;
+  color:var(--challenge-muted) !important;
+  font-size:13px !important;
+  font-variant-numeric:tabular-nums;
+  cursor:pointer;
+}
+.game-panel.challenge-panel.challenge-records-home .challenge-record-round-choice::before { content:none; }
+.game-panel.challenge-panel.challenge-records-home .challenge-record-round-choice[aria-pressed="true"] {
+  border-color:var(--challenge-accent) !important;
+  background:rgba(184,220,201,.13) !important;
+  color:var(--challenge-accent) !important;
+  font-weight:700;
+}
+.game-panel.challenge-panel.challenge-records-home .challenge-record-round-choice:focus-visible {
+  outline:2px solid var(--challenge-accent);
+  outline-offset:2px;
+}
+.challenge-record-row-selected { background:rgba(184,220,201,.08); }
+@media (max-width:760px) {
+  .challenge-records-layout {
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"personal" "company";
+    gap:10px;
+  }
+}
+@media (max-width:420px) {
+  .challenge-records-personal,
+  .challenge-records-company { padding:10px; }
+}
