@@ -8,7 +8,7 @@ const WIDTHS=[32,48,64,80,96,112];
 const RECT_KEYS=['x','y','w','h'];
 const PROFILE_STEP=16;
 const MIN_LAYER_GAP=48;
-const INPUT=(move,jumpPressed=false)=>({move,jumpPressed,jumpHeld:true,attackPressed:false,rollPressed:false,divePressed:false,aimX:320,aimY:290});
+const INPUT=(move,jumpPressed=false)=>({move,jumpPressed,jumpHeld:true,attackPressed:false,rollPressed:false,aimX:320,aimY:290});
 const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const overlapsHorizontally=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x;
 const sameRect=(a,b)=>a.x===b.x&&a.y===b.y&&a.w===b.w&&a.h===b.h;

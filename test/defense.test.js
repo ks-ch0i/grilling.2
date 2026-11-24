@@ -16,7 +16,7 @@ const frame = overrides => ({ move: 0, jumpPressed: false, dropPressed: false, j
 const tick = (player, input = {}) => stepPlayer(player, frame(input), floor).player;
 const grounded = () => tick(createPlayer());
 
-test('right mouse shield is canvas-only; Q and shield are edge queued and reset clears them', () => {
+test('right mouse parry is canvas-only; Q shield and both defense edges reset correctly', () => {
   class Target {
     listeners = {};
     addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
@@ -56,7 +56,7 @@ test('shield lasts 60 ticks, ends on release, and requires a fresh press after c
   assert.equal(p.defenseMode, 'shield');
 });
 
-test('parry cooldown starts on Q; defense cancels attacks, allows movement and jump, and roll cancels it', () => {
+test('right-click parry starts cooldown; defense cancels attacks, allows movement and jump, and roll cancels it', () => {
   let p = grounded(); p = tick(p, { attackPressed: true }); assert.equal(p.mode, 'attack');
   p = tick(p, { parryPressed: true, move: 1 });
   assert.equal(p.defenseMode, 'parry'); assert.equal(p.defenseTicksRemaining, 37); assert.equal(p.parryCooldownTicks, 180);
