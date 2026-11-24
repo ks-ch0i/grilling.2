@@ -121,7 +121,7 @@ export class StageScene extends Phaser.Scene {
     if(id)this.audio.playSfx(id);
     const player=this.run.player;
     if(event.type==='enemy:hurt'){const enemy=this.run.enemies.find(e=>e.id===event.id);if(enemy)this.showEffect(1,enemy.x+enemy.w/2,enemy.y+enemy.h/2);}
-    if(event.type==='shield:blocked'||event.type==='parry:blocked')this.showDefenseSpark(event,player);
+    if(event.type==='shield:blocked'||event.type==='parry:blocked'||event.type==='parry:perfect')this.showDefenseSpark(event,player);
     if(event.type==='roll')this.showEffect(2,player.x+player.w/2,player.y+player.h);
     if(event.type==='dive-impact'){this.showEffect(3,event.x,event.y);this.showImpactWave(event.x,event.y,event.canDamage);}
     if(event.type==='stage:pickup')this.showEffect(4,player.x+player.w/2,player.y+player.h/2);
@@ -135,12 +135,13 @@ export class StageScene extends Phaser.Scene {
     const px=player.x+player.w/2,py=player.y+player.h/2,aim=player.aim??{x:player.horizontalFacing,y:0};
     const x=Phaser.Math.Clamp(Number.isFinite(event.originX)?event.originX:px+aim.x*10,player.x-4,player.x+player.w+4);
     const y=Phaser.Math.Clamp(Number.isFinite(event.originY)?event.originY:py,player.y+3,player.y+player.h-3);
-    const isShield=event.type==='shield:blocked',duration=12,sprite=this.add.graphics().setDepth(7);
-    const core=isShield?0xfff0b0:0xe7ffff,accent=isShield?0xffa94f:0x77d8df,shadow=isShield?0x7b4338:0x315e78;
-    const draw=elapsed=>{const progress=Math.min(1,elapsed/duration),alpha=1-progress*.8,distance=3+progress*10;sprite.clear();
+    const isShield=event.type==='shield:blocked',isPerfect=event.type==='parry:perfect',duration=isPerfect?18:12,sprite=this.add.graphics().setDepth(7);
+    const core=isShield?0xfff0b0:isPerfect?0xffffff:0xe7ffff,accent=isShield?0xffa94f:isPerfect?0xfff2a3:0x77d8df,shadow=isShield?0x7b4338:isPerfect?0x80521f:0x315e78;
+    const draw=elapsed=>{const progress=Math.min(1,elapsed/duration),alpha=1-progress*.8,distance=isPerfect?4+14*progress:3+progress*10;sprite.clear();
       sprite.fillStyle(shadow,alpha).fillRect(Math.round(x-4),Math.round(y-4),8,8);
       sprite.fillStyle(core,alpha).fillRect(Math.round(x-2),Math.round(y-2),4,4);
-      for(let i=0;i<6;i++){const angle=i*Math.PI/3+(isShield?0:Math.PI/6),fx=Math.round(x+Math.cos(angle)*distance),fy=Math.round(y+Math.sin(angle)*distance);sprite.fillStyle(i%2?accent:core,alpha).fillRect(fx-1,fy-1,2,2);}
+      const rays=isPerfect?8:6,raySize=isPerfect?3:2;
+      for(let i=0;i<rays;i++){const angle=i*Math.PI*2/rays+(isShield?0:Math.PI/6),fx=Math.round(x+Math.cos(angle)*distance),fy=Math.round(y+Math.sin(angle)*distance);sprite.fillStyle(i%2?accent:core,alpha).fillRect(fx-Math.floor(raySize/2),fy-Math.floor(raySize/2),raySize,raySize);}
     };
     draw(0);this.visualEffects.push({sprite,start:this.run.elapsedTicks,until:this.run.elapsedTicks+duration,fade:duration,draw});
   }

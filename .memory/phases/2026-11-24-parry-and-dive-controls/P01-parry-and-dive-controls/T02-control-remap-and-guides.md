@@ -97,4 +97,4 @@ Task: T02-control-remap-and-guides
 ## Progress
 - [x] Implementation complete
 - [x] Validation passed
-- commit: pending
+- commit: 92b20f0

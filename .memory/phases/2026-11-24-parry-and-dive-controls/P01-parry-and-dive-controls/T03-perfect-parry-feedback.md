@@ -1,6 +1,6 @@
 # Task: T03 Perfect Parry Feedback
 
-## Status: pending
+## Status: done
 
 ## Goal
 Make a successful perfect parry immediately distinguishable from a regular parry by playing a separate synthesized sound and a stronger impact flash, while retaining the existing small cyan impact spark and sound for regular parries.
@@ -83,6 +83,6 @@ Task: T03-perfect-parry-feedback
 ~~~
 
 ## Progress
-- [ ] Implementation complete
-- [ ] Validation passed
+- [x] Implementation complete
+- [x] Validation passed
 - commit: pending
