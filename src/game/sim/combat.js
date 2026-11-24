@@ -1,4 +1,4 @@
-import { ATTACK_HALF_ANGLE, ATTACK_RADIUS, DIVE_IMPACT_WIDTH, DIVE_IMPACT_HEIGHT, HURT_INVULNERABLE_TICKS, HURT_TICKS } from './constants.js';
+import { ATTACK_HALF_ANGLE, ATTACK_RADIUS, DIVE_IMPACT_WIDTH, DIVE_IMPACT_HEIGHT, HURT_INVULNERABLE_TICKS, HURT_TICKS, PARRY_WINDOW_TICKS, PARRY_PERFECT_TICKS } from './constants.js';
 export function diveImpactRect(x,y) { return {x:x-DIVE_IMPACT_WIDTH/2,y:y-DIVE_IMPACT_HEIGHT/2,w:DIVE_IMPACT_WIDTH,h:DIVE_IMPACT_HEIGHT}; }
 export function angleToFacing8(aim) {
   return ((Math.round(Math.atan2(aim.y, aim.x) / (Math.PI / 4)) % 8) + 8) % 8;
@@ -80,14 +80,16 @@ export function applyPlayerDamage(state, source = 'contact', impact = undefined,
   const distance = Math.hypot(dx, dy), aim = player.aim || { x: 1, y: 0 };
   const aimLength = Math.hypot(aim.x, aim.y);
   const inFront = distance > 1e-9 && aimLength > 1e-9 && (aim.x * dx + aim.y * dy) / (aimLength * distance) >= Math.cos(Math.PI / 3);
-  const defense = player.defenseMode === 'shield' && defenseCategory === 'ranged' || player.defenseMode === 'parry' && defenseCategory === 'melee';
+  const defense = player.defenseTicksRemaining > 0 && (player.defenseMode === 'shield' && defenseCategory === 'ranged' || player.defenseMode === 'parry' && defenseCategory === 'melee');
   const blocked = source !== 'pit' && defense && inFront;
-  player.hp = source === 'pit' ? 0 : Math.max(0, player.hp - (blocked ? 0.5 : 1));
+  const firstRegularTick = PARRY_WINDOW_TICKS - PARRY_PERFECT_TICKS + 1;
+  const perfectParry = blocked && player.defenseMode === 'parry' && player.defenseTicksRemaining >= firstRegularTick;
+  player.hp = source === 'pit' ? 0 : Math.max(0, player.hp - (perfectParry ? 0 : blocked ? 0.5 : 1));
   player.attackTick = 0; player.hitIds.clear();
   if (player.hp === 0) { player.mode = 'dead'; player.vx = 0; player.vy = 0; player.hurtPushTicks = 0; events.push({ type: 'death', source }); }
   else if (blocked) {
     player.invulnerableTicks = HURT_INVULNERABLE_TICKS;
-    events.push({ type: `${player.defenseMode}:blocked`, defense: player.defenseMode, source, originX: ix, originY: iy });
+    events.push({ type: perfectParry ? 'parry:perfect' : `${player.defenseMode}:blocked`, defense: player.defenseMode, source, originX: ix, originY: iy });
   }
   else {
     const pushX = px - ix;

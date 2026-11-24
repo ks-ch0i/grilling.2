@@ -139,13 +139,14 @@ export function snapshotStageRun(run){
   return copy;
 }
 
-export function restoreStageRun(stage,snapshot,{legacyDefense=false}={}){
+export function restoreStageRun(stage,snapshot,{legacyDefense=false,legacyAirborne=false}={}){
   validateStage(stage);
   const s=structuredClone(snapshot);
   if(legacyDefense&&object(s.player)){
     s.player.defenseMode='none';s.player.defenseTicksRemaining=0;
     s.player.shieldCooldownTicks=0;s.player.parryCooldownTicks=0;
   }
+  if(legacyAirborne&&object(s.player)&&!Object.hasOwn(s.player,'airborneTicks'))s.player.airborneTicks=0;
   if(!Object.hasOwn(s,'terrainLayout'))s.terrainLayout={mode:'legacy-fixed',platforms:structuredClone(stage.solids.slice(1))};
   else validatePlatformLayout(stage,s.terrainLayout);
   const fresh=createRunState(stage,s.terrainLayout,0);
@@ -164,7 +165,8 @@ export function restoreStageRun(stage,snapshot,{legacyDefense=false}={}){
     if(!Array.isArray(drops)||new Set(drops).size!==drops.length||[...drops].some(index=>!count(index)||index>=s.terrainLayout.platforms.length))throw new TypeError('Invalid player drop platforms');
   }
   for(const k of ['invulnerableTicks','rollCooldown','rollTicks','diveCooldown','diveGraceTicks','attackTick','hurtTicks','hurtPushTicks','defenseTicksRemaining'])if(!count(p[k]))throw new RangeError('Invalid player timer');
-  if(!count(p.shieldCooldownTicks)||p.shieldCooldownTicks>180||!count(p.parryCooldownTicks)||p.parryCooldownTicks>180||p.defenseMode==='none'&&p.defenseTicksRemaining!==0||p.defenseMode==='shield'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>60)||p.defenseMode==='parry'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>15))throw new RangeError('Invalid defense timer');
+  if(!count(p.airborneTicks)||p.airborneTicks>30)throw new RangeError('Invalid airborne timer');
+  if(!count(p.shieldCooldownTicks)||p.shieldCooldownTicks>180||!count(p.parryCooldownTicks)||p.parryCooldownTicks>180||p.defenseMode==='none'&&p.defenseTicksRemaining!==0||p.defenseMode==='shield'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>60)||p.defenseMode==='parry'&&(p.defenseTicksRemaining<1||p.defenseTicksRemaining>37))throw new RangeError('Invalid defense timer');
   if((p.mode==='dead')!==(p.hp===0)||p.mode==='dead'&&s.deathTicks===0)throw new TypeError('Invalid death snapshot');
   if(!strings(s.consumedPickupIds)||s.consumedPickupIds.some(id=>!stage.pickups.some(pickup=>pickup.id===id)))throw new TypeError('Invalid pickup snapshot');
 

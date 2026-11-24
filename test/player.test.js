@@ -75,11 +75,24 @@ test('damage grants immunity and death happens once', () => {
   for(let i=0;i<C.HURT_INVULNERABLE_TICKS;i++) { p=tick(p); assert.equal(p.invulnerableTicks,C.HURT_INVULNERABLE_TICKS-i-1); const blocked=applyPlayerDamage(p); assert.equal(blocked.player.hp,2); assert.equal(blocked.player.invulnerableTicks,C.HURT_INVULNERABLE_TICKS-i-1); } p=tick(p); p=applyPlayerDamage(p).player; assert.equal(p.hp,1);
   for(let i=0;i<C.HURT_INVULNERABLE_TICKS+1;i++) p=tick(p); result=applyPlayerDamage(p); assert.equal(result.player.hp,0); assert.equal(result.events[0].type,'death'); assert.equal(applyPlayerDamage(result.player).events.length,0);
 });
-test('dive requires air, falls vertically and starts cooldown at landing', () => {
-  let p=grounded(); p=tick(p,{divePressed:true}); assert.notEqual(p.mode,'dive'); p=tick(p,{jumpPressed:true,jumpHeld:true}); for(let i=0;i<5;i++) p=tick(p,{jumpHeld:true});
-  p=tick(p,{divePressed:true,move:1}); assert.equal(p.mode,'dive'); assert.equal(p.vx,0); assert.equal(p.vy,C.MAX_FALL_SPEED);
+test('air time counts 30 completed ticks, caps there and resets on landing', () => {
+  let p=grounded(); p=tick(p,{jumpPressed:true,jumpHeld:true}); assert.equal(p.airborneTicks,1);
+  for(let i=0;i<28;i++)p=tick(p,{jumpHeld:true}); assert.equal(p.airborneTicks,29);
+  p=tick(p,{jumpHeld:true}); assert.equal(p.airborneTicks,30);
+  p=createPlayer(120,275);p.grounded=false;p.vy=400;p.airborneTicks=30;p=tick(p);
+  assert.equal(p.grounded,true);assert.equal(p.airborneTicks,0);
+});
+test('left click swings before 30 air ticks and starts dive after the threshold', () => {
+  let p=grounded(); p=tick(p,{jumpPressed:true,jumpHeld:true});
+  for(let i=0;i<28;i++)p=tick(p,{jumpHeld:true});
+  assert.equal(p.airborneTicks,29);
+  p=tick(p,{attackPressed:true,jumpHeld:true});
+  assert.equal(p.mode,'attack');assert.equal(p.airborneTicks,30);
+  p=tick(p,{attackPressed:true,jumpHeld:true,move:1});
+  assert.equal(p.mode,'dive');assert.equal(p.vx,0);assert.equal(p.vy,C.MAX_FALL_SPEED);
   let impacts=0; for(let i=0;i<20;i++){const r=stepPlayer(p,frame(),floor);p=r.player;impacts+=r.events.filter(e=>e.type==='dive-impact').length;} assert.equal(impacts,1); assert.ok(p.diveCooldown>0);
-  p=tick(p,{jumpPressed:true,jumpHeld:true}); p=tick(p,{divePressed:true}); assert.notEqual(p.mode,'dive');
+  assert.equal(p.grounded,true);assert.equal(p.airborneTicks,0);
+  p=tick(p,{attackPressed:true});assert.equal(p.mode,'attack');
 });
 test('attacks track current aim without queuing another swing', () => {
   let p=grounded(); let result=stepPlayer(p,frame({attackPressed:true,aimX:500,aimY:290}),floor);p=result.player;
@@ -104,8 +117,8 @@ test('turning during an active swing moves the hit area with the aim',()=>{
 });
 
 test('a dive ignores enemy damage until landing and starts its cooldown',()=>{
- let p=grounded(); p=tick(p,{jumpPressed:true,jumpHeld:true}); for(let i=0;i<8;i++)p=tick(p,{jumpHeld:true});
- p=tick(p,{divePressed:true});
+ let p=grounded(); p=tick(p,{jumpPressed:true,jumpHeld:true}); for(let i=0;i<29;i++)p=tick(p,{jumpHeld:true});
+ p=tick(p,{attackPressed:true});
  for(const source of ['contact','enemy-attack','projectile','boss-attack']) { const result=applyPlayerDamage(p,source); assert.equal(result.player.hp,3); assert.equal(result.player.mode,'dive'); assert.equal(result.events.length,0); }
  assert.equal(applyPlayerDamage(p,'pit').player.mode,'dead');
  for(let i=0;i<30&&!p.grounded;i++)p=tick(p); assert.equal(p.grounded,true); assert.equal(p.diveCooldown,C.DIVE_COOLDOWN);

@@ -59,12 +59,12 @@ test('shield lasts 60 ticks, ends on release, and requires a fresh press after c
 test('parry cooldown starts on Q; defense cancels attacks, allows movement and jump, and roll cancels it', () => {
   let p = grounded(); p = tick(p, { attackPressed: true }); assert.equal(p.mode, 'attack');
   p = tick(p, { parryPressed: true, move: 1 });
-  assert.equal(p.defenseMode, 'parry'); assert.equal(p.defenseTicksRemaining, 15); assert.equal(p.parryCooldownTicks, 180);
+  assert.equal(p.defenseMode, 'parry'); assert.equal(p.defenseTicksRemaining, 37); assert.equal(p.parryCooldownTicks, 180);
   assert.notEqual(p.mode, 'attack'); assert.equal(p.attackTick, 0); assert.ok(p.vx > 0);
   p = tick(p, { jumpPressed: true, jumpHeld: true }); assert.equal(p.mode, 'jump'); assert.equal(p.defenseMode, 'parry');
   p = tick(p, { rollPressed: true }); assert.equal(p.mode, 'roll'); assert.equal(p.defenseMode, 'none');
   assert.equal(p.parryCooldownTicks, 178);
-  assert.equal(C.PARRY_WINDOW_TICKS, 15); assert.equal(C.DEFENSE_COOLDOWN_TICKS, 180);
+  assert.equal(C.PARRY_WINDOW_TICKS, 37); assert.equal(C.PARRY_PERFECT_TICKS, 23); assert.equal(C.DEFENSE_COOLDOWN_TICKS, 180);
 });
 
 test('simultaneous defenses, active-defense replacement, and defense during forbidden modes are rejected', () => {
@@ -76,9 +76,24 @@ test('simultaneous defenses, active-defense replacement, and defense during forb
   let hurt = applyPlayerDamage(grounded()).player;
   hurt = tick(hurt, { parryPressed: true }); assert.equal(hurt.defenseMode, 'none');
   let diving = grounded(); diving = tick(diving, { jumpPressed: true, jumpHeld: true });
-  for (let i = 0; i < 8; i++) diving = tick(diving, { jumpHeld: true });
-  diving = tick(diving, { divePressed: true }); assert.equal(diving.mode, 'dive');
+  for (let i = 0; i < 29; i++) diving = tick(diving, { jumpHeld: true });
+  assert.equal(diving.airborneTicks, 30);
+  diving = tick(diving, { attackPressed: true }); assert.equal(diving.mode, 'dive');
   diving = tick(diving, { parryPressed: true }); assert.equal(diving.defenseMode, 'none');
+});
+
+test('perfect and regular parries split at the 23/14 tick boundary', () => {
+  const source={...grounded(),aim:{x:1,y:0},defenseMode:'parry',hp:3};
+  for(const ticks of [37,15]){
+    const result=applyPlayerDamage({...source,defenseTicksRemaining:ticks},'enemy-attack',{originX:200,originY:290},'melee');
+    assert.equal(result.player.hp,3);assert.equal(result.player.invulnerableTicks,60);
+    assert.deepEqual(result.events.map(event=>event.type),['parry:perfect']);
+  }
+  for(const ticks of [14,1]){
+    const result=applyPlayerDamage({...source,defenseTicksRemaining:ticks},'enemy-attack',{originX:200,originY:290},'melee');
+    assert.equal(result.player.hp,2.5);assert.equal(result.player.invulnerableTicks,60);
+    assert.deepEqual(result.events.map(event=>event.type),['parry:blocked']);
+  }
 });
 
 test('front matching attacks chip half a heart without hurt or knockback; wrong, rear and pit hits remain unblocked', () => {
@@ -92,7 +107,7 @@ test('front matching attacks chip half a heart without hurt or knockback; wrong,
   assert.equal(wrongCategory.player.hp, 2); assert.equal(wrongCategory.events.some(event=>event.type==='shield:blocked'||event.type==='parry:blocked'),false);
   const fromBehind=applyPlayerDamage(shielding, 'projectile', { originX: 80, originY: 290 }, 'ranged');
   assert.equal(fromBehind.player.hp, 2); assert.equal(fromBehind.events.some(event=>event.type==='shield:blocked'||event.type==='parry:blocked'),false);
-  const parrying = { ...shielding, defenseMode: 'parry', defenseTicksRemaining: 15, hp: 1 };
+  const parrying = { ...shielding, defenseMode: 'parry', defenseTicksRemaining: 14, hp: 1 };
   const parried = applyPlayerDamage(parrying, 'enemy-attack', { originX: 200, originY: 290 }, 'melee');
   assert.equal(parried.player.hp, 0.5); assert.equal(parried.events[0].type, 'parry:blocked'); assert.equal(parried.events[0].originX,200); assert.equal(parried.events[0].originY,290);
   const lastHit = applyPlayerDamage({ ...parrying, hp: 0.5 }, 'enemy-attack', { originX: 200, originY: 290 }, 'melee');
@@ -106,7 +121,7 @@ test('save restore validates defense timers and closes active windows safely', (
   let restored = restoreStageRun(stage, JSON.parse(JSON.stringify(snapshotStageRun(run))));
   assert.equal(restored.player.defenseMode, 'none'); assert.equal(restored.player.defenseTicksRemaining, 0);
   assert.equal(restored.player.shieldCooldownTicks, C.DEFENSE_COOLDOWN_TICKS);
-  run.player.defenseMode = 'parry'; run.player.defenseTicksRemaining = 4; run.player.parryCooldownTicks = 121;
+  run.player.defenseMode = 'parry'; run.player.defenseTicksRemaining = 37; run.player.parryCooldownTicks = 121;
   restored = restoreStageRun(stage, JSON.parse(JSON.stringify(snapshotStageRun(run))));
   assert.equal(restored.player.defenseMode, 'none'); assert.equal(restored.player.parryCooldownTicks, 121);
   const invalid = snapshotStageRun(createStageRun(stage, {}, { seed: 4 })); invalid.player.defenseTicksRemaining = 1;
@@ -118,7 +133,7 @@ test('stage routes soldier swings and projectiles to defense, while acid pools b
   const player = run.player;
   const soldier = createEnemy({ ...FOREST_STAGE.enemies.find(enemy => enemy.kind === 'soldier'), id: 'test-soldier', x: player.x + 20, y: player.y });
   soldier.state = 'attack'; soldier.stateTicks = 20; soldier.lockedFacing = -1;
-  run.enemies = [soldier]; run.player.defenseMode = 'parry'; run.player.defenseTicksRemaining = 15;
+  run.enemies = [soldier]; run.player.defenseMode = 'parry'; run.player.defenseTicksRemaining = 14;
   let result = stepStage(run, frame(), FOREST_STAGE);
   assert.equal(result.run.player.hp, 2.5); assert.ok(result.events.some(event => event.type === 'parry:blocked'));
   assert.equal(result.run.player.mode, 'idle');

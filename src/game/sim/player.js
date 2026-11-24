@@ -7,7 +7,7 @@ export function createPlayer(x = 120, y = 276) {
     horizontalFacing: 1, aim: { x: 1, y: 0 }, invulnerableTicks: 0,
     defenseMode: 'none', defenseTicksRemaining: 0, shieldCooldownTicks: 0, parryCooldownTicks: 0,
     rollCooldown: 0, rollTicks: 0, rollDirection: 1, rollInvulnerable: false, damageInvulnerable: false, jumpCut: false, diveCooldown: 0, diveUsed: false,
-    diveGraceTicks: 0, diveGraceActive: false, attackTick: 0, hitIds: new Set(), hurtTicks: 0, hurtPushTicks: 0, hurtPushDirection: 1 };
+    diveGraceTicks: 0, diveGraceActive: false, airborneTicks: 0, attackTick: 0, hitIds: new Set(), hurtTicks: 0, hurtPushTicks: 0, hurtPushDirection: 1 };
 }
 function startAttack(p, events) {
   p.mode = 'attack'; p.attackTick = 0; p.hitIds.clear();
@@ -81,7 +81,7 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
       p.defenseMode = 'none'; p.defenseTicksRemaining = 0;
       p.mode = 'roll'; p.rollTicks = C.ROLL_TICKS; p.rollDirection = input.move || p.horizontalFacing;
       p.attackTick = 0; p.hitIds.clear(); events.push({ type: 'roll' });
-    } else if (p.defenseMode === 'none' && input.divePressed && !p.grounded && !p.diveUsed && canDive) {
+    } else if (p.defenseMode === 'none' && input.attackPressed && !p.grounded && p.airborneTicks >= C.AIR_DIVE_UNLOCK_TICKS && !p.diveUsed && canDive) {
       p.mode = 'dive'; p.diveUsed = true; p.attackTick = 0; p.hitIds.clear();
     } else {
       const canStartDefense = p.defenseMode === 'none' && !['roll','dive','hurt','dead'].includes(modeAtStart);
@@ -150,6 +150,7 @@ export function stepPlayer(state, input, terrain, pitDeathY = C.PIT_Y, platformP
     } else landed = rectLanded;
   }
   p.grounded = landed;
+  p.airborneTicks = p.grounded ? 0 : Math.min(C.AIR_DIVE_UNLOCK_TICKS, p.airborneTicks + 1);
   if (landed && p.diveUsed) {
     if (p.mode === 'dive') {
       events.push({ type: 'dive-impact', x: p.x + p.w/2, y: p.y + p.h });
