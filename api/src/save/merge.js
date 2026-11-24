@@ -1,5 +1,6 @@
 import { ApiError } from '../shared/http.js';
-import { fromSaveDocument, toSaveDocument, validateCloudSave } from './schema.js';
+import { compareHardProgress } from './hardProgress.js';
+import { fromSaveDocument, normalizeCloudSave, toSaveDocument } from './schema.js';
 
 const STAGE_IDS = ['forest-1', 'mine-1'];
 const ROUND_KEYS = Array.from({ length: 8 }, (_, index) => String(index + 1));
@@ -24,6 +25,17 @@ function mergeRecords(existing, incoming) {
   return Object.fromEntries(STAGE_IDS.map((stageId) => [stageId, mergeRecordPair(existing[stageId], incoming[stageId])]));
 }
 
+function mergeHardProgress(existing, incoming) {
+  return Object.fromEntries(STAGE_IDS.map((stageId) => {
+    const previous = existing[stageId];
+    const next = incoming[stageId];
+    const best = previous.best === null || (next.best !== null && compareHardProgress(next.best, previous.best) < 0)
+      ? next.best
+      : previous.best;
+    return [stageId, { best, recent: next.recent ?? previous.recent }];
+  }));
+}
+
 function mergeRoundRecords(existing, incoming) {
   return Object.fromEntries(STAGE_IDS.map((stageId) => [stageId,
     Object.fromEntries(ROUND_KEYS.map((round) => [round, mergeRecordPair(existing[stageId][round], incoming[stageId][round])]))
@@ -36,8 +48,8 @@ function mergeRoundDeaths(existing, incoming) {
   ]));
 }
 
-export function mergeCloudSave(existing, incoming, principal, now = new Date().toISOString()) {
-  if (!validateCloudSave(incoming)) throw new ApiError(400, 'invalid_payload');
+export function mergeCloudSave(existing, incomingSave, principal, now = new Date().toISOString()) {
+  const incoming = normalizeCloudSave(incomingSave);
 
   const current = existing === null ? null : fromSaveDocument(existing);
   if (existing !== null && existing.userId !== principal?.userId) throw new ApiError(503, 'service_unavailable');
@@ -52,11 +64,12 @@ export function mergeCloudSave(existing, incoming, principal, now = new Date().t
     roundRecords: mergeRoundRecords(previous.easy.roundRecords, incoming.easy.roundRecords)
   };
   const merged = {
-    version: 6,
+    version: 8,
     run: incoming.run === null ? null : clone(incoming.run),
     unlockedStageIds,
     records: mergeRecords(previous.records, incoming.records),
-    easy
+    easy,
+    hardProgress: mergeHardProgress(previous.hardProgress, incoming.hardProgress)
   };
   const revision = existing === null ? 1 : existing.revision + 1;
   const updatedAt = now instanceof Date ? now.toISOString() : now;

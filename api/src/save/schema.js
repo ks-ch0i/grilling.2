@@ -1,9 +1,12 @@
 import { ApiError } from '../shared/http.js';
 import { isSwaUserId } from '../auth/swaPrincipal.js';
+import { completionProgressFromRecords } from './hardProgress.js';
 
 export const MAX_SAVE_BODY_BYTES = 256 * 1024;
 
 const STAGE_IDS = ['forest-1', 'mine-1'];
+const CLOUD_KEYS = ['version', 'run', 'unlockedStageIds', 'records', 'easy'];
+const V8_CLOUD_KEYS = [...CLOUD_KEYS, 'hardProgress'];
 const ROUND_KEYS = Array.from({ length: 8 }, (_, index) => String(index + 1));
 const ROUND_ENEMY_COUNTS = [1, 2, 3, 4, 0, 6, 3, 3];
 const PLAYER_KEYS = [
@@ -13,6 +16,7 @@ const PLAYER_KEYS = [
   'diveCooldown', 'diveUsed', 'diveGraceTicks', 'diveGraceActive', 'attackTick', 'hitIds',
   'hurtTicks', 'hurtPushTicks', 'hurtPushDirection'
 ];
+const V8_PLAYER_KEYS = [...PLAYER_KEYS, 'airborneTicks'];
 const RUN_KEYS = [
   'stageId', 'player', 'enemies', 'projectiles', 'boss', 'arenaLocked', 'consumedPickupIds',
   'elapsedTicks', 'deaths', 'outcome', 'deathTicks', 'round', 'roundClearTicks', 'rngState', 'bossSequence'
@@ -53,10 +57,17 @@ function validRecord(value) {
   return hasExactKeys(value, ['elapsedTicks', 'deaths']) && isCount(value.elapsedTicks) && isCount(value.deaths);
 }
 
-function validRecordPair(value) {
+function validHardResult(value) {
+  return hasExactKeys(value, ['roundReached', 'cleared', 'elapsedTicks', 'deaths']) &&
+    Number.isInteger(value.roundReached) && value.roundReached >= 1 && value.roundReached <= 8 &&
+    typeof value.cleared === 'boolean' && (!value.cleared || value.roundReached === 8) &&
+    isCount(value.elapsedTicks) && isCount(value.deaths);
+}
+
+function validRecordPair(value, validate = validRecord) {
   return hasExactKeys(value, ['best', 'recent']) &&
-    (value.best === null || validRecord(value.best)) &&
-    (value.recent === null || validRecord(value.recent));
+    (value.best === null || validate(value.best)) &&
+    (value.recent === null || validate(value.recent));
 }
 
 function validStageRecordMap(value, validate) {
@@ -73,8 +84,11 @@ function validRect(value, withTicks = false) {
     value.w > 0 && value.h > 0 && (!withTicks || isCount(value.ticks));
 }
 
-function validPlayer(player) {
-  if (!hasExactKeys(player, PLAYER_KEYS, ['dropPlatforms']) || !isFiniteJson(player)) return false;
+function validPlayer(player, requireAirborneTicks) {
+  const required = requireAirborneTicks ? V8_PLAYER_KEYS : PLAYER_KEYS;
+  const optional = requireAirborneTicks ? ['dropPlatforms'] : ['dropPlatforms', 'airborneTicks'];
+  if (!hasExactKeys(player, required, optional) || !isFiniteJson(player)) return false;
+  if (Object.hasOwn(player, 'airborneTicks') && !isCount(player.airborneTicks)) return false;
   if (!hasExactKeys(player.aim, ['x', 'y']) || !Number.isFinite(player.aim.x) || !Number.isFinite(player.aim.y)) return false;
   if (!isStringList(player.hitIds) || !['idle', 'run', 'jump', 'fall', 'attack', 'roll', 'dive', 'hurt', 'dead'].includes(player.mode)) return false;
   if (!['none', 'shield', 'parry'].includes(player.defenseMode) || typeof player.grounded !== 'boolean') return false;
@@ -97,7 +111,7 @@ function validPlayer(player) {
   return true;
 }
 
-function validRun(run) {
+function validRun(run, requireAirborneTicks) {
   if (!isObject(run) || !isFiniteJson(run) || !STAGE_IDS.includes(run.stageId)) return false;
   const required = run.stageId === 'mine-1' ? [...RUN_KEYS, 'cartZones', 'hazards', 'bossDrop'] : RUN_KEYS;
   if (!hasExactKeys(run, required, ['terrainLayout'])) return false;
@@ -105,7 +119,7 @@ function validRun(run) {
     !Number.isInteger(run.round) || run.round < 1 || run.round > 8 ||
     !(run.roundClearTicks === null || Number.isSafeInteger(run.roundClearTicks) && run.roundClearTicks > 0 && run.roundClearTicks <= 120) ||
     !isCount(run.rngState) || run.rngState > 0xffffffff || typeof run.bossSequence !== 'string' || typeof run.arenaLocked !== 'boolean') return false;
-  if (!validPlayer(run.player) || !Array.isArray(run.enemies) || !Array.isArray(run.projectiles) ||
+  if (!validPlayer(run.player, requireAirborneTicks) || !Array.isArray(run.enemies) || !Array.isArray(run.projectiles) ||
     !isObject(run.boss) || !isStringList(run.consumedPickupIds)) return false;
   const enemyKinds = run.stageId === 'forest-1' ? ['soldier', 'wisp', 'boar'] : ['golem', 'insect', 'bat'];
   const enemyStates = ['idle', 'chase', 'windup', 'attack', 'return', 'recovery', 'hurt', 'dead'];
@@ -150,13 +164,15 @@ function validRun(run) {
 }
 
 export function validateCloudSave(value) {
-  if (!hasExactKeys(value, ['version', 'run', 'unlockedStageIds', 'records', 'easy']) || value.version !== 6) return false;
-  if (!(value.run === null || validRun(value.run))) return false;
+  if (!isObject(value) || ![6, 7, 8].includes(value.version)) return false;
+  const isV8 = value.version === 8;
+  if (!hasExactKeys(value, isV8 ? V8_CLOUD_KEYS : CLOUD_KEYS)) return false;
+  if (!(value.run === null || validRun(value.run, isV8))) return false;
   if (!Array.isArray(value.unlockedStageIds) || !value.unlockedStageIds.includes('forest-1') ||
     new Set(value.unlockedStageIds).size !== value.unlockedStageIds.length || value.unlockedStageIds.some((id) => !STAGE_IDS.includes(id))) return false;
   if (value.run !== null && !value.unlockedStageIds.includes(value.run.stageId)) return false;
-  if (!validStageRecordMap(value.records, (records) => hasExactKeys(records, ['best', 'recent']) &&
-    (records.best === null || validRecord(records.best)) && (records.recent === null || validRecord(records.recent)))) return false;
+  if (!validStageRecordMap(value.records, validRecordPair)) return false;
+  if (isV8 && !validStageRecordMap(value.hardProgress, (pair) => validRecordPair(pair, validHardResult))) return false;
 
   const easy = value.easy;
   if (!hasExactKeys(easy, ['unlockedRoundByStage', 'roundDeaths', 'roundRecords'])) return false;
@@ -165,6 +181,21 @@ export function validateCloudSave(value) {
     !Number.isInteger(easy.unlockedRoundByStage['mine-1']) || easy.unlockedRoundByStage['mine-1'] < 0 || easy.unlockedRoundByStage['mine-1'] > 8) return false;
   return validStageRecordMap(easy.roundDeaths, (rounds) => validRoundMap(rounds, isCount)) &&
     validStageRecordMap(easy.roundRecords, (rounds) => validRoundMap(rounds, validRecordPair));
+}
+
+function cloneAsV8(value) {
+  const save = structuredClone(value);
+  if (save.version !== 8) {
+    save.version = 8;
+    save.hardProgress = completionProgressFromRecords(save.records);
+    if (save.run !== null && !Object.hasOwn(save.run.player, 'airborneTicks')) save.run.player.airborneTicks = 0;
+  }
+  return save;
+}
+
+export function normalizeCloudSave(value) {
+  if (!validateCloudSave(value)) throw new ApiError(400, 'invalid_payload');
+  return cloneAsV8(value);
 }
 
 function validPrincipal(principal) {
@@ -184,7 +215,8 @@ function cloudFields(document) {
     run: document.run,
     unlockedStageIds: document.unlockedStageIds,
     records: document.records,
-    easy: document.easy
+    easy: document.easy,
+    ...(Object.hasOwn(document, 'hardProgress') ? { hardProgress: document.hardProgress } : {})
   };
 }
 
@@ -197,7 +229,7 @@ export function toSaveDocument(save, principal, { revision = 1, updatedAt = new 
     id: principal.userId,
     userId: principal.userId,
     displayName: principal.displayName.trim(),
-    ...structuredClone(cloudFields(save)),
+    ...cloneAsV8(save),
     updatedAt,
     revision
   };
@@ -207,8 +239,9 @@ export function fromSaveDocument(document) {
   if (!isObject(document) || typeof document.id !== 'string' || document.id !== document.userId ||
     !isSwaUserId(document.userId) ||
     typeof document.displayName !== 'string' || [...document.displayName.trim()].length < 1 || [...document.displayName.trim()].length > 80 ||
-    !isCount(document.revision) || document.revision < 1 || !validTimestamp(document.updatedAt) ||
-    !validateCloudSave(cloudFields(document))) throw new ApiError(503, 'service_unavailable');
+    !isCount(document.revision) || document.revision < 1 || !validTimestamp(document.updatedAt)) throw new ApiError(503, 'service_unavailable');
 
-  return structuredClone(cloudFields(document));
+  const save = cloudFields(document);
+  if (!validateCloudSave(save)) throw new ApiError(503, 'service_unavailable');
+  return cloneAsV8(save);
 }
