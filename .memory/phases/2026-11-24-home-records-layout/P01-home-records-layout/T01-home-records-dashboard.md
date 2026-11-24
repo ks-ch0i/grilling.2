@@ -132,4 +132,4 @@ Task: T01-home-records-dashboard
 ## Progress
 - [x] 구현 완료
 - [x] 기록 창 회귀 검증, 빌드, 브라우저 크기 확인 완료
-- commit: pending
+- commit: `cc927e5`
