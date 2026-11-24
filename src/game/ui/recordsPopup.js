@@ -44,7 +44,7 @@ function easyTable(stageId,roundRecords,onBoard,{selectedRound,onSelectRound}={}
     if(onSelectRound){
       const choice=element('button',String(round).padStart(2,'0'),'challenge-record-round-choice');
       choice.type='button';choice.setAttribute('aria-label',`${String(round).padStart(2,'0')}라운드 회사 순위`);choice.setAttribute('aria-pressed',String(selected));
-      choice.addEventListener('click',()=>{if(!selected)onSelectRound(round);});
+      choice.addEventListener('click',()=>onSelectRound(round));
       roundHeader.append(choice);
     }
     if(!onSelectRound)roundHeader.append(element('span',String(round).padStart(2,'0'),'challenge-record-round'));
